@@ -46,15 +46,6 @@
         /* Geçiş animasyonları */
         .sidebar-transition { transition: all 0.3s ease-in-out; }
 
-        /* İşaret silme animasyonu */
-        .delete-mode-active .marker-element {
-            animation: pulse-red 1s infinite;
-            cursor: crosshair !important;
-        }
-        @keyframes pulse-red {
-            0%, 100% { filter: drop-shadow(0 0 4px red) scale(1); }
-            50% { filter: drop-shadow(0 0 12px red) scale(1.3); }
-        }
         .no-pan { pointer-events: auto; }
     </style>
 </head>
@@ -261,9 +252,6 @@
                         <button id="mode-btn-marker" onclick="setMapMode('marker')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border" title="Harita İşaretçisi Ekle">
                             📍 İşaret Koy
                         </button>
-                        <button id="mode-btn-delete-marker" onclick="setMapMode('delete-marker')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-red-400 hover:bg-red-950/40" title="Harita İşaretçisi Sil">
-                            🗑️ İşaret Sil
-                        </button>
                         
                         <!-- Host Özel Düşman Saldırı Paneli Butonu -->
                         <button id="host-attack-btn" onclick="openAttackModal()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#6B000D] hover:bg-red-700 text-white shadow-inner">
@@ -331,6 +319,11 @@
                         <button onclick="undoLastWaypoint()" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors shadow-inner" title="Son Noktayı Geri Al">↩</button>
                         <div class="w-px h-6 bg-[#8A6529]/30"></div>
                         <button onclick="clearRoute()" class="px-2 h-8 rounded bg-[#1F1404] hover:bg-red-950/60 text-red-500 font-bold flex items-center justify-center text-xs transition-colors shadow-inner" title="Tüm Rotaları Sil">🧹 Temizle</button>
+                    </div>
+
+                    <!-- SOL ALT: İşaretçileri Temizle (Rota temizle ile aynı mantık) -->
+                    <div id="marker-edit-capsule" class="hidden absolute bottom-4 left-16 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1 shadow-xl backdrop-blur-xs">
+                        <button onclick="clearMarkers()" class="px-2 h-8 rounded bg-[#1F1404] hover:bg-red-950/60 text-red-500 font-bold flex items-center justify-center text-xs transition-colors shadow-inner" title="Tüm İşaretçileri Sil">🧹 İşaretleri Temizle</button>
                     </div>
 
                     <!-- ORTA ALT: Göz Butonu -->
@@ -819,8 +812,9 @@
                 try {
                     const packet = snapshot.val();
                     if (!packet) return;
-                    if (packet.timestamp && packet.timestamp < connectTime) return; // bağlanmadan önceki eski olayları yok say
+                    if (packet.timestamp && packet.timestamp < connectTime) { console.log('[Ağ][ATLANDI-ESKİ]', packet.type, packet); return; }
                     if (packet.senderId === mySenderId) return;
+                    console.log('[Ağ][ALINDI]', packet.type, packet);
                     handleIncomingNetworkEvent(packet);
                 } catch (err) {
                     console.error('[Ağ] Gelen paket işlenemedi:', err);
@@ -852,6 +846,8 @@
             packet.senderId = mySenderId;
             packet.senderName = state.username;
             packet.timestamp = serverNow();
+
+            console.log('[Ağ][GÖNDERİLİYOR]', packet.type, packet);
 
             const ref = db.ref('rooms/' + state.roomCode.toLowerCase() + '/events').push();
             ref.set(packet).catch(err => {
@@ -1618,7 +1614,12 @@
         function applyMapDisplay() {
             const board = document.getElementById('map-board');
             let imgUrl = MAP_PRESETS[state.selectedMap];
-            if (state.selectedMap === 'custom_map') imgUrl = state.customMapUrl || "input_file_0.png";
+            // ÖNEMLİ DÜZELTME: "custom_map" seçiliyken ve host henüz kendi haritasını
+            // yüklemediyse, kod var olmayan sahte bir dosyaya ("input_file_0.png")
+            // düşüyordu — bu dosya sitenizde hiç yok, bu yüzden harita simsiyah
+            // görünüyordu. Artık bunun yerine gerçek bir hazır harita (zindan
+            // görseli) gösteriliyor, ekran asla bomboş kalmıyor.
+            if (state.selectedMap === 'custom_map') imgUrl = state.customMapUrl || MAP_PRESETS.dungeon;
             board.style.backgroundImage = `url('${imgUrl}')`;
             document.getElementById('map-select-preset').value = state.selectedMap;
         }
@@ -1663,14 +1664,12 @@
 
         function setMapMode(mode) {
             state.currentMode = mode;
-            const modes = ['tokens', 'measurement', 'marker', 'delete-marker'];
+            const modes = ['tokens', 'measurement', 'marker'];
             modes.forEach(m => {
                 const btn = document.getElementById(`mode-btn-${m}`);
                 if (btn) {
                     if (m === mode) {
                         btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white";
-                    } else if (m === 'delete-marker') {
-                        btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-900 text-white hover:bg-red-800 border border-red-700";
                     } else {
                         btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border";
                     }
@@ -1678,6 +1677,7 @@
             });
 
             const clearBtnCapsule = document.getElementById('route-edit-capsule');
+            const markerCapsule = document.getElementById('marker-edit-capsule');
             const travelCard = document.getElementById('velutan-travel-card');
             
             if (mode === 'measurement') {
@@ -1690,11 +1690,10 @@
                 clearBtnCapsule.classList.add('hidden');
             }
 
-            const viewport = document.getElementById('map-viewport');
-            if (mode === 'delete-marker') {
-                viewport.classList.add('delete-mode-active');
+            if (mode === 'marker' && state.markers && state.markers.length > 0) {
+                markerCapsule.classList.remove('hidden');
             } else {
-                viewport.classList.remove('delete-mode-active');
+                markerCapsule.classList.add('hidden');
             }
 
             renderTokens();
@@ -2030,8 +2029,8 @@
         // touchstart, hem üst kutuya hem butona) ekleniyordu; bu karmaşa bazı
         // tıklamaların hiç işlenmemesine ya da birden fazla işlenmesine yol
         // açıyordu. Yeni yapı: her pin'e TEK BİR onclick atanır (üzerine
-        // yazılır, asla üst üste yığılmaz), mod "delete-marker" ise tıklama
-        // direkt siler.
+        // ================================================================
+        // HARİTA İŞARETÇİLERİ (MARKERS) — sadece koyma + rota gibi "Temizle" butonu
         // ================================================================
         function renderMarkers() {
             const container = document.getElementById('markers-layer');
@@ -2040,55 +2039,44 @@
 
             if (!state.markers) state.markers = [];
 
-            const isDeleteMode = state.currentMode === 'delete-marker';
-
             state.markers.forEach((marker) => {
                 const pin = document.createElement('div');
                 pin.style.left = marker.x + 'px';
                 pin.style.top = marker.y + 'px';
                 pin.style.transform = 'translate(-50%, -100%)';
-                pin.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto no-pan marker-element" +
-                    (isDeleteMode ? " cursor-crosshair delete-mode-active" : "");
+                pin.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto no-pan marker-element";
 
                 pin.innerHTML = `
                     <div class="relative">
                         <span class="text-xl filter drop-shadow">📍</span>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 ${isDeleteMode ? 'bg-red-950 border-red-500' : 'bg-[#2E1E07] border-[#8A6529]'} border px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md flex items-center gap-1">
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-[#2E1E07] border border-[#8A6529] px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md flex items-center gap-1">
                             <span>📍 ${marker.title}</span>
-                            ${isDeleteMode ? '<span class="text-red-300">✕ Sil</span>' : ''}
                         </div>
                     </div>
                 `;
 
-                // TEK dinleyici: mod delete-marker ise, pin'in HERHANGİ bir
-                // yerine (ikon ya da etiket) tıklamak siler. addEventListener
-                // yerine .onclick kullanıyoruz ki her renderMarkers() çağrısında
-                // eski/yeni listener çakışması asla olmasın.
-                if (isDeleteMode) {
-                    pin.onclick = (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        removeMarker(marker.id);
-                    };
-                } else {
-                    pin.onclick = null;
-                }
-
                 container.appendChild(pin);
             });
+
+            const markerCapsule = document.getElementById('marker-edit-capsule');
+            if (markerCapsule) {
+                if (state.currentMode === 'marker' && state.markers.length > 0) {
+                    markerCapsule.classList.remove('hidden');
+                } else {
+                    markerCapsule.classList.add('hidden');
+                }
+            }
         }
 
-        function removeMarker(markerId) {
-            if (!state.markers) return;
-            const before = state.markers.length;
-            state.markers = state.markers.filter(m => m.id !== markerId);
-            if (state.markers.length === before) return; // zaten silinmişti, tekrar yayınlama
-
+        // Rotadaki clearRoute() ile birebir aynı mantık: tüm işaretçileri temizler
+        function clearMarkers() {
+            state.markers = [];
+            document.getElementById('marker-edit-capsule').classList.add('hidden');
             renderMarkers();
             saveToLocalStorage();
             broadcastNetworkEvent({
                 type: 'sync_markers',
-                markers: state.markers
+                markers: []
             });
         }
 
