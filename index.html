@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -13,7 +12,7 @@
                 extend: {
                     colors: {
                         rpg: {
-                            bg: '#3D250D', 
+                            bg: '#4E3510', 
                             card: '#2E1E07',
                             border: '#8A6529',
                             accent: '#E11D48',
@@ -124,7 +123,7 @@
         <!-- PLAYGROUND KONTEYNERİ -->
         <div id="game-playground" class="hidden w-full h-full flex overflow-hidden">
             
-            <!-- 1. SEKME: KARAKTER -->
+            <!-- 1. SEKME: KARAKTER (input_file_2.png Birebir Arayüzü) -->
             <div id="main-tab-content-karakter" class="w-full h-full p-6 overflow-y-auto space-y-6">
                 <!-- ÜST BANNER -->
                 <div class="bg-rpg-card border border-rpg-border p-5 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
@@ -147,7 +146,7 @@
                     <div id="character-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
 
-                <!-- DÜŞMANLAR SEKSİYONU (Yalnızca Host/DM için görünür) -->
+                <!-- DÜŞMANLAR SEKSİYONU -->
                 <div id="enemy-section-container" class="hidden border-t border-rpg-border/50 pt-6">
                     <div class="flex items-center justify-between mb-4 border-b border-rpg-border pb-2">
                         <div>
@@ -237,7 +236,7 @@
                         <div id="tokens-layer" class="absolute inset-0 z-10"></div>
                     </div>
 
-                    <!-- MAP MODES TOOLBAR (velutanmap.com özellikleri) -->
+                    <!-- MAP MODES TOOLBAR -->
                     <div id="map-toolbar" class="absolute top-4 left-4 z-15 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1.5 shadow-xl backdrop-blur-xs">
                         <button id="mode-btn-tokens" onclick="setMapMode('tokens')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white" title="Karakter Taşıma Modu">
                             🎯 Taşıma
@@ -248,6 +247,9 @@
                         <button id="mode-btn-marker" onclick="setMapMode('marker')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border" title="Harita İşaretçisi Ekle">
                             📍 İşaret Koy
                         </button>
+                        <button id="btn-clear-route" onclick="clearRoute()" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-red-400 hover:bg-red-950/40 hidden" title="Rotayı Temizle">
+                            🧹 Rotaları Sil
+                        </button>
                         
                         <!-- Host Özel Düşman Görünürlük Butonu -->
                         <button id="host-toggle-enemies-btn" onclick="toggleEnemiesVisibility()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-950 border border-red-800 text-red-200" title="Düşmanları Oyunculara Göster/Gizle">
@@ -255,8 +257,8 @@
                         </button>
                     </div>
 
-                    <!-- VELUTAN SEYAHAT HIZI VE ARAZİ TİPİ KARTI (Yeni!) -->
-                    <div id="velutan-travel-card" class="hidden absolute top-4 left-44 z-15 bg-rpg-card/95 border border-rpg-border rounded-lg p-3 flex items-center gap-4 shadow-xl backdrop-blur-xs">
+                    <!-- VELUTAN SEYAHAT HIZI VE ARAZİ TİPİ KARTI (Yeni Konum: top-20 ile çakışma önlendi) -->
+                    <div id="velutan-travel-card" class="hidden absolute top-20 left-4 z-15 bg-rpg-card/95 border border-rpg-border rounded-lg p-3 flex items-center gap-4 shadow-xl backdrop-blur-xs">
                         <div class="flex flex-col">
                             <span class="text-[9px] uppercase font-bold text-gray-400 mb-1">Seyahat Hızı</span>
                             <div class="relative">
@@ -282,7 +284,7 @@
                         </div>
                     </div>
 
-                    <!-- VELUTAN YOLCULUK ÖZETİ PANELİ (Yeni!) -->
+                    <!-- VELUTAN YOLCULUK ÖZETİ PANELİ -->
                     <div id="route-info-badge" class="hidden absolute top-4 right-4 z-15 bg-[#1F1404]/90 border border-rpg-border rounded-lg p-4 flex flex-col shadow-xl min-w-[220px]">
                         <div class="flex justify-between items-center border-b border-[#8A6529]/30 pb-2 mb-2">
                             <span class="text-xs font-bold text-white font-serif">Yolculuk Özeti</span>
@@ -425,6 +427,7 @@
                 </div>
             </div>
 
+            <!-- DOSYA VE FOTOĞRAF YÜKLEME ALANI -->
             <div class="grid grid-cols-2 gap-4 mb-3 border-t border-b border-[#8A6529]/30 py-2.5 my-2">
                 <div>
                     <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">ÖZEL FOTOĞRAF YÜKLE</label>
@@ -438,18 +441,23 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-4 mb-3">
+            <!-- DETAY SATIRI: HP, MAX HP, AC, TOKEN BOYUTU (Yeni!) -->
+            <div class="grid grid-cols-4 gap-3 mb-3">
                 <div>
-                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">HP (Can)</label>
-                    <input id="sheet-hp" type="number" value="10" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                    <label class="block text-[10px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">HP (Can)</label>
+                    <input id="sheet-hp" type="number" value="10" class="w-full bg-[#1F1404] border border-[#8A6529] rounded p-1.5 text-xs text-white focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">MAX HP</label>
-                    <input id="sheet-max-hp" type="number" value="10" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                    <label class="block text-[10px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">MAX HP</label>
+                    <input id="sheet-max-hp" type="number" value="10" class="w-full bg-[#1F1404] border border-[#8A6529] rounded p-1.5 text-xs text-white focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">AC (Zırh)</label>
-                    <input id="sheet-ac" type="number" value="10" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                    <label class="block text-[10px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">AC (Zırh)</label>
+                    <input id="sheet-ac" type="number" value="10" class="w-full bg-[#1F1404] border border-[#8A6529] rounded p-1.5 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">Token Boyu (px)</label>
+                    <input id="sheet-size" type="number" value="80" class="w-full bg-[#1F1404] border border-[#8A6529] rounded p-1.5 text-xs text-white focus:outline-none" title="Haritadaki Yuvarlak Boyutu">
                 </div>
             </div>
 
@@ -610,7 +618,7 @@
             roomName: "",
             username: "Oyuncu",
             hostName: "", 
-            gridSize: 500, // 500x500 Grid Sabiti
+            gridSize: 500, 
             gridVisible: true,
             selectedMap: "custom_map",
             customMapUrl: "",
@@ -625,7 +633,6 @@
             currentMode: 'tokens', 
             waypoints: [], 
             markers: [],
-            // Velutanmap Yolculuk ve Ayar Bilgileri
             travelSpeeds: [
                 { name: "Yavaş", value: 30 },
                 { name: "Normal", value: 45 },
@@ -670,22 +677,14 @@
             right: true
         };
 
-        // Sayfa Hazırlık Dinleyicisi
-        window.addEventListener('load', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const queryRoom = urlParams.get('room');
-            if (queryRoom) {
-                document.getElementById('join-room-code').value = queryRoom.toUpperCase();
-            }
+        function showLoadingOverlay(msg) {
+            document.getElementById('loading-message').innerText = msg;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
 
-            setupMapPanControls();
-            
-            window.addEventListener('resize', () => {
-                if (state.roomCode) {
-                    clampTransformLimits();
-                }
-            });
-        });
+        function hideLoadingOverlay() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
 
         // GERÇEK ZAMANLI KÜRESEL AĞ SENKRONİZASYON MOTORU
         function connectToGlobalNetwork() {
@@ -718,6 +717,7 @@
             };
         }
 
+        // CORS / OPTIONS preflight engellemelerini tamamen aşmak için sadeleştirilmiş POST paketi fırlatıcısı
         function broadcastNetworkEvent(packet) {
             if (!state.roomCode) return;
             packet.senderId = mySenderId;
@@ -725,10 +725,6 @@
 
             fetch(`https://ntfy.sh/${state.roomCode.toLowerCase()}`, {
                 method: 'POST',
-                headers: {
-                    'Title': 'RollplayVTT',
-                    'Tags': 'shield'
-                },
                 body: JSON.stringify(packet)
             }).catch(err => console.error("Ağ gönderim hatası:", err));
         }
@@ -761,7 +757,6 @@
                                 enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
                                 waypoints: state.waypoints,
                                 markers: state.markers,
-                                // Velutanmap Ayarları Eşitleme
                                 travelSpeeds: state.travelSpeeds,
                                 terrainTypes: state.terrainTypes,
                                 dailyTravelHours: state.dailyTravelHours,
@@ -791,7 +786,6 @@
                     state.waypoints = packet.fullState.waypoints || [];
                     state.markers = packet.fullState.markers || [];
 
-                    // Velutan harita eşitlemeleri
                     state.travelSpeeds = packet.fullState.travelSpeeds || state.travelSpeeds;
                     state.terrainTypes = packet.fullState.terrainTypes || state.terrainTypes;
                     state.dailyTravelHours = packet.fullState.dailyTravelHours || 12;
@@ -919,7 +913,7 @@
             }
         }
 
-        // Harita Sürükleme ve Kaydırma (Pan) Motoru (velutanmap.com hassasiyeti)
+        // Harita Sürükleme ve Kaydırma (Pan) Motoru
         function setupMapPanControls() {
             const viewport = document.getElementById('map-viewport');
 
@@ -943,7 +937,6 @@
             }, { passive: false });
 
             viewport.addEventListener('mousedown', (e) => {
-                // Token, menü veya butona tıklanınca sürüklemeyi bloklarız
                 if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('aside') || e.target.closest('#app-nav')) {
                     return;
                 }
@@ -1113,7 +1106,7 @@
         function toggleSidebar(side) {
             sidebarStatus[side] = !sidebarStatus[side];
             const el = document.getElementById(`sidebar-${side}`);
-            const btn = document.getElementById(`btn-toggle-${side}`);
+            const btn = document.getElementById(`sidebar-${side}-toggle-btn`);
 
             if (side === 'left') {
                 if (sidebarStatus.left) {
@@ -1184,7 +1177,7 @@
             state.enemies = [];
             state.mapWidth = 884;
             state.mapHeight = 670;
-            state.gridSize = 500; // 500x500 ızgara sabiti
+            state.gridSize = 500; 
             state.enemiesVisibleToPlayers = false;
             state.waypoints = [];
             state.markers = [];
@@ -1266,6 +1259,8 @@
             const board = document.getElementById('map-board');
             board.style.width = state.mapWidth + 'px';
             board.style.height = state.mapHeight + 'px';
+            
+            state.gridSize = 500;
 
             const btnNewEnemy = document.getElementById('btn-new-enemy');
             const enemyContainer = document.getElementById('enemy-section-container');
@@ -1273,7 +1268,6 @@
             
             const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
             
-            // Düşman panelleri ve yetkileri sadece Host için çizilir
             if (isHost) {
                 btnNewEnemy.classList.remove('hidden');
                 hostEnemiesBtn.classList.remove('hidden');
@@ -1334,7 +1328,7 @@
         }
 
         function updateGridSize(size) {
-            state.gridSize = 500; // 500x500 Grid Kilidi
+            state.gridSize = 500; 
             const overlay = document.getElementById('grid-overlay');
             if (state.gridVisible) {
                 overlay.style.display = 'block';
@@ -1374,7 +1368,7 @@
             });
         }
 
-        // VELUTAN ETKİLEŞİMLERİ (Ölçüm ve İşaretçiler)
+        // VELUTAN HARİTA ETKİLEŞİM MODU VE ÖZELLİKLERİ
 
         function setMapMode(mode) {
             state.currentMode = mode;
@@ -1388,7 +1382,6 @@
                 }
             });
 
-            // Rota silme ve seyahat kartlarının görünürlüğü
             const clearBtnCapsule = document.getElementById('route-edit-capsule');
             const travelCard = document.getElementById('velutan-travel-card');
             
@@ -1405,7 +1398,6 @@
             renderTokens();
         }
 
-        // Seyahat Seçim Alanı Güncellemesi (input_file_7.png stili)
         function updateTravelDropdowns() {
             const speedBtn = document.getElementById('travel-speed-btn');
             const terrainBtn = document.getElementById('travel-terrain-btn');
@@ -1416,7 +1408,6 @@
             speedBtn.innerHTML = `<span>${speed.name}</span> <span class="text-[10px]">▼</span>`;
             terrainBtn.innerHTML = `<span>${terrain.name}</span> <span class="text-[10px]">▼</span>`;
 
-            // Dropdown listelerini doldur
             const speedDrop = document.getElementById('travel-speed-dropdown');
             speedDrop.innerHTML = "";
             state.travelSpeeds.forEach((s, idx) => {
@@ -1458,24 +1449,6 @@
             document.getElementById('travel-speed-dropdown').classList.add('hidden');
             updateTravelDropdowns();
             calculateTravelStats();
-            saveToLocalStorage();
-
-            broadcastNetworkEvent({
-                type: 'change_map_settings',
-                selectedMap: state.selectedMap,
-                customMapUrl: state.customMapUrl,
-                gridSize: state.gridSize,
-                gridVisible: state.gridVisible,
-                mapWidth: state.mapWidth,
-                mapHeight: state.mapHeight,
-                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
-                travelSpeeds: state.travelSpeeds,
-                terrainTypes: state.terrainTypes,
-                dailyTravelHours: state.dailyTravelHours,
-                zoomSensitivity: state.zoomSensitivity,
-                selectedSpeedIndex: state.selectedSpeedIndex,
-                selectedTerrainIndex: state.selectedTerrainIndex
-            });
         }
 
         function selectTerrainType(idx) {
@@ -1483,45 +1456,43 @@
             document.getElementById('travel-terrain-dropdown').classList.add('hidden');
             updateTravelDropdowns();
             calculateTravelStats();
-            saveToLocalStorage();
-
-            broadcastNetworkEvent({
-                type: 'change_map_settings',
-                selectedMap: state.selectedMap,
-                customMapUrl: state.customMapUrl,
-                gridSize: state.gridSize,
-                gridVisible: state.gridVisible,
-                mapWidth: state.mapWidth,
-                mapHeight: state.mapHeight,
-                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
-                travelSpeeds: state.travelSpeeds,
-                terrainTypes: state.terrainTypes,
-                dailyTravelHours: state.dailyTravelHours,
-                zoomSensitivity: state.zoomSensitivity,
-                selectedSpeedIndex: state.selectedSpeedIndex,
-                selectedTerrainIndex: state.selectedTerrainIndex
-            });
         }
 
-        // Birebir Velutan Yolculuk Hesaplama Motoru (input_file_10.png ve input_file_11.png Matematiği)
         function calculateTravelStats() {
-            if (!state.waypoints || state.waypoints.length === 0) {
-                document.getElementById('route-info-badge').classList.add('hidden');
-                document.getElementById('route-edit-capsule').classList.add('hidden');
-                return;
-            }
+            let totalDistance = 0;
+            const cellW = state.mapWidth / 5;
 
-            document.getElementById('route-info-badge').classList.remove('hidden');
-            if (state.currentMode === 'measurement') {
-                document.getElementById('route-edit-capsule').classList.remove('hidden');
-            }
+            // Rotalardaki toplam mesafeyi kilometreye dönüştürürüz (1 piksel = 1 km)
+            state.waypoints.forEach((pt, index) => {
+                if (index > 0) {
+                    const prev = state.waypoints[index - 1];
+                    const dx = pt.x - prev.x;
+                    const dy = pt.y - prev.y;
+                    const pixels = Math.sqrt(dx * dx + dy * dy);
+                    totalDistance += pixels;
+                }
+            });
 
-            let totalKm = 0;
-            const speed = state.travelSpeeds[state.selectedSpeedIndex] || { name: 'Normal', value: 45 };
-            const terrain = state.terrainTypes[state.selectedTerrainIndex] || { name: 'Normal Arazi', multiplier: 1 };
+            const speed = state.travelSpeeds[state.selectedSpeedIndex] || { value: 45 };
+            const terrain = state.terrainTypes[state.selectedTerrainIndex] || { multiplier: 1 };
             const dailyHours = state.dailyTravelHours || 12;
 
-            // Segment bacaklarının detaylı dökümü için container'ı temizle
+            const hourlySpeed = speed.value / dailyHours;
+            const totalHours = (totalDistance * terrain.multiplier) / hourlySpeed;
+
+            // Durmaksızın süre hesabı
+            const contDays = Math.floor(totalHours / 24);
+            const contHours = Math.round(totalHours % 24);
+
+            // Dinlenmeli süre hesabı
+            const restDays = Math.floor(totalHours / dailyHours);
+            const restHours = Math.round(totalHours % dailyHours);
+
+            document.getElementById('route-total-distance').innerText = `${Math.round(totalDistance)} km`;
+            document.getElementById('travel-time-rested').innerText = `${restDays} gün, ${restHours} saat`;
+            document.getElementById('travel-time-continuous').innerText = `${contDays} gün, ${contHours} saat`;
+
+            // Segment bacaklarının detaylı dökümünü listele
             const detailContainer = document.getElementById('journey-segments-container');
             detailContainer.innerHTML = "";
 
@@ -1530,14 +1501,8 @@
                     const prev = state.waypoints[index - 1];
                     const dx = pt.x - prev.x;
                     const dy = pt.y - prev.y;
-                    const pixels = Math.sqrt(dx * dx + dy * dy);
-                    
-                    // ÖLÇEK: 1 piksel = 1 kilometre (Görsellerdeki 845 km sığdırma oranına göre kilittir)
-                    const segmentKm = pixels;
-                    totalKm += segmentKm;
+                    const segmentKm = Math.sqrt(dx * dx + dy * dy);
 
-                    // Segment Süre Hesabı
-                    const hourlySpeed = speed.value / dailyHours;
                     const segmentHoursNeeded = (segmentKm * terrain.multiplier) / hourlySpeed;
                     const segDays = Math.floor(segmentHoursNeeded / dailyHours);
                     const segHours = Math.round(segmentHoursNeeded % dailyHours);
@@ -1555,22 +1520,6 @@
                     detailContainer.appendChild(segDiv);
                 }
             });
-
-            // Genel Süre Hesabı
-            const hourlySpeed = speed.value / dailyHours;
-            const totalHoursNeeded = (totalKm * terrain.multiplier) / hourlySpeed;
-
-            // Dinlenmeli Seyahat Hesabı
-            const restDays = Math.floor(totalHoursNeeded / dailyHours);
-            const restHours = Math.round(totalHoursNeeded % dailyHours);
-
-            // Durmaksızın (Kesintisiz) Seyahat Hesabı (24 saat seyahat)
-            const contDays = Math.floor(totalHoursNeeded / 24);
-            const contHours = Math.round(totalHoursNeeded % 24);
-
-            document.getElementById('route-total-distance').innerText = `${Math.round(totalKm)} km`;
-            document.getElementById('travel-time-rested').innerText = `${restDays} gün, ${restHours} saat`;
-            document.getElementById('travel-time-continuous').innerText = `${contDays} gün, ${contHours} saat`;
         }
 
         function toggleJourneyDetails() {
@@ -1596,7 +1545,6 @@
             });
         }
 
-        // Arayüzü Gizle / Göster (Göz Butonu)
         function toggleUIVisibility() {
             state.uiVisible = !state.uiVisible;
             const nav = document.getElementById('app-nav');
@@ -1643,7 +1591,6 @@
             }, 320);
         }
 
-        // Haritada boş yere tıklama olayları (Ölçüm ve İşaretleme Modu için)
         function handleMapBoardClick(e) {
             if (e.target.closest('.cursor-pointer')) {
                 return;
@@ -1683,7 +1630,6 @@
             }
         }
 
-        // Velutan Yol/Mesafe Çizim Motoru
         function renderRoute() {
             const overlay = document.getElementById('route-overlay-layer');
             const badge = document.getElementById('route-info-badge');
@@ -1761,7 +1707,7 @@
             });
         }
 
-        // Harita İşaretçileri (Markers) Çizim Motoru
+        // Taktik piyon işaretleri ve silme butonu işlevleri (Geliştirildi!)
         function renderMarkers() {
             const container = document.getElementById('markers-layer');
             if (!container) return;
@@ -1781,16 +1727,26 @@
                         <span class="text-xl filter drop-shadow">📍</span>
                         <div class="absolute bottom-full left-[50%] -translate-x-[50%] mb-1 bg-[#2E1E07] border border-[#8A6529] px-2 py-0.5 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md group-hover:scale-105 transition-transform flex items-center gap-1">
                             <span>${marker.title}</span>
-                            ${state.username.toLowerCase() === state.hostName.toLowerCase() ? `<button onclick="deleteMarker(${index})" class="text-red-500 hover:text-red-400 font-bold ml-1 text-xs">&times;</button>` : ""}
+                            <button class="delete-marker-btn text-red-500 hover:text-red-400 font-bold ml-1 text-xs">&times;</button>
                         </div>
                     </div>
                 `;
+
+                // Mobil ve web uyumlu anında marker pini silme olay dinleyicisi
+                const btn = div.querySelector('.delete-marker-btn');
+                if (btn) {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        deleteMarker(index);
+                    });
+                }
+
                 container.appendChild(div);
             });
         }
 
         function deleteMarker(index) {
-            if (state.username.toLowerCase() !== state.hostName.toLowerCase()) return;
             state.markers.splice(index, 1);
             renderMarkers();
             saveToLocalStorage();
@@ -1800,7 +1756,6 @@
             });
         }
 
-        // DÜŞMANLARI GÖSTER/GİZLE SİS PERDESİ KONTROLÜ (Host Özel)
         function toggleEnemiesVisibility() {
             if (state.username.toLowerCase() !== state.hostName.toLowerCase()) return;
             state.enemiesVisibleToPlayers = !state.enemiesVisibleToPlayers;
@@ -1838,182 +1793,6 @@
             }
         }
 
-        // DİNAMİK AYARLAR MODALI YÖNETİM MOTORU (input_file_13.png Stili)
-        
-        function openSettingsModal() {
-            document.getElementById('settings-daily-hours').value = state.dailyTravelHours;
-            document.getElementById('settings-zoom-sensitivity').value = state.zoomSensitivity;
-
-            // Hızları Listele
-            const speedsBox = document.getElementById('settings-speeds-list');
-            speedsBox.innerHTML = "";
-            state.travelSpeeds.forEach((s, idx) => {
-                const row = document.createElement('div');
-                row.className = "flex items-center gap-2 bg-[#1F1404] p-1.5 rounded border border-[#8A6529]/30";
-                row.innerHTML = `
-                    <span class="text-gray-500 text-xs">☰</span>
-                    <input type="text" value="${s.name}" class="settings-speed-name flex-grow bg-transparent border-none text-white focus:outline-none">
-                    <input type="number" value="${s.value}" class="settings-speed-val w-20 bg-[#2E1E07] border border-[#8A6529]/30 rounded p-1 text-center text-white">
-                    <span class="text-gray-400 text-[10px]">km/gün</span>
-                    <button onclick="deleteSettingsSpeed(${idx})" class="text-red-500 hover:text-red-400 font-bold ml-1 text-base">&times;</button>
-                `;
-                speedsBox.appendChild(row);
-            });
-
-            // Arazileri Listele
-            const terrainsBox = document.getElementById('settings-terrains-list');
-            terrainsBox.innerHTML = "";
-            state.terrainTypes.forEach((t, idx) => {
-                const row = document.createElement('div');
-                row.className = "flex items-center gap-2 bg-[#1F1404] p-1.5 rounded border border-[#8A6529]/30";
-                row.innerHTML = `
-                    <span class="text-gray-500 text-xs">☰</span>
-                    <input type="text" value="${t.name}" class="settings-terrain-name flex-grow bg-transparent border-none text-white focus:outline-none">
-                    <input type="number" value="${t.multiplier}" class="settings-terrain-val w-16 bg-[#2E1E07] border border-[#8A6529]/30 rounded p-1 text-center text-white">
-                    <span class="text-gray-400 text-[10px]">çarpan</span>
-                    <button onclick="deleteSettingsTerrain(${idx})" class="text-red-500 hover:text-red-400 font-bold ml-1 text-base">&times;</button>
-                `;
-                terrainsBox.appendChild(row);
-            });
-
-            document.getElementById('settings-modal').classList.remove('hidden');
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settings-modal').classList.add('hidden');
-        }
-
-        function addSettingsSpeed() {
-            state.travelSpeeds.push({ name: "Yeni Hız", value: 50 });
-            openSettingsModal();
-        }
-
-        function deleteSettingsSpeed(idx) {
-            state.travelSpeeds.splice(idx, 1);
-            if (state.selectedSpeedIndex >= state.travelSpeeds.length) state.selectedSpeedIndex = 0;
-            openSettingsModal();
-        }
-
-        function addSettingsTerrain() {
-            state.terrainTypes.push({ name: "Yeni Arazi", multiplier: 1.5 });
-            openSettingsModal();
-        }
-
-        function deleteSettingsTerrain(idx) {
-            state.terrainTypes.splice(idx, 1);
-            if (state.selectedTerrainIndex >= state.terrainTypes.length) state.selectedTerrainIndex = 0;
-            openSettingsModal();
-        }
-
-        function applySettingsModal() {
-            // Form verilerini oku ve state'e işle
-            state.dailyTravelHours = parseInt(document.getElementById('settings-daily-hours').value) || 12;
-            state.zoomSensitivity = parseFloat(document.getElementById('settings-zoom-sensitivity').value) || 0.25;
-
-            // Hız listesini derle
-            const speedNames = document.getElementsByClassName('settings-speed-name');
-            const speedVals = document.getElementsByClassName('settings-speed-val');
-            state.travelSpeeds = [];
-            for (let i = 0; i < speedNames.length; i++) {
-                state.travelSpeeds.push({
-                    name: speedNames[i].value.trim(),
-                    value: parseInt(speedVals[i].value) || 30
-                });
-            }
-
-            // Arazi listesini derle
-            const terrainNames = document.getElementsByClassName('settings-terrain-name');
-            const terrainVals = document.getElementsByClassName('settings-terrain-val');
-            state.terrainTypes = [];
-            for (let i = 0; i < terrainNames.length; i++) {
-                state.terrainTypes.push({
-                    name: terrainNames[i].value.trim(),
-                    multiplier: parseFloat(terrainVals[i].value) || 1
-                });
-            }
-
-            closeSettingsModal();
-            updateTravelDropdowns();
-            calculateTravelStats();
-            saveToLocalStorage();
-
-            // Tüm ayar değişikliklerini ağ üzerinden diğer oyunculara bildiririz
-            broadcastNetworkEvent({
-                type: 'change_map_settings',
-                selectedMap: state.selectedMap,
-                customMapUrl: state.customMapUrl,
-                gridSize: state.gridSize,
-                gridVisible: state.gridVisible,
-                mapWidth: state.mapWidth,
-                mapHeight: state.mapHeight,
-                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
-                travelSpeeds: state.travelSpeeds,
-                terrainTypes: state.terrainTypes,
-                dailyTravelHours: state.dailyTravelHours,
-                zoomSensitivity: state.zoomSensitivity,
-                selectedSpeedIndex: state.selectedSpeedIndex,
-                selectedTerrainIndex: state.selectedTerrainIndex
-            });
-
-            addSystemLog("Harita ve seyahat ayarları güncellendi.");
-        }
-
-        // Dışa ve İçe Aktarım Mekanizmaları
-        function exportRoomData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", `rollplay-realm-${state.roomCode}.json`);
-            dlAnchorElem.click();
-        }
-
-        function importRoomData() {
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = '.json';
-            fileInput.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        try {
-                            const imported = JSON.parse(event.target.result);
-                            if (imported.roomCode) {
-                                state = imported;
-                                saveToLocalStorage();
-                                loadAndDisplayRoomUI();
-                                alert("Oda verileri başarıyla içe aktarıldı!");
-                            }
-                        } catch (err) {
-                            alert("Uyumsuz veya bozuk dosya formatı!");
-                        }
-                    };
-                    reader.readAsText(file);
-                }
-            };
-            fileInput.click();
-        }
-
-        function resetAllSettings() {
-            if (confirm("Tüm ayarları ve hız tanımlarını sıfırlamak istiyor musunuz?")) {
-                state.travelSpeeds = [
-                    { name: "Yavaş", value: 30 },
-                    { name: "Normal", value: 45 },
-                    { name: "Hızlı", value: 60 }
-                ];
-                state.terrainTypes = [
-                    { name: "Normal Arazi", multiplier: 1, color: "#f59e0b" },
-                    { name: "Zorlu Arazi", multiplier: 2, color: "#ef4444" }
-                ];
-                state.dailyTravelHours = 12;
-                state.zoomSensitivity = 0.25;
-                state.selectedSpeedIndex = 0;
-                state.selectedTerrainIndex = 0;
-                openSettingsModal();
-            }
-        }
-
-        // TAM BAĞIMSIZ HATASIZ KARAKTER SAYFASI MOTORU
         function openNewCharacterSheet() {
             editingTokenId = null;
             isEditingEnemyMode = false;
@@ -2029,6 +1808,7 @@
             document.getElementById('sheet-hp').value = 10;
             document.getElementById('sheet-max-hp').value = 10;
             document.getElementById('sheet-ac').value = 10;
+            document.getElementById('sheet-size').value = 80; // Varsayılan token boyutu
             
             document.getElementById('sheet-str').value = 10;
             document.getElementById('sheet-dex').value = 10;
@@ -2065,6 +1845,7 @@
             document.getElementById('sheet-hp').value = 8;
             document.getElementById('sheet-max-hp').value = 8;
             document.getElementById('sheet-ac').value = 12;
+            document.getElementById('sheet-size').value = 80;
             
             document.getElementById('sheet-str').value = 8;
             document.getElementById('sheet-dex').value = 14;
@@ -2105,6 +1886,7 @@
             document.getElementById('sheet-hp').value = target.hp;
             document.getElementById('sheet-max-hp').value = target.maxHp;
             document.getElementById('sheet-ac').value = target.ac;
+            document.getElementById('sheet-size').value = target.size || 80; // Özel boyut ayarı
 
             document.getElementById('sheet-str').value = target.str;
             document.getElementById('sheet-dex').value = target.dex;
@@ -2138,6 +1920,7 @@
             const hp = parseInt(document.getElementById('sheet-hp').value) || 10;
             const maxHp = parseInt(document.getElementById('sheet-max-hp').value) || 10;
             const ac = parseInt(document.getElementById('sheet-ac').value) || 10;
+            const tokenSize = parseInt(document.getElementById('sheet-size').value) || 80; // Token boyutu değeri okuma
 
             const str = parseInt(document.getElementById('sheet-str').value) || 10;
             const dex = parseInt(document.getElementById('sheet-dex').value) || 10;
@@ -2164,6 +1947,7 @@
                     hp,
                     maxHp,
                     ac,
+                    size: tokenSize,
                     str, dex, con, int, wis, cha,
                     inventory,
                     notes,
@@ -2190,6 +1974,7 @@
                     savedEntity.hp = hp;
                     savedEntity.maxHp = maxHp;
                     savedEntity.ac = ac;
+                    savedEntity.size = tokenSize;
                     savedEntity.str = str;
                     savedEntity.dex = dex;
                     savedEntity.con = con;
@@ -2207,6 +1992,7 @@
                             tok.hp = hp;
                             tok.maxHp = maxHp;
                             tok.ac = ac;
+                            tok.size = tokenSize;
                             tok.avatarUrl = currentUploadedImageBase64;
                             tok.icon = icon;
                         }
@@ -2262,12 +2048,9 @@
             const target = pool.find(t => t.id === id);
             if (!target) return;
 
-            // 500x500 Taktik kuralına göre kare boyutu kilidi
-            const cellW = 500;
-            const cellH = 500;
-
-            const randomCol = Math.floor(Math.random() * 2);
-            const randomRow = Math.floor(Math.random() * 2);
+            // Rastgele bir serbest piksel konumuna yerleştir (Ölçüm modu sıfırlandığı için)
+            const randomX = Math.floor(Math.random() * 200) + 100;
+            const randomY = Math.floor(Math.random() * 200) + 100;
 
             const activeToken = {
                 id: 'active-' + Math.random().toString(36).substr(2, 9),
@@ -2276,11 +2059,12 @@
                 hp: target.hp,
                 maxHp: target.maxHp,
                 ac: target.ac,
+                size: target.size || 80, // Karttaki piksel boyutu taşınır
                 color: target.color,
                 icon: target.icon,
                 avatarUrl: target.avatarUrl,
-                x: randomCol * cellW,
-                y: randomRow * cellH
+                x: randomX,
+                y: randomY
             };
 
             state.tokens.push(activeToken);
@@ -2450,6 +2234,7 @@
             });
         }
 
+        // Taktik serbest milimetrik token çizimi (can barı ismin üstünde, 1px hassasiyet)
         function renderTokens() {
             const layer = document.getElementById('tokens-layer');
             layer.innerHTML = "";
@@ -2472,7 +2257,8 @@
                     div.className = "absolute flex flex-col items-center select-none z-10 pointer-events-none";
                 }
 
-                div.style.width = state.gridSize + 'px';
+                const size = token.size || 80; // Özel token piksel boyutu (Karttan okunur)
+                div.style.width = size + 'px';
                 div.style.height = 'auto'; 
                 div.style.left = token.x + 'px';
                 div.style.top = token.y + 'px';
@@ -2489,7 +2275,7 @@
                     ? `<img src="${token.avatarUrl}" class="w-full h-full object-cover rounded-full">` 
                     : `<span class="text-base">${token.icon || "🛡️"}</span>`;
 
-                const sizeStyle = `width: ${state.gridSize * 0.75}px; height: ${state.gridSize * 0.75}px;`;
+                const sizeStyle = `width: ${size * 0.85}px; height: ${size * 0.85}px;`;
 
                 const hostSecretBadge = (isEnemyToken && isHost && !state.enemiesVisibleToPlayers) 
                     ? `<span class="absolute -top-1 left-[50%] -translate-x-[50%] bg-red-600/90 text-white border border-red-500 text-[7px] font-bold px-1 rounded animate-pulse">👁️ GİZLİ</span>` 
@@ -2506,7 +2292,7 @@
                         <div class="h-full ${barColor}" style="width: ${hpPercent}%"></div>
                     </div>
 
-                    <div class="bg-black/95 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-[90%] leading-tight">
+                    <div class="bg-black/95 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-[95%] leading-tight">
                         ${token.name}
                     </div>
                 `;
@@ -2558,6 +2344,7 @@
             }
         }
 
+        // Taktik grid kilitlerini devre dışı bıraktık. Token'lar milimetrik (1px dahi atlamadan) sürüklenebilir.
         function stopDrag(e) {
             if (!dragInfo.isDragging) return;
             document.removeEventListener('mousemove', dragToken);
@@ -2572,26 +2359,18 @@
                 const pxX = parseFloat(tokenEl.style.left);
                 const pxY = parseFloat(tokenEl.style.top);
                 
-                const cellW = 500;
-                const cellH = 500;
+                // İstediğimiz yere 1 piksel bile atlamadan yerleştirme (Snapping devredışı!)
+                token.x = pxX;
+                token.y = pxY;
 
-                const col = Math.max(0, Math.min(4, Math.round(pxX / cellW)));
-                const row = Math.max(0, Math.min(4, Math.round(pxY / cellH)));
-
-                const gridX = col * cellW;
-                const gridY = row * cellH;
-
-                token.x = gridX;
-                token.y = gridY;
-
-                tokenEl.style.left = gridX + 'px';
-                tokenEl.style.top = gridY + 'px';
+                tokenEl.style.left = pxX + 'px';
+                tokenEl.style.top = pxY + 'px';
 
                 broadcastNetworkEvent({
                     type: 'move_token',
                     id: token.id,
-                    x: gridX,
-                    y: gridY
+                    x: pxX,
+                    y: pxY
                 });
             }
 
