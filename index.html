@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rollplay Realm Online - RPG Masaüstü</title>
+    <title>Rollplay Realm Online - Velutan RPG Masaüstü</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -49,13 +50,8 @@
             background: #CBB58F;
         }
         
-        /* Grid Katmanı */
         .grid-layer {
             pointer-events: none;
-            background-size: var(--grid-size, 50px) var(--grid-size, 50px);
-            background-image: 
-                linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
         }
     </style>
 </head>
@@ -143,9 +139,9 @@
         <!-- PLAYGROUND KONTEYNERİ -->
         <div id="game-playground" class="hidden w-full h-full flex overflow-hidden">
             
-            <!-- 1. SEKME: KARAKTER (input_file_2.png Birebir Arayüzü) -->
+            <!-- 1. SEKME: KARAKTER -->
             <div id="main-tab-content-karakter" class="w-full h-full p-6 overflow-y-auto space-y-6">
-                <!-- ÜST BANNER (Davet Detayları) -->
+                <!-- ÜST BANNER -->
                 <div class="bg-rpg-card border border-rpg-border p-5 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
                     <div class="flex items-center gap-3">
                         <span class="text-xs uppercase text-gray-400 font-bold">ODA KODU:</span>
@@ -163,11 +159,7 @@
                         <h3 class="text-lg font-bold tracking-wider text-white uppercase font-serif">Grup Üyeleri</h3>
                         <button onclick="openNewCharacterSheet()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-4 py-2 rounded text-xs font-bold uppercase transition-all tracking-wider">+ Yeni Karakter</button>
                     </div>
-                    
-                    <!-- Karakter Kartları Izgarası -->
-                    <div id="character-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Dinamik dolacak -->
-                    </div>
+                    <div id="character-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
 
                 <!-- DÜŞMANLAR SEKSİYONU -->
@@ -181,11 +173,7 @@
                         </div>
                         <button id="btn-new-enemy" onclick="openNewEnemySheet()" class="hidden bg-red-950 border border-red-800 hover:bg-red-900 text-red-200 px-4 py-2 rounded text-xs font-bold uppercase transition-all tracking-wider">+ Yeni Düşman</button>
                     </div>
-                    
-                    <!-- Düşman Kartları Izgarası -->
-                    <div id="enemy-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Host düşmanları burada görüntülenecek -->
-                    </div>
+                    <div id="enemy-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
             </div>
 
@@ -215,27 +203,18 @@
                             </label>
                         </div>
 
-                        <!-- Grid Ayarları -->
+                        <!-- Taktiksel Katman Sınırı (Izgara kare boyutu sliderı kaldırıldı, 5x5 zorunlu yapıldı) -->
                         <div class="border-t border-rpg-border/60 pt-4 space-y-3">
                             <div class="flex justify-between items-center text-xs">
-                                <span class="text-gray-300 font-semibold">Izgara Katmanı (Grid)</span>
+                                <span class="text-gray-300 font-semibold">Taktiksel Grid (5x5)</span>
                                 <button onclick="toggleGridVisible()" id="btn-grid-toggle" class="text-[9px] bg-rpg-accent/20 text-rpg-accent border border-rpg-accent/30 px-2 py-0.5 rounded font-bold">Açık</button>
-                            </div>
-                            <div class="space-y-1">
-                                <div class="flex justify-between text-[11px] text-gray-400">
-                                    <span>Kare Boyutu</span>
-                                    <span id="display-grid-size">50px</span>
-                                </div>
-                                <input id="slider-grid-size" type="range" min="30" max="120" value="50" oninput="updateGridSize(this.value)" class="w-full accent-rpg-accent cursor-pointer">
                             </div>
                         </div>
 
                         <!-- Oyuncu Listesi -->
                         <div class="border-t border-rpg-border/60 pt-4">
                             <h4 class="text-[10px] text-gray-400 tracking-wider font-bold mb-2">AKTİF OYUNCULAR</h4>
-                            <div id="realm-player-list" class="space-y-1.5">
-                                <!-- Dinamik dolacak -->
-                            </div>
+                            <div id="realm-player-list" class="space-y-1.5"></div>
                         </div>
                     </div>
 
@@ -246,13 +225,62 @@
                 </aside>
 
                 <!-- ORTA HARİTA ALANI -->
-                <section id="map-viewport" class="flex-grow h-full relative bg-[#040507] overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing">
-                    <div id="map-board" class="relative shadow-2xl origin-center select-none" style="width: 884px; height: 670px; background-size: cover; background-position: center; transform: translate(0px, 0px) scale(1);">
-                        <div id="grid-overlay" class="grid-layer absolute inset-0 z-0"></div>
+                <section id="map-viewport" class="flex-grow h-full relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing" style="background-color: #1F1404; background-image: radial-gradient(rgba(0,0,0,0.15) 1px, transparent 0); background-size: 8px 8px;">
+                    <!-- Harita Konteyneri -->
+                    <div id="map-board" class="relative shadow-2xl origin-center select-none" style="width: 884px; height: 670px; background-size: 100% 100%; background-position: center; transform: translate(0px, 0px) scale(1);">
+                        
+                        <!-- 5x5 SVG GRID overlay -->
+                        <div id="grid-overlay" class="grid-layer absolute inset-0 z-0">
+                            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="pointer-events: none;">
+                                <line x1="20%" y1="0" x2="20%" y2="100%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                                <line x1="40%" y1="0" x2="40%" y2="100%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                                <line x1="60%" y1="0" x2="60%" y2="100%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                                <line x1="80%" y1="0" x2="80%" y2="100%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                                <line x1="0" y1="20%" x2="100%" y2="20%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                                <line x1="0" y1="40%" x2="100%" y2="40%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                                <line x1="0" y1="60%" x2="100%" y2="60%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                                <line x1="0" y1="80%" x2="100%" y2="80%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                            </svg>
+                        </div>
+                        
+                        <!-- Velutan Rota Çizim Overlay Katmanı (velutanmap.com stili) -->
+                        <svg id="route-overlay-layer" class="absolute inset-0 z-5 pointer-events-none" width="100%" height="100%"></svg>
+                        
+                        <!-- İşaretçiler (Markers) Katmanı -->
+                        <div id="markers-layer" class="absolute inset-0 z-6 pointer-events-none"></div>
+
+                        <!-- Token Katmanı -->
                         <div id="tokens-layer" class="absolute inset-0 z-10"></div>
                     </div>
 
-                    <!-- ZOOM CONTROLS -->
+                    <!-- MAP MODES TOOLBAR -->
+                    <div class="absolute top-4 left-4 z-15 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1.5 shadow-xl backdrop-blur-xs">
+                        <button id="mode-btn-tokens" onclick="setMapMode('tokens')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white" title="Karakter Taşıma Modu">
+                            🎯 Taşıma
+                        </button>
+                        <button id="mode-btn-measurement" onclick="setMapMode('measurement')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border" title="Mesafe Ölçüm Modu">
+                            📏 Rota Planla
+                        </button>
+                        <button id="mode-btn-marker" onclick="setMapMode('marker')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border" title="Harita İşaretçisi Ekle">
+                            📍 İşaret Koy
+                        </button>
+                        <button id="btn-clear-route" onclick="clearRoute()" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-red-400 hover:bg-red-950/40 hidden" title="Rotayı Temizle">
+                            🧹 Rotaları Sil
+                        </button>
+                        
+                        <!-- Host Özel Düşman Görünürlük Butonu -->
+                        <button id="host-toggle-enemies-btn" onclick="toggleEnemiesVisibility()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-950 border border-red-800 text-red-200" title="Düşmanları Oyunculara Göster/Gizle">
+                            👁️ Düşmanlar: GİZLİ
+                        </button>
+                    </div>
+
+                    <!-- FLOATING ROUTE TOTAL DISTANCE BADGE -->
+                    <div id="route-info-badge" class="hidden absolute top-4 right-4 z-15 bg-rpg-card/90 border border-rpg-border rounded-lg px-4 py-2 flex flex-col items-center shadow-xl">
+                        <span class="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Toplam Rota Mesafesi</span>
+                        <span id="route-total-distance" class="text-lg font-bold text-rpg-gold font-mono">0.0 Mil</span>
+                    </div>
+
+                    <!-- FLOATING ZOOM CONTROLS -->
                     <div class="absolute bottom-4 left-4 z-15 bg-rpg-card/90 border border-rpg-border rounded-lg p-1.5 flex items-center gap-2 shadow-xl backdrop-blur-xs">
                         <button onclick="changeZoom(-0.08)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors">-</button>
                         <span id="zoom-display" class="text-xs font-mono font-bold text-rpg-gold min-w-[40px] text-center">100%</span>
@@ -430,10 +458,10 @@
         </div>
     </div>
 
-    <!-- BAĞLANTI VE SENKRONİZASYON BEKLEME EKRANI (Yeni!) -->
+    <!-- BAĞLANTI VE SENKRONİZASYON BEKLEME EKRANI -->
     <div id="loading-overlay" class="hidden absolute inset-0 z-40 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 text-[#CBB58F]">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rpg-accent mb-4"></div>
-        <p id="loading-message" class="text-sm font-bold tracking-wide animate-pulse">Dünyaya bağlanılıyor, Host'tan veri bekleniyor...</p>
+        <p id="loading-message" class="text-sm font-bold tracking-wide animate-pulse">Dünyaya bağlanılıyor, Host'tan harita verileri alınıyor...</p>
     </div>
 
     <!-- JAVASCRIPT MOTORU -->
@@ -469,7 +497,7 @@
             roomName: "",
             username: "Oyuncu",
             hostName: "", 
-            gridSize: 50,
+            gridSize: 176.8, 
             gridVisible: true,
             selectedMap: "custom_map",
             customMapUrl: "",
@@ -479,12 +507,16 @@
             roster: [], 
             enemies: [], 
             players: [],
-            chatLogs: []
+            chatLogs: [],
+            enemiesVisibleToPlayers: false, 
+            currentMode: 'tokens', 
+            waypoints: [], 
+            markers: [] 
         };
 
         let currentUploadedImageBase64 = null;
         let eventSource = null; 
-        let joinTimeout = null; // Bağlantı bekleme zamanlayıcısı
+        let joinTimeout = null; 
 
         let zoomLevel = 1.0;
         let panX = 0;
@@ -510,7 +542,6 @@
             right: true
         };
 
-        // Yükleme ekranı kontrolcüleri
         function showLoadingOverlay(msg) {
             document.getElementById('loading-message').innerText = msg;
             document.getElementById('loading-overlay').classList.remove('hidden');
@@ -568,7 +599,6 @@
 
         function handleIncomingNetworkEvent(packet) {
             switch (packet.type) {
-                // Yeni katılan cihazın veri isteme çağrısı (Çoklu cihaz senkronizasyonu)
                 case 'request_state_on_join':
                     if (!state.players.find(p => p.name.toLowerCase() === packet.name.toLowerCase())) {
                         state.players.push({ name: packet.name, lastSeen: Date.now() });
@@ -576,7 +606,6 @@
                     }
                     addSystemLog(`${packet.name} odaya katılma talebi gönderdi.`);
 
-                    // Yalnızca Host (Yönetici) olan cihaz tüm tahtayı fırlatır
                     if (state.username.toLowerCase() === state.hostName.toLowerCase()) {
                         broadcastNetworkEvent({
                             type: 'sync_state',
@@ -592,14 +621,16 @@
                                 tokens: state.tokens,
                                 roster: state.roster,
                                 enemies: state.enemies,
-                                players: state.players
+                                players: state.players,
+                                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
+                                waypoints: state.waypoints,
+                                markers: state.markers
                             }
                         });
                     }
                     break;
 
                 case 'sync_state':
-                    // Host'tan gelen tüm veriyi yerel state'e yazarız
                     state.roomName = packet.fullState.roomName;
                     state.hostName = packet.fullState.hostName;
                     state.gridSize = packet.fullState.gridSize;
@@ -612,13 +643,15 @@
                     state.roster = packet.fullState.roster || [];
                     state.enemies = packet.fullState.enemies || [];
                     state.players = packet.fullState.players;
+                    
+                    state.enemiesVisibleToPlayers = packet.fullState.enemiesVisibleToPlayers || false;
+                    state.waypoints = packet.fullState.waypoints || [];
+                    state.markers = packet.fullState.markers || [];
 
-                    // Bağlantı zamanlayıcısını temizle
                     if (joinTimeout) {
                         clearTimeout(joinTimeout);
                     }
 
-                    // Bekleme ekranını gizle ve arayüzü çizdir
                     hideLoadingOverlay();
                     loadAndDisplayRoomUI();
                     break;
@@ -700,6 +733,8 @@
                     state.gridVisible = packet.gridVisible;
                     state.mapWidth = packet.mapWidth;
                     state.mapHeight = packet.mapHeight;
+                    
+                    state.enemiesVisibleToPlayers = packet.enemiesVisibleToPlayers || false;
 
                     const b = document.getElementById('map-board');
                     b.style.width = state.mapWidth + 'px';
@@ -707,13 +742,24 @@
 
                     applyMapDisplay();
                     updateGridSize(state.gridSize);
+                    updateHostEnemiesToggleButton();
                     resetZoom();
                     saveToLocalStorage();
+                    break;
+                
+                case 'sync_waypoints':
+                    state.waypoints = packet.waypoints || [];
+                    renderRoute();
+                    break;
+                
+                case 'sync_markers':
+                    state.markers = packet.markers || [];
+                    renderMarkers();
                     break;
             }
         }
 
-        // Harita Kaydırma & Zoom Sınırları
+        // Harita Sürükleme ve Kaydırma (Pan) Motoru
         function setupMapPanControls() {
             const viewport = document.getElementById('map-viewport');
 
@@ -724,7 +770,7 @@
                 if (e.deltaY < 0) {
                     targetZoom = Math.min(zoomLevel * zoomFactor, 3.5);
                 } else {
-                    targetZoom = Math.max(zoomLevel / zoomFactor, 0.2);
+                    targetZoom = Math.max(zoomLevel / zoomFactor, 0.15);
                 }
                 
                 const minZoom = getMinZoomLimit();
@@ -735,12 +781,13 @@
             }, { passive: false });
 
             viewport.addEventListener('mousedown', (e) => {
-                const target = e.target;
-                if (target.id === 'map-board' || target.id === 'grid-overlay' || target.id === 'tokens-layer') {
-                    isPanning = true;
-                    startPanX = e.clientX - panX;
-                    startPanY = e.clientY - panY;
+                if (e.target.closest('.cursor-pointer')) {
+                    return;
                 }
+                isPanning = true;
+                viewport.style.cursor = 'grabbing';
+                startPanX = e.clientX - panX;
+                startPanY = e.clientY - panY;
             });
 
             document.addEventListener('mousemove', (e) => {
@@ -753,6 +800,33 @@
             });
 
             document.addEventListener('mouseup', () => {
+                if (isPanning) {
+                    isPanning = false;
+                    viewport.style.cursor = 'grab';
+                }
+            });
+            
+            viewport.addEventListener('touchstart', (e) => {
+                if (e.target.closest('.cursor-pointer')) {
+                    return;
+                }
+                isPanning = true;
+                const touch = e.touches[0];
+                startPanX = touch.clientX - panX;
+                startPanY = touch.clientY - panY;
+            }, { passive: true });
+
+            document.addEventListener('touchmove', (e) => {
+                if (isPanning) {
+                    const touch = e.touches[0];
+                    panX = touch.clientX - startPanX;
+                    panY = touch.clientY - startPanY;
+                    clampTransformLimits();
+                    updateMapTransform();
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchend', () => {
                 isPanning = false;
             });
         }
@@ -763,7 +837,6 @@
             const viewWidth = viewport.clientWidth;
             const viewHeight = viewport.clientHeight;
             
-            // Haritayı dış kenarlarla sığdıracak şekilde en boy oranı tespiti
             return Math.min(viewWidth / state.mapWidth, viewHeight / state.mapHeight) * 0.95;
         }
 
@@ -816,7 +889,6 @@
             updateMapTransform();
         }
 
-        // Bilgisayardan Harita Yükleme İşlemi (input_file_0.png)
         function handleLocalMapUpload(event) {
             const file = event.target.files[0];
             if (file) {
@@ -835,6 +907,8 @@
                         board.style.width = img.width + 'px';
                         board.style.height = img.height + 'px';
                         
+                        state.gridSize = img.width / 5;
+
                         applyMapDisplay();
                         resetZoom();
                         saveToLocalStorage();
@@ -847,7 +921,8 @@
                             gridSize: state.gridSize,
                             gridVisible: state.gridVisible,
                             mapWidth: state.mapWidth,
-                            mapHeight: state.mapHeight
+                            mapHeight: state.mapHeight,
+                            enemiesVisibleToPlayers: state.enemiesVisibleToPlayers
                         });
                     };
                     img.src = dataUrl;
@@ -856,7 +931,6 @@
             }
         }
 
-        // Karakter Fotoğraf Yükleme İşlemi
         function handleKarakterResimYukle(event) {
             const file = event.target.files[0];
             if (file) {
@@ -870,7 +944,6 @@
             }
         }
 
-        // Sidebar Açıp Kapatma Fonksiyonu
         function toggleSidebar(side) {
             sidebarStatus[side] = !sidebarStatus[side];
             const el = document.getElementById(`sidebar-${side}`);
@@ -904,7 +977,6 @@
             }, 320);
         }
 
-        // Sekme Değiştirme Sistemi (Karakter, Battle Map)
         function switchMainTab(tabId) {
             const tabs = ['karakter', 'battlemap'];
             tabs.forEach(t => {
@@ -926,7 +998,6 @@
             }
         }
 
-        // Yeni Oda Kurulumları (Host)
         function createNewRoom() {
             const rawName = document.getElementById('create-room-name').value.trim();
             const rawUser = document.getElementById('create-user-name').value.trim();
@@ -947,6 +1018,10 @@
             state.enemies = [];
             state.mapWidth = 884;
             state.mapHeight = 670;
+            state.gridSize = 884 / 5; 
+            state.enemiesVisibleToPlayers = false;
+            state.waypoints = [];
+            state.markers = [];
             state.chatLogs = [{
                 sender: "Sistem",
                 text: `${rawUser} yeni oyun masasını hazırladı.`,
@@ -956,14 +1031,10 @@
 
             saveToLocalStorage();
             
-            // Küresel Ağ Bağlantısını Başlat
             connectToGlobalNetwork();
-
-            // Arayüzü Çizdir
             loadAndDisplayRoomUI();
         }
 
-        // ÇOKLU CİHAZ (TELEFON VB.) BAĞLANTI SİSTEMİ
         function joinRoom() {
             const rawCode = document.getElementById('join-room-code').value.trim().toUpperCase();
             const rawUser = document.getElementById('join-user-name').value.trim();
@@ -973,17 +1044,14 @@
                 return;
             }
 
-            // Bağlantı ve senkronizasyon ekranını fırlat
             showLoadingOverlay("Odaya bağlanılıyor, Host'tan harita verileri alınıyor...");
 
             state.roomCode = rawCode;
             state.username = rawUser;
-            state.hostName = ""; // Ağdan gelecek eşleşmeyle dolacak
+            state.hostName = ""; 
 
-            // Ağ dinleyicisini başlat
             connectToGlobalNetwork();
 
-            // SSE bağlantısı oturduktan sonra (1 sn sonra) ağ üzerinden Host'a veri senkronizasyon çağrısı atarız
             setTimeout(() => {
                 broadcastNetworkEvent({
                     type: 'request_state_on_join',
@@ -991,7 +1059,6 @@
                 });
             }, 1000);
 
-            // 10 Saniye içinde Host'tan veri dönmezse zaman aşımı uyarısı fırlatırız
             joinTimeout = setTimeout(() => {
                 if (!state.hostName) {
                     hideLoadingOverlay();
@@ -1022,7 +1089,6 @@
             }
         }
 
-        // Arayüz Çizdirici Paketleyici
         function loadAndDisplayRoomUI() {
             document.getElementById('char-display-code').innerText = state.roomCode;
             document.getElementById('nav-user-display').innerText = state.username;
@@ -1034,25 +1100,34 @@
             const board = document.getElementById('map-board');
             board.style.width = state.mapWidth + 'px';
             board.style.height = state.mapHeight + 'px';
+            
+            state.gridSize = state.mapWidth / 5;
 
             const btnNewEnemy = document.getElementById('btn-new-enemy');
             const dmOnlyHint = document.getElementById('dm-only-hint');
+            const hostEnemiesBtn = document.getElementById('host-toggle-enemies-btn');
             
-            // Sadece Host ise düşman oluşturma butonları açılır
             if (state.username.toLowerCase() === state.hostName.toLowerCase()) {
                 btnNewEnemy.classList.remove('hidden');
+                hostEnemiesBtn.classList.remove('hidden');
                 dmOnlyHint.innerText = "Yönetici yetkileriniz aktif.";
             } else {
                 btnNewEnemy.classList.add('hidden');
+                hostEnemiesBtn.classList.add('hidden');
                 dmOnlyHint.innerText = `Sadece oda kurucusu (${state.hostName}) düşman oluşturabilir.`;
             }
 
             applyMapDisplay();
             updateGridSize(state.gridSize);
+            updateHostEnemiesToggleButton();
             renderTokens();
             renderPlayers();
             renderChat();
             renderCharacterRoster();
+            renderRoute();
+            renderMarkers();
+            
+            board.addEventListener('click', handleMapBoardClick);
             
             switchMainTab('karakter');
         }
@@ -1062,10 +1137,7 @@
             localStorage.setItem(`realm_room_${state.roomCode}`, JSON.stringify(state));
         }
 
-        // KOORDİNASYONLU TEK MERKEZLİ LOCAL MULTIPLAYER SENKRONİZASYONU
         function handleCrossTabSync(e) {
-            // Zar mükerrerlik hatasını çözmek adına LocalStorage storage dinleyicisi deaktif edilmiştir.
-            // Tüm eşlemeler ve mesajlar artık kesintisiz ntfy SSE ağ geçidi üzerinden yürütülmektedir.
         }
 
         function copyInviteLinkOnly() {
@@ -1076,11 +1148,8 @@
         }
 
         function copyInviteLink() {
-            const inviteURL = `${window.location.origin}${window.location.pathname}?room=${state.roomCode}`;
-            const inviteMessage = `🎲 Rollplay Realm Masaüstü Daveti!\n\n🏰 Oturum: ${state.roomName}\n🔑 Giriş Kodu: ${state.roomCode}\n🔗 Doğrudan Katılma Linki: ${inviteURL}\n\nMaceraya ortak olmak için yukarıdaki linke tıklayabilirsiniz!`;
-            
-            navigator.clipboard.writeText(inviteMessage).then(() => {
-                alert("Detaylı davet metni kopyalandı!");
+            navigator.clipboard.writeText(state.roomCode).then(() => {
+                alert(`Davet kodu kopyalandı! KOD: ${state.roomCode}`);
             });
         }
 
@@ -1109,19 +1178,19 @@
                 gridSize: state.gridSize,
                 gridVisible: state.gridVisible,
                 mapWidth: state.mapWidth,
-                mapHeight: state.mapHeight
+                mapHeight: state.mapHeight,
+                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers
             });
         }
 
         function updateGridSize(size) {
-            state.gridSize = parseInt(size);
-            document.getElementById('display-grid-size').innerText = size + 'px';
-            document.getElementById('grid-overlay').style.setProperty('--grid-size', size + 'px');
+            state.gridSize = state.mapWidth / 5; 
             
+            const overlay = document.getElementById('grid-overlay');
             if (state.gridVisible) {
-                document.getElementById('grid-overlay').style.display = 'block';
+                overlay.style.display = 'block';
             } else {
-                document.getElementById('grid-overlay').style.display = 'none';
+                overlay.style.display = 'none';
             }
             saveToLocalStorage();
         }
@@ -1145,11 +1214,220 @@
                 gridSize: state.gridSize,
                 gridVisible: state.gridVisible,
                 mapWidth: state.mapWidth,
-                mapHeight: state.mapHeight
+                mapHeight: state.mapHeight,
+                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers
             });
         }
 
-        // TAM BAĞIMSIZ HATASIZ KARAKTER SAYFASI MOTORU
+        function setMapMode(mode) {
+            state.currentMode = mode;
+            const modes = ['tokens', 'measurement', 'marker'];
+            modes.forEach(m => {
+                const btn = document.getElementById(`mode-btn-${m}`);
+                if (m === mode) {
+                    btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white";
+                } else {
+                    btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border";
+                }
+            });
+
+            const clearBtn = document.getElementById('btn-clear-route');
+            if (mode === 'measurement' && state.waypoints && state.waypoints.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            renderTokens();
+        }
+
+        function handleMapBoardClick(e) {
+            if (e.target.closest('.cursor-pointer')) {
+                return;
+            }
+
+            const board = document.getElementById('map-board');
+            const rect = board.getBoundingClientRect();
+            const clickX = (e.clientX - rect.left) / zoomLevel;
+            const clickY = (e.clientY - rect.top) / zoomLevel;
+
+            if (state.currentMode === 'measurement') {
+                if (!state.waypoints) state.waypoints = [];
+                state.waypoints.push({ x: clickX, y: clickY });
+                
+                renderRoute();
+                saveToLocalStorage();
+                
+                document.getElementById('btn-clear-route').classList.remove('hidden');
+
+                broadcastNetworkEvent({
+                    type: 'sync_waypoints',
+                    waypoints: state.waypoints
+                });
+            } else if (state.currentMode === 'marker') {
+                const title = prompt("📍 Harita İşaretçisi Başlığı Girin:");
+                if (title && title.trim()) {
+                    if (!state.markers) state.markers = [];
+                    state.markers.push({ x: clickX, y: clickY, title: title.trim() });
+                    
+                    renderMarkers();
+                    saveToLocalStorage();
+
+                    broadcastNetworkEvent({
+                        type: 'sync_markers',
+                        markers: state.markers
+                    });
+                }
+            }
+        }
+
+        function renderRoute() {
+            const overlay = document.getElementById('route-overlay-layer');
+            const badge = document.getElementById('route-info-badge');
+            if (!overlay) return;
+            overlay.innerHTML = "";
+
+            if (!state.waypoints || state.waypoints.length === 0) {
+                badge.classList.add('hidden');
+                document.getElementById('btn-clear-route').classList.add('hidden');
+                return;
+            }
+
+            badge.classList.remove('hidden');
+            let pathD = "";
+            let totalDistance = 0;
+
+            state.waypoints.forEach((pt, index) => {
+                if (index === 0) {
+                    pathD += `M ${pt.x} ${pt.y}`;
+                } else {
+                    pathD += ` L ${pt.x} ${pt.y}`;
+                    
+                    const prev = state.waypoints[index - 1];
+                    const dx = pt.x - prev.x;
+                    const dy = pt.y - prev.y;
+                    const pixels = Math.sqrt(dx * dx + dy * dy);
+                    const cellW = state.mapWidth / 5;
+                    const segmentMiles = (pixels / cellW) * 5;
+                    totalDistance += segmentMiles;
+
+                    const midX = (prev.x + pt.x) / 2;
+                    const midY = (prev.y + pt.y) / 2;
+                    
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", midX);
+                    text.setAttribute("y", midY - 8);
+                    text.setAttribute("fill", "#f59e0b");
+                    text.setAttribute("font-size", "10px");
+                    text.setAttribute("font-weight", "bold");
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("style", "text-shadow: 2px 2px 2px #000; font-family: sans-serif;");
+                    text.textContent = `${segmentMiles.toFixed(1)} Mil`;
+                    overlay.appendChild(text);
+                }
+
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", pt.x);
+                circle.setAttribute("cy", pt.y);
+                circle.setAttribute("r", "5");
+                circle.setAttribute("fill", "#e11d48");
+                circle.setAttribute("stroke", "#ffffff");
+                circle.setAttribute("stroke-width", "1.5");
+                overlay.appendChild(circle);
+            });
+
+            if (state.waypoints.length > 1) {
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", pathD);
+                path.setAttribute("fill", "none");
+                path.setAttribute("stroke", "#e11d48");
+                path.setAttribute("stroke-width", "3");
+                path.setAttribute("stroke-dasharray", "6,6");
+                overlay.insertBefore(path, overlay.firstChild);
+            }
+
+            document.getElementById('route-total-distance').innerText = `${totalDistance.toFixed(1)} Mil`;
+        }
+
+        function clearRoute() {
+            state.waypoints = [];
+            renderRoute();
+            saveToLocalStorage();
+            broadcastNetworkEvent({
+                type: 'sync_waypoints',
+                waypoints: []
+            });
+        }
+
+        function renderMarkers() {
+            const container = document.getElementById('markers-layer');
+            if (!container) return;
+            container.innerHTML = "";
+
+            if (!state.markers) state.markers = [];
+
+            state.markers.forEach((marker, index) => {
+                const div = document.createElement('div');
+                div.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto";
+                div.style.left = marker.x + 'px';
+                div.style.top = marker.y + 'px';
+                div.style.transform = 'translate(-50%, -100%)'; 
+
+                div.innerHTML = `
+                    <div class="relative group cursor-pointer">
+                        <span class="text-xl filter drop-shadow">📍</span>
+                        <div class="absolute bottom-full left-[50%] -translate-x-[50%] mb-1 bg-[#2E1E07] border border-[#8A6529] px-2 py-0.5 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md group-hover:scale-105 transition-transform flex items-center gap-1">
+                            <span>${marker.title}</span>
+                            ${state.username.toLowerCase() === state.hostName.toLowerCase() ? `<button onclick="deleteMarker(${index})" class="text-red-500 hover:text-red-400 font-bold ml-1 text-xs">&times;</button>` : ""}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function deleteMarker(index) {
+            if (state.username.toLowerCase() !== state.hostName.toLowerCase()) return;
+            state.markers.splice(index, 1);
+            renderMarkers();
+            saveToLocalStorage();
+            broadcastNetworkEvent({
+                type: 'sync_markers',
+                markers: state.markers
+            });
+        }
+
+        function toggleEnemiesVisibility() {
+            if (state.username.toLowerCase() !== state.hostName.toLowerCase()) return;
+            state.enemiesVisibleToPlayers = !state.enemiesVisibleToPlayers;
+            
+            updateHostEnemiesToggleButton();
+            renderTokens();
+            saveToLocalStorage();
+
+            broadcastNetworkEvent({
+                type: 'change_map_settings',
+                selectedMap: state.selectedMap,
+                customMapUrl: state.customMapUrl,
+                gridSize: state.gridSize,
+                gridVisible: state.gridVisible,
+                mapWidth: state.mapWidth,
+                mapHeight: state.mapHeight,
+                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers
+            });
+        }
+
+        function updateHostEnemiesToggleButton() {
+            const btn = document.getElementById('host-toggle-enemies-btn');
+            if (state.enemiesVisibleToPlayers) {
+                btn.innerText = "👁️ Düşmanlar: GÖRÜNÜR";
+                btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-green-950 border border-green-800 text-green-200";
+            } else {
+                btn.innerText = "👁️‍🗨️ Düşmanlar: GİZLİ";
+                btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-950 border border-red-800 text-red-200";
+            }
+        }
+
         function openNewCharacterSheet() {
             editingTokenId = null;
             isEditingEnemyMode = false;
@@ -1182,7 +1460,6 @@
         }
 
         function openNewEnemySheet() {
-            // Sadece Host (Yönetici) düşman oluşturabilir
             if (state.username.toLowerCase() !== state.hostName.toLowerCase()) {
                 alert("Yalnızca oda yöneticisi (Host) canavar veya düşman kurgulayabilir!");
                 return;
@@ -1219,7 +1496,6 @@
         }
 
         function openEditSheet(tokenId, isEnemy) {
-            // Sadece Host ise düşman düzenleyebilir
             if (isEnemy && state.username.toLowerCase() !== state.hostName.toLowerCase()) {
                 alert("Düşman kartlarını düzenleme yetkisi sadece yöneticidedir.");
                 return;
@@ -1400,7 +1676,11 @@
             const target = pool.find(t => t.id === id);
             if (!target) return;
 
-            const offset = Math.floor(Math.random() * 3) * state.gridSize;
+            const cellW = state.mapWidth / 5;
+            const cellH = state.mapHeight / 5;
+
+            const randomCol = Math.floor(Math.random() * 2);
+            const randomRow = Math.floor(Math.random() * 3);
 
             const activeToken = {
                 id: 'active-' + Math.random().toString(36).substr(2, 9),
@@ -1412,8 +1692,8 @@
                 color: target.color,
                 icon: target.icon,
                 avatarUrl: target.avatarUrl,
-                x: state.gridSize + offset,
-                y: state.gridSize + offset
+                x: randomCol * cellW,
+                y: randomRow * cellH
             };
 
             state.tokens.push(activeToken);
@@ -1587,11 +1867,24 @@
             const layer = document.getElementById('tokens-layer');
             layer.innerHTML = "";
 
+            const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+
             state.tokens.forEach(token => {
+                const isEnemyToken = token.rosterId && token.rosterId.startsWith('enemy-');
+                
+                if (isEnemyToken && !isHost && !state.enemiesVisibleToPlayers) {
+                    return; 
+                }
+
                 const div = document.createElement('div');
                 div.id = token.id;
                 
-                div.className = "absolute cursor-pointer flex flex-col items-center select-none z-10 hover:scale-105 transition-transform duration-75";
+                if (state.currentMode === 'tokens') {
+                    div.className = "absolute cursor-pointer flex flex-col items-center select-none z-10 hover:scale-105 transition-transform duration-75 pointer-events-auto";
+                } else {
+                    div.className = "absolute flex flex-col items-center select-none z-10 pointer-events-none";
+                }
+
                 div.style.width = state.gridSize + 'px';
                 div.style.height = 'auto'; 
                 div.style.left = token.x + 'px';
@@ -1609,31 +1902,39 @@
                     ? `<img src="${token.avatarUrl}" class="w-full h-full object-cover rounded-full">` 
                     : `<span class="text-base">${token.icon || "🛡️"}</span>`;
 
-                const sizeStyle = `width: ${state.gridSize * 0.85}px; height: ${state.gridSize * 0.85}px;`;
+                const sizeStyle = `width: ${state.gridSize * 0.75}px; height: ${state.gridSize * 0.75}px;`;
+
+                const hostSecretBadge = (isEnemyToken && isHost && !state.enemiesVisibleToPlayers) 
+                    ? `<span class="absolute -top-1 left-[50%] -translate-x-[50%] bg-red-600/90 text-white border border-red-500 text-[7px] font-bold px-1 rounded animate-pulse">👁️ GİZLİ</span>` 
+                    : ``;
 
                 div.innerHTML = `
                     <div class="rounded-full border-[3px] flex items-center justify-center bg-gray-900 shadow-xl relative" style="${sizeStyle} border-color: ${token.color || '#f59e0b'};">
                         ${avatarHTML}
+                        ${hostSecretBadge}
                         <span class="absolute -bottom-1 -right-1 bg-black border border-gray-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px] text-white font-bold">${token.ac}</span>
                     </div>
 
-                    <div class="w-full bg-black/80 border border-black rounded-full overflow-hidden mt-1.5 mb-0.5" style="height: 6px;">
+                    <div class="w-[85%] bg-black/80 border border-black rounded-full overflow-hidden mt-1.5 mb-0.5" style="height: 5px;">
                         <div class="h-full ${barColor}" style="width: ${hpPercent}%"></div>
                     </div>
 
-                    <div class="bg-black/90 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-full leading-tight">
+                    <div class="bg-black/95 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-[90%] leading-tight">
                         ${token.name}
                     </div>
                 `;
 
-                div.addEventListener('mousedown', (e) => startDrag(e, token.id));
-                div.addEventListener('touchstart', (e) => startDrag(e, token.id), { passive: false });
+                if (state.currentMode === 'tokens') {
+                    div.addEventListener('mousedown', (e) => startDrag(e, token.id));
+                    div.addEventListener('touchstart', (e) => startDrag(e, token.id), { passive: false });
+                }
 
                 layer.appendChild(div);
             });
         }
 
         function startDrag(e, tokenId) {
+            if (state.currentMode !== 'tokens') return;
             e.stopPropagation();
             const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
             const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
@@ -1684,8 +1985,14 @@
                 const pxX = parseFloat(tokenEl.style.left);
                 const pxY = parseFloat(tokenEl.style.top);
                 
-                const gridX = Math.max(0, Math.round(pxX / state.gridSize) * state.gridSize);
-                const gridY = Math.max(0, Math.round(pxY / state.gridSize) * state.gridSize);
+                const cellW = state.mapWidth / 5;
+                const cellH = state.mapHeight / 5;
+
+                const col = Math.max(0, Math.min(4, Math.round(pxX / cellW)));
+                const row = Math.max(0, Math.min(4, Math.round(pxY / cellH)));
+
+                const gridX = col * cellW;
+                const gridY = row * cellH;
 
                 token.x = gridX;
                 token.y = gridY;
@@ -1828,3 +2135,4 @@
     </script>
 </body>
 </html>
+```
