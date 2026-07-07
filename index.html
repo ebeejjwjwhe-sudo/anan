@@ -39,7 +39,6 @@
         ::-webkit-scrollbar-thumb:hover { background: #CBB58F; }
         .grid-layer { pointer-events: none; }
         
-        /* Geçiş animasyonları */
         .sidebar-transition { transition: all 0.3s ease-in-out; }
 
         /* İşaret silme animasyonu */
@@ -96,9 +95,6 @@
                             Rollplay Realm; haritalar yükleyebileceğiniz, karakter token'larını yerleştirebileceğiniz, D&D Beyond uyumlu sınıflarla macera kurgulayabileceğiniz ve çoklu sekme senkronizasyonu ile arkadaşlarınızla oynayabileceğiniz gerçek zamanlı sanal oyun masasıdır [1].
                         </p>
                     </div>
-                    <div class="border-t border-rpg-border/50 pt-6 mt-6">
-                        <p class="text-xs text-gray-500">Macerayı test etmek için odayı kurup davet linkini yan sekmede açabilirsiniz.</p>
-                    </div>
                 </div>
 
                 <!-- Giriş Formu -->
@@ -148,7 +144,6 @@
             
             <!-- 1. SEKME: KARAKTER -->
             <div id="main-tab-content-karakter" class="w-full h-full p-6 overflow-y-auto space-y-6 absolute inset-0 bg-[#3D250D] z-30">
-                <!-- ÜST BANNER -->
                 <div class="bg-rpg-card border border-rpg-border p-5 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
                     <div class="flex items-center gap-3">
                         <span class="text-xs uppercase text-gray-400 font-bold">ODA KODU:</span>
@@ -205,12 +200,12 @@
                         <div>
                             <label class="text-[10px] text-rpg-gold tracking-wider font-bold block mb-1.5">BİLGİSAYARDAN HARİTA YÜKLE</label>
                             <label class="flex items-center justify-center border border-dashed border-rpg-border bg-[#1F1404]/50 hover:bg-[#1F1404] p-4 rounded cursor-pointer transition-colors text-xs text-gray-400 shadow-inner">
-                                📁 Görsel Seç (input_file_0.png)
+                                📁 Görsel Seç
                                 <input type="file" accept="image/*" class="hidden" onchange="handleLocalMapUpload(event)">
                             </label>
                         </div>
 
-                        <!-- Taktiksel Katman Sınırı -->
+                        <!-- Taktiksel Katman Sınırı (Grid seçeneği yazısız butona dönüştürüldü) -->
                         <div class="border-t border-rpg-border/60 pt-4 flex justify-between items-center text-xs">
                             <button onclick="toggleGridVisible()" id="btn-grid-toggle" class="w-full text-center bg-rpg-accent/20 text-rpg-accent border border-rpg-accent/30 py-2 rounded font-bold transition-colors">Grid: Açık</button>
                         </div>
@@ -277,7 +272,7 @@
                         </button>
                     </div>
 
-                    <!-- VELUTAN SEYAHAT KARTI (Yeni Konum: Diğer butonları engellememesi için biraz aşağıya kaydırıldı) -->
+                    <!-- VELUTAN SEYAHAT KARTI (Yeri Çakışmayacak Şekilde top-20 olarak ayarlandı) -->
                     <div id="velutan-travel-card" class="hidden absolute top-20 left-4 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-3 flex items-center gap-4 shadow-xl backdrop-blur-xs">
                         <div class="flex flex-col">
                             <span class="text-[9px] uppercase font-bold text-gray-400 mb-1">Seyahat Hızı</span>
@@ -302,7 +297,7 @@
                         </div>
                     </div>
 
-                    <!-- VELUTAN YOLCULUK ÖZETİ -->
+                    <!-- VELUTAN YOLCULUK ÖZETİ PANELİ -->
                     <div id="route-info-badge" class="hidden absolute top-4 right-4 z-20 bg-[#1F1404]/90 border border-rpg-border rounded-lg p-4 flex flex-col shadow-xl min-w-[220px]">
                         <div class="flex justify-between items-center border-b border-[#8A6529]/30 pb-2 mb-2">
                             <span class="text-xs font-bold text-white font-serif">Yolculuk Özeti</span>
@@ -335,15 +330,15 @@
                     <div id="route-edit-capsule" class="hidden absolute bottom-4 left-16 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1 shadow-xl backdrop-blur-xs">
                         <button onclick="undoLastWaypoint()" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors shadow-inner" title="Son Noktayı Geri Al">↩</button>
                         <div class="w-px h-6 bg-[#8A6529]/30"></div>
-                        <button onclick="clearRoute()" class="px-2 h-8 rounded bg-[#1F1404] hover:bg-red-950/60 text-red-500 font-bold flex items-center justify-center text-xs transition-colors shadow-inner" title="Tüm Rotaları Sil">🧹 Temizle</button>
+                        <button onclick="clearRoute()" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-red-950/40 text-red-500 font-bold flex items-center justify-center text-sm transition-colors shadow-inner" title="Tüm Rotaları Sil">🧹 Temizle</button>
                     </div>
 
-                    <!-- Sol Sidebar Açma / Kapatma Tırnağı (Kalıcı Buton) -->
+                    <!-- Sol Sidebar Açma / Kapatma Tırnağı (Yatay Kapanmada Kaybolmayan Kalıcı Buton!) -->
                     <button id="sidebar-left-toggle-btn" onclick="toggleSidebar('left')" class="absolute left-0 top-[50%] -translate-y-[50%] z-20 bg-rpg-card hover:bg-rpg-border text-rpg-gold border-r border-t border-b border-rpg-border rounded-r-lg w-4 h-12 flex items-center justify-center font-bold text-[10px] cursor-pointer shadow-lg">
                         &lt;
                     </button>
 
-                    <!-- Sağ Sidebar Açma / Kapatma Tırnağı (Kalıcı Buton) -->
+                    <!-- Sağ Sidebar Açma / Kapatma Tırnağı (Yatay Kapanmada Kaybolmayan Kalıcı Buton!) -->
                     <button id="sidebar-right-toggle-btn" onclick="toggleSidebar('right')" class="absolute right-0 top-[50%] -translate-y-[50%] z-20 bg-rpg-card hover:bg-rpg-border text-rpg-gold border-l border-t border-b border-rpg-border rounded-l-lg w-4 h-12 flex items-center justify-center font-bold text-[10px] cursor-pointer shadow-lg">
                         &gt;
                     </button>
@@ -354,12 +349,12 @@
                     </div>
 
                     <!-- Sağ Alt: Ayarlar Çarkı -->
-                    <div id="settings-wheel-container" class="absolute bottom-4 right-12 z-20 bg-rpg-card/90 border border-rpg-border rounded-full p-2 shadow-xl hover:scale-110 transition-transform cursor-pointer">
+                    <div id="settings-wheel-container" class="absolute bottom-4 right-12 z-15 bg-rpg-card/90 border border-rpg-border rounded-full p-2 shadow-xl hover:scale-110 transition-transform cursor-pointer">
                         <button onclick="openSettingsModal()" class="w-8 h-8 flex items-center justify-center text-xl" title="Masaüstü ve Velutan Ayarları">⚙️</button>
                     </div>
 
                     <!-- FLOAT ZOOM CONTROLS (Sağ Üst) -->
-                    <div id="floating-zoom-container" class="absolute top-44 right-4 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex flex-col gap-2 shadow-xl backdrop-blur-xs">
+                    <div id="floating-zoom-container" class="absolute top-4 right-4 z-15 bg-rpg-card/90 border border-rpg-border rounded-lg p-1.5 flex flex-col gap-2 shadow-xl backdrop-blur-xs">
                         <button onclick="changeZoom(0.15)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-lg transition-colors shadow-inner">+</button>
                         <div class="h-px bg-[#8A6529]/30"></div>
                         <button onclick="changeZoom(-0.15)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-xl transition-colors shadow-inner">-</button>
@@ -388,7 +383,7 @@
                         </div>
                     </div>
 
-                    <!-- SOHBET -->
+                    <!-- SOHBET & LOG PANELİ -->
                     <div class="flex-grow flex flex-col overflow-hidden h-0">
                         <div class="bg-[#1F1404] px-4 py-3 border-b border-rpg-border shrink-0 flex items-center justify-between">
                             <span class="text-xs font-bold text-[#D4B46A]">💬 SOHBET & ZAR GEÇMİŞİ</span>
@@ -398,7 +393,7 @@
 
                         <div class="p-3 bg-[#1F1404] border-t border-rpg-border flex gap-1.5 shrink-0">
                             <input id="battle-chat-input" type="text" placeholder="Mesaj yazın..." onkeydown="handleBattleChatKeyPress(event)" class="flex-grow bg-[#2E1E07] border border-[#8A6529]/40 rounded p-2 text-xs focus:outline-none focus:border-[#8A6529] text-white shadow-inner">
-                            <button onclick="sendBattleChatMessage()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-3 rounded text-xs font-bold transition-all">Gönder</button>
+                            <button onclick="sendBattleChatMessage()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-3 rounded text-xs font-bold transition-all shadow-md">Gönder</button>
                         </div>
                     </div>
                 </aside>
@@ -415,7 +410,7 @@
             <div class="grid grid-cols-2 gap-4 mb-3">
                 <div>
                     <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">İSİM</label>
-                    <input id="sheet-name" type="text" placeholder="Kahraman" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                    <input id="sheet-name" type="text" placeholder="anan'ın kahramanı" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">SINIF (Class)</label>
@@ -461,7 +456,7 @@
                 </div>
             </div>
 
-            <!-- DETAY SATIRI (Özel boyut ayarı) -->
+            <!-- DETAY SATIRI: HP, MAX HP, AC, TOKEN BOYUTU -->
             <div class="grid grid-cols-4 gap-3 mb-3">
                 <div>
                     <label class="block text-[10px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">HP (Can)</label>
@@ -734,9 +729,12 @@
             document.getElementById('loading-overlay').classList.add('hidden');
         }
 
+        // Ağ veri paketini ntfy 4KB sınırının altında tutacak şekilde ağır dosyaları ve chat log geçmişini sıfırlar
         function sanitizeStateForBroadcast(rawState) {
             const clean = JSON.parse(JSON.stringify(rawState));
-            if (clean.customMapUrl && clean.customMapUrl.length > 500) clean.customMapUrl = ""; 
+            if (clean.customMapUrl && clean.customMapUrl.length > 500) {
+                clean.customMapUrl = ""; // Ağ paketini hafifletmek için harita görseli gönderilmez
+            }
             if (clean.roster) {
                 clean.roster.forEach(c => {
                     if (c.avatarUrl && c.avatarUrl.length > 500) c.avatarUrl = ""; 
@@ -752,19 +750,20 @@
                     if (t.avatarUrl && t.avatarUrl.length > 500) t.avatarUrl = ""; 
                 });
             }
-            // Ağ paket boyutunu ntfy için daha da düşür
             if (clean.chatLogs) {
-                clean.chatLogs = clean.chatLogs.slice(-5);
+                clean.chatLogs = clean.chatLogs.slice(-5); // Sadece son 5 logu gönder
             }
             return clean;
         }
 
+        // GERÇEK ZAMANLI KÜRESEL AĞ SENKRONİZASYON MOTORU (P2P / Serverless)
         function connectToGlobalNetwork() {
             if (!state.roomCode) return;
             if (eventSource) {
                 eventSource.close();
             }
 
+            // ntfy.sh sse kanalı dinlenir
             eventSource = new EventSource(`https://ntfy.sh/${state.roomCode.toLowerCase()}/sse`);
 
             eventSource.onmessage = (e) => {
@@ -779,7 +778,9 @@
 
                         handleIncomingNetworkEvent(packet);
                     }
-                } catch (err) {}
+                } catch (err) {
+                    console.error("Ağ paket çözme hatası:", err);
+                }
             };
 
             eventSource.onerror = () => {
@@ -880,6 +881,7 @@
                         isSystem: false
                     });
                     renderChat();
+                    saveToLocalStorage();
                     break;
 
                 case 'roll':
@@ -890,6 +892,7 @@
                         isRoll: true
                     });
                     renderChat();
+                    saveToLocalStorage();
                     break;
 
                 case 'move_token':
@@ -898,6 +901,7 @@
                         tok.x = packet.x;
                         tok.y = packet.y;
                         renderTokens();
+                        saveToLocalStorage();
                     }
                     break;
 
@@ -910,6 +914,7 @@
                         pool.push(packet.entity);
                     }
                     renderCharacterRoster();
+                    saveToLocalStorage();
                     break;
 
                 case 'delete_character':
@@ -921,11 +926,13 @@
                     state.tokens = state.tokens.filter(tok => tok.rosterId !== packet.id);
                     renderCharacterRoster();
                     renderTokens();
+                    saveToLocalStorage();
                     break;
 
                 case 'spawn_token':
                     state.tokens.push(packet.token);
                     renderTokens();
+                    saveToLocalStorage();
                     break;
 
                 case 'change_map_settings':
@@ -954,6 +961,7 @@
                     updateTravelDropdowns();
                     calculateTravelStats();
                     resetZoom();
+                    saveToLocalStorage();
                     break;
                 
                 case 'sync_waypoints':
@@ -971,7 +979,6 @@
                     triggerAttackAnimation(packet.attackerId, packet.targetId, packet.damage);
                     break;
             }
-            saveToLocalStorage();
         }
 
         // Taktik Saldırı Görsel Çizim Motoru
@@ -1256,7 +1263,6 @@
             }
         }
 
-        // Açılıp kapanabilen tırnakların DOM özellikleriyle tam kilitlenmesi
         function toggleSidebar(side) {
             sidebarStatus[side] = !sidebarStatus[side];
             const el = document.getElementById(`sidebar-${side}`);
@@ -1327,7 +1333,6 @@
             }
         }
 
-        // --- ROOM MANAGEMENT (Oda Yönetimi ve Online Bypass Düzenlemesi) ---
         function createNewRoom() {
             try {
                 const rawName = document.getElementById('create-room-name').value.trim();
@@ -1368,7 +1373,6 @@
             }
         }
 
-        // ÇOKLU CİHAZ (TELEFON VB.) BAĞLANTI SİSTEMİ (Mükerrerlik engellendi!)
         function joinRoom() {
             try {
                 const rawCode = document.getElementById('join-room-code').value.trim().toUpperCase();
@@ -1387,7 +1391,6 @@
 
                 connectToGlobalNetwork();
 
-                // İlk istek ağ tamponu oturduktan sonra fırlatılır
                 setTimeout(() => {
                     broadcastNetworkEvent({
                         type: 'request_state_on_join',
@@ -1409,7 +1412,7 @@
                         clearInterval(joinRequestInterval);
                         hideLoadingOverlay();
                         if (eventSource) eventSource.close();
-                        alert("Zaman aşımı! Oda yöneticisi (Host) şu anda aktif değil veya davet kodu yanlış. Host'un sayfasını açık tuttuğundan emin olun.");
+                        alert("Zaman aşımı! Oda yöneticisi (Host) şu anda aktif değil veya davet kodu yanlış.");
                     }
                 }, 15000);
             } catch(e) {
@@ -1485,7 +1488,6 @@
             renderMarkers();
             calculateTravelStats();
             
-            board.removeEventListener('click', handleMapBoardClick);
             board.addEventListener('click', handleMapBoardClick);
             
             switchMainTab('karakter');
@@ -1566,7 +1568,7 @@
                     if (m === mode) {
                         btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white";
                     } else if (m === 'delete-marker') {
-                        btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-900 text-white hover:bg-red-800 border border-red-700";
+                        btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border";
                     } else {
                         btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border";
                     }
@@ -1580,12 +1582,10 @@
                 travelCard.classList.remove('hidden');
                 if (state.waypoints && state.waypoints.length > 0) {
                     clearBtnCapsule.classList.remove('hidden');
-                    clearBtnCapsule.style.display = 'flex';
                 }
             } else {
                 travelCard.classList.add('hidden');
                 clearBtnCapsule.classList.add('hidden');
-                clearBtnCapsule.style.display = '';
             }
 
             // Silme modu efektini tetikle
@@ -1868,7 +1868,6 @@
                 badge.classList.remove('hidden');
                 if (state.currentMode === 'measurement') {
                     editCap.classList.remove('hidden');
-                    editCap.style.display = 'flex';
                 }
             }
             
@@ -1924,17 +1923,6 @@
             }
         }
 
-        function clearRoute() {
-            state.waypoints = [];
-            renderRoute();
-            calculateTravelStats();
-            saveToLocalStorage();
-            broadcastNetworkEvent({
-                type: 'sync_waypoints',
-                waypoints: []
-            });
-        }
-
         // Taktik piyon işaretleri (İşaret Silme Moduyla kusursuzlaştırıldı!)
         function renderMarkers() {
             const container = document.getElementById('markers-layer');
@@ -1963,7 +1951,7 @@
                 div.innerHTML = `
                     <div class="relative marker-wrapper group">
                         <span class="text-xl filter drop-shadow">📍</span>
-                        <div class="absolute bottom-full left-[50%] -translate-x-[50%] mb-1 bg-[#2E1E07] border border-[#8A6529] px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md flex items-center gap-1 group-hover:scale-105 transition-transform">
+                        <div class="absolute bottom-full left-[50%] -translate-x-[50%] mb-1 bg-[#2E1E07] border border-[#8A6529] px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md flex items-center gap-1">
                             <span>📍 ${marker.title}</span>
                             <button class="${xBtnClasses}">&times;</button>
                         </div>
@@ -2234,7 +2222,7 @@
             document.getElementById('sheet-title').innerText = "YENİ KARAKTER SAYFASI YARAT";
             document.getElementById('sheet-btn-delete').classList.add('hidden');
 
-            document.getElementById('sheet-name').value = "Kahraman";
+            document.getElementById('sheet-name').value = "anan'ın kahramanı";
             document.getElementById('sheet-class').value = "🛡️ Fighter";
             document.getElementById('sheet-race').value = "İnsan";
             document.getElementById('sheet-level').value = 1;
@@ -2481,11 +2469,8 @@
             const target = pool.find(t => t.id === id);
             if (!target) return;
 
-            const cellW = 500;
-            const cellH = 500;
-
-            const randomCol = Math.floor(Math.random() * 2);
-            const randomRow = Math.floor(Math.random() * 2);
+            const randomX = Math.floor(Math.random() * 200) + 100;
+            const randomY = Math.floor(Math.random() * 200) + 100;
 
             const activeToken = {
                 id: 'active-' + Math.random().toString(36).substr(2, 9),
@@ -2498,8 +2483,8 @@
                 color: target.color,
                 icon: target.icon,
                 avatarUrl: target.avatarUrl,
-                x: randomCol * cellW,
-                y: randomRow * cellH
+                x: randomX,
+                y: randomY
             };
 
             state.tokens.push(activeToken);
@@ -2517,6 +2502,7 @@
 
         function renderCharacterRoster() {
             const charGrid = document.getElementById('character-cards-grid');
+            if (!charGrid) return;
             charGrid.innerHTML = "";
 
             if (state.roster.length === 0) {
@@ -2592,6 +2578,7 @@
             });
 
             const enemyGrid = document.getElementById('enemy-cards-grid');
+            if (!enemyGrid) return;
             enemyGrid.innerHTML = "";
 
             if (state.enemies.length === 0) {
