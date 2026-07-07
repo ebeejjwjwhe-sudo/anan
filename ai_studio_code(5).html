@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rollplay Realm Online - RPG Masaüstü</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            bg: '#4E3510', 
+                            card: '#2E1E07',
+                            border: '#8A6529',
+                            accent: '#E11D48',
+                            accentHover: '#BE123C',
+                            gold: '#CBB58F',
+                            goldHover: '#D4B46A'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #3D250D;
+            background-image: radial-gradient(rgba(0,0,0,0.15) 1px, transparent 0), radial-gradient(rgba(0,0,0,0.15) 1px, transparent 0);
+            background-size: 8px 8px;
+            background-position: 0 0, 4px 4px;
+        }
+        
+        /* Özelleştirilmiş Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1F1404;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #8A6529;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #CBB58F;
+        }
+        
+        /* Grid Katmanı */
+        .grid-layer {
+            pointer-events: none;
+            background-size: var(--grid-size, 50px) var(--grid-size, 50px);
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="text-[#CBB58F] h-screen w-screen flex flex-col font-serif select-none overflow-hidden">
+
+    <!-- ÜST NAVİGASYON TABS BAR -->
+    <nav id="app-nav" class="hidden shrink-0 bg-[#3D250D] border-b border-[#5C3D11] px-6 py-3 flex items-center justify-between z-10 shadow-md">
+        <div class="flex items-center gap-8">
+            <span class="text-xl font-bold tracking-widest text-[#D4B46A] cursor-pointer" onclick="resetZoom()">ROLLPLAY</span>
+            <div class="flex gap-4 text-xs font-bold uppercase tracking-wider">
+                <button id="tab-btn-karakter" onclick="switchMainTab('karakter')" class="flex items-center gap-1.5 py-2 px-3 rounded hover:bg-[#5C3D11] transition-colors border-b-2 border-rpg-accent text-white">📜 KARAKTER</button>
+                <button id="tab-btn-battlemap" onclick="switchMainTab('battlemap')" class="flex items-center gap-1.5 py-2 px-3 rounded hover:bg-[#5C3D11] transition-colors">🗺️ BATTLE MAP</button>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3 text-xs">
+            <span class="text-[#A68858]">Aktif Oyuncu:</span>
+            <span id="nav-user-display" class="font-bold text-white bg-black/40 px-2 py-1 rounded">Oyuncu</span>
+            <button onclick="exitRoom()" class="text-red-400 hover:text-red-300 font-bold ml-2">Çıkış</button>
+        </div>
+    </nav>
+
+    <!-- ANA ÇALIŞMA ALANI -->
+    <main class="flex-grow flex overflow-hidden relative">
+
+        <!-- LOBİ GİRİŞ EKRANI -->
+        <div id="lobby-screen" class="absolute inset-0 z-20 bg-[#1F1404] flex items-center justify-center p-4 overflow-y-auto">
+            <div class="max-w-4xl w-full grid md:grid-cols-2 gap-8 items-stretch">
+                <!-- Sol Tanıtım -->
+                <div class="bg-rpg-card border border-rpg-border p-8 rounded-xl flex flex-col justify-between relative overflow-hidden">
+                    <div>
+                        <div class="inline-block bg-rpg-accent/10 text-rpg-accent text-[10px] px-2.5 py-1 rounded-full border border-rpg-accent/20 mb-4 font-bold tracking-widest uppercase">Masaüstü Portalı</div>
+                        <h2 class="text-2xl font-bold text-white mb-4 leading-tight">Yarım Kalan Hikayeni Canlandır.</h2>
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6">
+                            Rollplay Realm; haritalar yükleyebileceğiniz, karakter token'larını yerleştirebileceğiniz, D&D Beyond uyumlu sınıflarla macera kurgulayabileceğiniz ve çoklu sekme senkronizasyonu ile arkadaşlarınızla oynayabileceğiniz gerçek zamanlı sanal oyun masasıdır [1].
+                        </p>
+                    </div>
+                    <div class="border-t border-rpg-border/50 pt-6 mt-6">
+                        <p class="text-xs text-gray-500">Macerayı test etmek için odayı kurup davet linkini yan sekmede açabilirsiniz.</p>
+                    </div>
+                </div>
+
+                <!-- Giriş Formu -->
+                <div class="bg-rpg-card border border-rpg-border p-8 rounded-xl flex flex-col justify-center shadow-2xl">
+                    <div class="space-y-6">
+                        <!-- Oda Oluştur -->
+                        <div>
+                            <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2 border-b border-rpg-border pb-1.5">
+                                <span class="text-rpg-gold">⚔️</span> Yeni Dünya Yarat (Host)
+                            </h3>
+                            <div class="space-y-3">
+                                <input id="create-room-name" type="text" placeholder="Kampanya veya Oturum Adı" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none focus:border-rpg-gold text-white">
+                                <input id="create-user-name" type="text" placeholder="Karakter Adınız (veya DM)" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none focus:border-rpg-gold text-white">
+                                <button onclick="createNewRoom()" class="w-full bg-rpg-accent hover:bg-rpg-accentHover text-white font-bold py-2.5 rounded transition-all text-xs tracking-wide">
+                                    Dünyayı İnşa Et ve Başlat
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Ayırıcı -->
+                        <div class="relative flex py-1 items-center">
+                            <div class="flex-grow border-t border-rpg-border"></div>
+                            <span class="flex-shrink mx-4 text-gray-500 text-[10px] tracking-wider uppercase">VEYA</span>
+                            <div class="flex-grow border-t border-rpg-border"></div>
+                        </div>
+
+                        <!-- Odaya Katıl -->
+                        <div>
+                            <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2 border-b border-rpg-border pb-1.5">
+                                <span class="text-rpg-gold">🧙</span> Mevcut Dünyaya Katıl
+                            </h3>
+                            <div class="space-y-3">
+                                <input id="join-room-code" type="text" placeholder="Davet Kodu Girin (REALM-XXXX)" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none text-white uppercase font-mono">
+                                <input id="join-user-name" type="text" placeholder="Karakter Adınız" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none text-white">
+                                <button onclick="joinRoom()" class="w-full bg-rpg-accent hover:bg-rpg-accentHover text-white font-bold py-2.5 rounded transition-all text-xs tracking-wide">
+                                    Maceraya Katıl
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PLAYGROUND KONTEYNERİ -->
+        <div id="game-playground" class="hidden w-full h-full flex overflow-hidden">
+            
+            <!-- 1. SEKME: KARAKTER -->
+            <div id="main-tab-content-karakter" class="w-full h-full p-6 overflow-y-auto space-y-6">
+                <!-- ÜST BANNER (Davet Detayları) -->
+                <div class="bg-rpg-card border border-rpg-border p-5 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs uppercase text-gray-400 font-bold">ODA KODU:</span>
+                        <span id="char-display-code" class="text-3xl font-bold font-serif text-rpg-accent tracking-wider">REALM-XXXX</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="copyInviteLinkOnly()" class="bg-transparent border border-rpg-border hover:bg-[#3D250D] text-[#CBB58F] px-4 py-2 rounded text-xs font-bold transition-all flex items-center gap-1">🔗 Bağlantıyı kopyala</button>
+                        <button onclick="copyInviteLink()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-4 py-2 rounded text-xs font-bold transition-all flex items-center gap-1">📥 DAVET KODUNU KOPYALA</button>
+                    </div>
+                </div>
+
+                <!-- GRUP ÜYELERİ SEKSİYONU -->
+                <div>
+                    <div class="flex items-center justify-between mb-4 border-b border-rpg-border pb-2">
+                        <h3 class="text-lg font-bold tracking-wider text-white uppercase font-serif">Grup Üyeleri</h3>
+                        <button onclick="openNewCharacterSheet()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-4 py-2 rounded text-xs font-bold uppercase transition-all tracking-wider">+ Yeni Karakter</button>
+                    </div>
+                    
+                    <!-- Karakter Kartları Izgarası -->
+                    <div id="character-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Dinamik dolacak -->
+                    </div>
+                </div>
+
+                <!-- DÜŞMANLAR SEKSİYONU (DM/HOST ÖZEL) -->
+                <div class="border-t border-rpg-border/50 pt-6">
+                    <div class="flex items-center justify-between mb-4 border-b border-rpg-border pb-2">
+                        <div>
+                            <h3 class="text-lg font-bold tracking-wider text-red-400 uppercase font-serif flex items-center gap-1.5">
+                                ☠️ Düşmanlar & Yaratıklar
+                            </h3>
+                            <p id="dm-only-hint" class="text-[10px] text-gray-500 mt-0.5">Sadece Oda Yöneticisi (Host) yaratabilir ve düzenleyebilir.</p>
+                        </div>
+                        <button id="btn-new-enemy" onclick="openNewEnemySheet()" class="hidden bg-red-950 border border-red-800 hover:bg-red-900 text-red-200 px-4 py-2 rounded text-xs font-bold uppercase transition-all tracking-wider">+ Yeni Düşman</button>
+                    </div>
+                    
+                    <!-- Düşman Kartları Izgarası -->
+                    <div id="enemy-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Host düşmanları burada görüntülenecek -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. SEKME: BATTLE MAP -->
+            <div id="main-tab-content-battlemap" class="hidden w-full h-full flex overflow-hidden relative">
+                
+                <!-- SOL SİDEBAR -->
+                <aside id="sidebar-left" class="w-80 bg-rpg-card border-r border-rpg-border flex flex-col shrink-0 h-full overflow-y-auto transition-all duration-300 relative z-10">
+                    <div class="p-4 space-y-5">
+                        <div>
+                            <label class="text-[10px] text-rpg-gold tracking-wider font-bold block mb-1.5">MİKRO HARİTA SEÇİCİ</label>
+                            <select id="map-select-preset" onchange="changeMapPreset()" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2 text-xs focus:outline-none text-white">
+                                <option value="custom_map">Haritanız (input_file_0.png)</option>
+                                <option value="grassland">Yeşil Vadi</option>
+                                <option value="dungeon">Zindan Mahzeni</option>
+                                <option value="tavern">Hancı Hanı</option>
+                                <option value="void">Kozmik Boşluk</option>
+                            </select>
+                        </div>
+
+                        <!-- Bilgisayardan Dosya Yükleme Butonu -->
+                        <div>
+                            <label class="text-[10px] text-rpg-gold tracking-wider font-bold block mb-1.5">BİLGİSAYARDAN HARİTA YÜKLE</label>
+                            <label class="flex items-center justify-center border border-dashed border-rpg-border bg-[#1F1404]/50 hover:bg-[#1F1404] p-4 rounded cursor-pointer transition-colors text-xs text-gray-400">
+                                📁 Görsel Seç (input_file_0.png)
+                                <input type="file" accept="image/*" class="hidden" onchange="handleLocalMapUpload(event)">
+                            </label>
+                        </div>
+
+                        <!-- Grid Ayarları -->
+                        <div class="border-t border-rpg-border/60 pt-4 space-y-3">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-gray-300 font-semibold">Izgara Katmanı (Grid)</span>
+                                <button onclick="toggleGridVisible()" id="btn-grid-toggle" class="text-[9px] bg-rpg-accent/20 text-rpg-accent border border-rpg-accent/30 px-2 py-0.5 rounded font-bold">Açık</button>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-[11px] text-gray-400">
+                                    <span>Kare Boyutu</span>
+                                    <span id="display-grid-size">50px</span>
+                                </div>
+                                <input id="slider-grid-size" type="range" min="30" max="120" value="50" oninput="updateGridSize(this.value)" class="w-full accent-rpg-accent cursor-pointer">
+                            </div>
+                        </div>
+
+                        <!-- Oyuncu Listesi -->
+                        <div class="border-t border-rpg-border/60 pt-4">
+                            <h4 class="text-[10px] text-gray-400 tracking-wider font-bold mb-2">AKTİF OYUNCULAR</h4>
+                            <div id="realm-player-list" class="space-y-1.5">
+                                <!-- Dinamik dolacak -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SOL PANELİ GİZLEME BUTONU -->
+                    <button onclick="toggleSidebar('left')" class="absolute top-[48%] -right-4 bg-rpg-card hover:bg-rpg-border text-rpg-gold border border-rpg-border rounded-r-lg w-4 h-12 flex items-center justify-center font-bold text-[10px] z-20 cursor-pointer shadow-lg" id="btn-toggle-left">
+                        &lt;
+                    </button>
+                </aside>
+
+                <!-- ORTA HARİTA ALANI -->
+                <section id="map-viewport" class="flex-grow h-full relative bg-[#040507] overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing">
+                    <div id="map-board" class="relative shadow-2xl origin-center select-none" style="width: 884px; height: 670px; background-size: cover; background-position: center; transform: translate(0px, 0px) scale(1);">
+                        <div id="grid-overlay" class="grid-layer absolute inset-0 z-0"></div>
+                        <div id="tokens-layer" class="absolute inset-0 z-10"></div>
+                    </div>
+
+                    <!-- ZOOM CONTROLS -->
+                    <div class="absolute bottom-4 left-4 z-15 bg-rpg-card/90 border border-rpg-border rounded-lg p-1.5 flex items-center gap-2 shadow-xl backdrop-blur-xs">
+                        <button onclick="changeZoom(-0.08)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors">-</button>
+                        <span id="zoom-display" class="text-xs font-mono font-bold text-rpg-gold min-w-[40px] text-center">100%</span>
+                        <button onclick="changeZoom(0.08)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors">+</button>
+                        <button onclick="resetZoom()" class="px-2 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-gray-300 text-[11px] font-bold transition-colors">Sıfırla</button>
+                    </div>
+                </section>
+
+                <!-- SAĞ SİDEBAR: MEYDAN -->
+                <aside id="sidebar-right" class="w-80 bg-rpg-card border-l border-rpg-border flex flex-col shrink-0 h-full overflow-hidden transition-all duration-300 relative z-10">
+                    
+                    <!-- ZAR ALANI -->
+                    <div class="border-b border-[#5C3D11] shrink-0 p-4 bg-[#1F1404]/60">
+                        <h3 class="text-[10px] text-rpg-gold font-bold mb-3 tracking-widest uppercase">🎲 BATTLE MAP HIZLI ZAR</h3>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button onclick="rollDice(4)" class="bg-[#2E1E07] border border-[#8A6529]/40 hover:border-rpg-gold py-2 rounded text-xs font-bold">D4</button>
+                            <button onclick="rollDice(6)" class="bg-[#2E1E07] border border-[#8A6529]/40 hover:border-rpg-gold py-2 rounded text-xs font-bold">D6</button>
+                            <button onclick="rollDice(8)" class="bg-[#2E1E07] border border-[#8A6529]/40 hover:border-rpg-gold py-2 rounded text-xs font-bold">D8</button>
+                            <button onclick="rollDice(10)" class="bg-[#2E1E07] border border-[#8A6529]/40 hover:border-rpg-gold py-2 rounded text-xs font-bold">D10</button>
+                            <button onclick="rollDice(12)" class="bg-[#2E1E07] border border-[#8A6529]/40 hover:border-rpg-gold py-2 rounded text-xs font-bold">D12</button>
+                            <button onclick="rollDice(20)" class="bg-[#2E1E07] border border-[#8A6529]/40 hover:border-rpg-accent py-2 rounded text-xs font-bold text-rpg-accent">D20</button>
+                            <button onclick="rollDice(100)" class="bg-[#2E1E07] border border-[#8A6529]/40 hover:border-rpg-gold py-2 rounded text-xs font-bold">D100</button>
+                            
+                            <div class="relative bg-[#2E1E07] border border-[#8A6529]/40 rounded flex flex-col items-center justify-center">
+                                <input id="battle-roll-modifier" type="number" value="0" class="w-full text-center bg-transparent text-xs text-white focus:outline-none">
+                                <span class="text-[8px] text-gray-500 font-bold uppercase absolute bottom-0.5">MOD</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SOHBET & LOG PANELİ -->
+                    <div class="flex-grow flex flex-col overflow-hidden h-0">
+                        <div class="bg-[#1F1404] px-4 py-3 border-b border-rpg-border shrink-0 flex items-center justify-between">
+                            <span class="text-xs font-bold text-[#D4B46A]">💬 SOHBET & ZAR GEÇMİŞİ</span>
+                        </div>
+                        
+                        <div id="battle-chat-logs" class="flex-grow overflow-y-auto p-4 space-y-3 text-xs leading-relaxed"></div>
+
+                        <div class="p-3 bg-[#1F1404] border-t border-rpg-border flex gap-1.5 shrink-0">
+                            <input id="battle-chat-input" type="text" placeholder="Mesaj yazın..." onkeydown="handleBattleChatKeyPress(event)" class="flex-grow bg-[#2E1E07] border border-[#8A6529]/40 rounded p-2 text-xs focus:outline-none focus:border-[#8A6529] text-white">
+                            <button onclick="sendBattleChatMessage()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-3 rounded text-xs font-bold transition-all">Gönder</button>
+                        </div>
+                    </div>
+
+                    <!-- SAĞ PANELİ GİZLEME BUTONU -->
+                    <button onclick="toggleSidebar('right')" class="absolute top-[48%] -left-4 bg-rpg-card hover:bg-rpg-border text-rpg-gold border border-rpg-border rounded-l-lg w-4 h-12 flex items-center justify-center font-bold text-[10px] z-20 cursor-pointer shadow-lg" id="btn-toggle-right">
+                        &gt;
+                    </button>
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <!-- KARAKTER SAYFASI MODALI -->
+    <div id="character-sheet-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-[#4E3510] border-2 border-[#8A6529] p-6 rounded-lg w-full max-w-xl shadow-2xl relative text-[#CBB58F] font-serif">
+            
+            <h2 id="sheet-title" class="text-[#D4B46A] text-sm uppercase font-bold tracking-wider mb-4 border-b border-[#8A6529] pb-2 text-center">YENİ KARAKTER SAYFASI YARAT</h2>
+
+            <div class="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">İSİM</label>
+                    <input id="sheet-name" type="text" placeholder="anan'ın kahramanı" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">SINIF (Class)</label>
+                    <select id="sheet-class" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                        <option value="🪓 Barbarian">🪓 Barbar (Barbarian)</option>
+                        <option value="🪕 Bard">🪕 Ozan (Bard)</option>
+                        <option value="⛪ Cleric">⛪ Ruhban (Cleric)</option>
+                        <option value="🍃 Druid">🍃 Druid (Druid)</option>
+                        <option value="🛡️ Fighter">🛡️ Savaşçı (Fighter)</option>
+                        <option value="🥋 Monk">🥋 Keşiş (Monk)</option>
+                        <option value="⚔️ Paladin">⚔️ Paladin (Paladin)</option>
+                        <option value="🏹 Ranger">🏹 Korucu (Ranger)</option>
+                        <option value="🗡️ Rogue">🗡️ Düzenbaz (Rogue)</option>
+                        <option value="⚡ Sorcerer">⚡ Büyücü (Sorcerer)</option>
+                        <option value="👁️ Warlock">👁️ Sihirbaz (Warlock)</option>
+                        <option value="🧙‍♂️ Wizard">🧙‍♂️ Mütehassıs (Wizard)</option>
+                        <option value="⚙️ Artificer">⚙️ Yapaycı (Artificer)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">IRK (Race)</label>
+                    <input id="sheet-race" type="text" placeholder="Elf, Dwarf..." class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">LEVEL</label>
+                    <input id="sheet-level" type="number" value="1" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-3 border-t border-b border-[#8A6529]/30 py-2.5 my-2">
+                <div>
+                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">ÖZEL FOTOĞRAF YÜKLE</label>
+                    <input type="file" accept="image/*" onchange="handleKarakterResimYukle(event)" class="w-full text-xs text-gray-400 bg-[#1F1404] border border-[#8A6529] rounded px-2 py-1 focus:outline-none cursor-pointer">
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="preview-avatar-container" class="w-10 h-10 rounded-full border-2 border-[#8A6529] overflow-hidden bg-[#1F1404] flex items-center justify-center">
+                        <span id="preview-avatar-text" class="text-xl">🛡️</span>
+                    </div>
+                    <span class="text-[10px] text-gray-400">Token görseli olarak bu fotoğraf kullanılacak.</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 mb-3">
+                <div>
+                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">HP (Can)</label>
+                    <input id="sheet-hp" type="number" value="10" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">MAX HP</label>
+                    <input id="sheet-max-hp" type="number" value="10" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">AC (Zırh)</label>
+                    <input id="sheet-ac" type="number" value="10" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-6 gap-2 mb-3 bg-[#2E1E07]/50 p-2 rounded border border-[#8A6529]/60">
+                <div>
+                    <label class="block text-[9px] text-center uppercase font-bold mb-0.5 text-[#CBB58F]">STR</label>
+                    <input id="sheet-str" type="number" value="10" class="w-full text-center bg-[#1F1404] border border-[#8A6529] rounded p-1 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[9px] text-center uppercase font-bold mb-0.5 text-[#CBB58F]">DEX</label>
+                    <input id="sheet-dex" type="number" value="10" class="w-full text-center bg-[#1F1404] border border-[#8A6529] rounded p-1 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[9px] text-center uppercase font-bold mb-0.5 text-[#CBB58F]">CON</label>
+                    <input id="sheet-con" type="number" value="10" class="w-full text-center bg-[#1F1404] border border-[#8A6529] rounded p-1 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[9px] text-center uppercase font-bold mb-0.5 text-[#CBB58F]">INT</label>
+                    <input id="sheet-int" type="number" value="10" class="w-full text-center bg-[#1F1404] border border-[#8A6529] rounded p-1 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[9px] text-center uppercase font-bold mb-0.5 text-[#CBB58F]">WIS</label>
+                    <input id="sheet-wis" type="number" value="10" class="w-full text-center bg-[#1F1404] border border-[#8A6529] rounded p-1 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[9px] text-center uppercase font-bold mb-0.5 text-[#CBB58F]">CHA</label>
+                    <input id="sheet-cha" type="number" value="10" class="w-full text-center bg-[#1F1404] border border-[#8A6529] rounded p-1 text-xs text-white focus:outline-none">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">ENVANTER</label>
+                <textarea id="sheet-inventory" rows="3" placeholder="Uzun kılıç..." class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none resize-none"></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">NOTLAR</label>
+                <textarea id="sheet-notes" rows="3" placeholder="Yetenekler..." class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none resize-none"></textarea>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-[#8A6529]/60 pt-4">
+                <button id="sheet-btn-delete" onclick="deleteSheetToken()" class="border border-red-700/60 hover:bg-red-950/60 text-red-400 px-4 py-2 rounded text-xs font-bold uppercase transition-colors">
+                    Sil
+                </button>
+                <div class="flex items-center gap-3 ml-auto">
+                    <button onclick="closeSheetModal()" class="border border-[#8A6529]/60 hover:bg-[#2E1E07] text-[#CBB58F] px-4 py-2 rounded text-xs font-bold uppercase transition-colors">
+                        Vazgeç
+                    </button>
+                    <button onclick="saveSheetModal()" class="bg-[#6B000D] hover:bg-[#8B0000] text-white px-6 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors">
+                        KAYDET
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT MOTORU -->
+    <script>
+        const MAP_PRESETS = {
+            custom_map: "input_file_0.png",
+            grassland: "https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?q=80&w=1200",
+            dungeon: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=1200",
+            tavern: "https://images.unsplash.com/photo-1590579491410-a92ef59c9918?q=80&w=1200",
+            void: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200"
+        };
+
+        const DND_CLASSES = {
+            barbarian: { name: "Barbar (Barbarian)", hp: 15, ac: 14, color: "#e11d48", icon: "🪓" },
+            bard: { name: "Ozan (Bard)", hp: 9, ac: 13, color: "#db2777", icon: "🪕" },
+            cleric: { name: "Ruhban (Cleric)", hp: 10, ac: 16, color: "#eab308", icon: "⛪" },
+            druid: { name: "Druid (Druid)", hp: 9, ac: 12, color: "#16a34a", icon: "🍃" },
+            fighter: { name: "Savaşçı (Fighter)", hp: 12, ac: 17, color: "#2563eb", icon: "🛡️" },
+            monk: { name: "Keşiş (Monk)", hp: 9, ac: 15, color: "#0d9488", icon: "🥋" },
+            paladin: { name: "Paladin (Paladin)", hp: 12, ac: 18, color: "#f59e0b", icon: "⚔️" },
+            ranger: { name: "Korucu (Ranger)", hp: 12, ac: 14, color: "#059669", icon: "🏹" },
+            rogue: { name: "Düzenbaz (Rogue)", hp: 9, ac: 14, color: "#4b5563", icon: "🗡️" },
+            sorcerer: { name: "Büyücü (Sorcerer)", hp: 7, ac: 12, color: "#7c3aed", icon: "⚡" },
+            warlock: { name: "Sihirbaz (Warlock)", hp: 9, ac: 12, color: "#4f46e5", icon: "👁️" },
+            wizard: { name: "Mütehassıs (Wizard)", hp: 7, ac: 12, color: "#0284c7", icon: "🧙‍♂️" },
+            artificer: { name: "Yapaycı (Artificer)", hp: 9, ac: 14, color: "#d97706", icon: "⚙️" }
+        };
+
+        let state = {
+            roomCode: null,
+            roomName: "",
+            username: "Oyuncu",
+            hostName: "", 
+            gridSize: 50,
+            gridVisible: true,
+            selectedMap: "custom_map",
+            customMapUrl: "",
+            mapWidth: 884, 
+            mapHeight: 670, 
+            tokens: [], 
+            roster: [], 
+            enemies: [], 
+            players: [],
+            chatLogs: []
+        };
+
+        let currentUploadedImageBase64 = null;
+
+        let zoomLevel = 1.0;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let startPanX = 0;
+        let startPanY = 0;
+
+        let dragInfo = {
+            isDragging: false,
+            tokenId: null,
+            startX: 0,
+            startY: 0,
+            tokenLeft: 0,
+            tokenTop: 0
+        };
+
+        let editingTokenId = null;
+        let isEditingEnemyMode = false;
+
+        let sidebarStatus = {
+            left: true,
+            right: true
+        };
+
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryRoom = urlParams.get('room');
+            if (queryRoom) {
+                document.getElementById('join-room-code').value = queryRoom.toUpperCase();
+            }
+
+            setupMapPanControls();
+            
+            window.addEventListener('resize', () => {
+                if (state.roomCode) {
+                    clampTransformLimits();
+                }
+            });
+        });
+
+        function setupMapPanControls() {
+            const viewport = document.getElementById('map-viewport');
+
+            viewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = 1.08;
+                let targetZoom = zoomLevel;
+                if (e.deltaY < 0) {
+                    targetZoom = Math.min(zoomLevel * zoomFactor, 3.5);
+                } else {
+                    targetZoom = Math.max(zoomLevel / zoomFactor, 0.2);
+                }
+                
+                const minZoom = getMinZoomLimit();
+                zoomLevel = Math.max(minZoom, targetZoom);
+                
+                clampTransformLimits();
+                updateMapTransform();
+            }, { passive: false });
+
+            viewport.addEventListener('mousedown', (e) => {
+                const target = e.target;
+                if (target.id === 'map-board' || target.id === 'grid-overlay' || target.id === 'tokens-layer') {
+                    isPanning = true;
+                    startPanX = e.clientX - panX;
+                    startPanY = e.clientY - panY;
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    panX = e.clientX - startPanX;
+                    panY = e.clientY - startPanY;
+                    clampTransformLimits();
+                    updateMapTransform();
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isPanning = false;
+            });
+        }
+
+        function getMinZoomLimit() {
+            const viewport = document.getElementById('map-viewport');
+            if (!viewport) return 0.3;
+            const viewWidth = viewport.clientWidth;
+            const viewHeight = viewport.clientHeight;
+            return Math.max(viewWidth / state.mapWidth, viewHeight / state.mapHeight);
+        }
+
+        function clampTransformLimits() {
+            const viewport = document.getElementById('map-viewport');
+            if (!viewport) return;
+            const viewWidth = viewport.clientWidth;
+            const viewHeight = viewport.clientHeight;
+
+            const minZoom = getMinZoomLimit();
+            if (zoomLevel < minZoom) {
+                zoomLevel = minZoom;
+            }
+
+            const rw = state.mapWidth * zoomLevel;
+            const rh = state.mapHeight * zoomLevel;
+
+            if (rw >= viewWidth) {
+                const maxPanX = (rw - viewWidth) / 2;
+                panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
+            } else {
+                panX = 0;
+            }
+
+            if (rh >= viewHeight) {
+                const maxPanY = (rh - viewHeight) / 2;
+                panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
+            } else {
+                panY = 0;
+            }
+        }
+
+        function updateMapTransform() {
+            const board = document.getElementById('map-board');
+            board.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+            document.getElementById('zoom-display').innerText = Math.round(zoomLevel * 100) + '%';
+        }
+
+        function changeZoom(factor) {
+            zoomLevel = Math.max(getMinZoomLimit(), Math.min(3.5, zoomLevel + factor));
+            clampTransformLimits();
+            updateMapTransform();
+        }
+
+        function resetZoom() {
+            zoomLevel = getMinZoomLimit();
+            panX = 0;
+            panY = 0;
+            clampTransformLimits();
+            updateMapTransform();
+        }
+
+        function handleLocalMapUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const dataUrl = e.target.result;
+                    state.customMapUrl = dataUrl;
+                    state.selectedMap = 'custom_map';
+                    
+                    const img = new Image();
+                    img.onload = function() {
+                        state.mapWidth = img.width;
+                        state.mapHeight = img.height;
+                        
+                        const board = document.getElementById('map-board');
+                        board.style.width = img.width + 'px';
+                        board.style.height = img.height + 'px';
+                        
+                        applyMapDisplay();
+                        resetZoom();
+                        saveToLocalStorage();
+                        addSystemLog(`Harita yüklendi: ${img.width}x${img.height} piksel.`);
+                    };
+                    img.src = dataUrl;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleKarakterResimYukle(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentUploadedImageBase64 = e.target.result;
+                    const previewContainer = document.getElementById('preview-avatar-container');
+                    previewContainer.innerHTML = `<img src="${currentUploadedImageBase64}" class="w-full h-full object-cover">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function toggleSidebar(side) {
+            sidebarStatus[side] = !sidebarStatus[side];
+            const el = document.getElementById(`sidebar-${side}`);
+            const btn = document.getElementById(`btn-toggle-${side}`);
+
+            if (side === 'left') {
+                if (sidebarStatus.left) {
+                    el.classList.remove('w-0', 'overflow-hidden', 'opacity-0');
+                    el.classList.add('w-80');
+                    btn.innerHTML = '&lt;';
+                } else {
+                    el.classList.add('w-0', 'overflow-hidden', 'opacity-0');
+                    el.classList.remove('w-80');
+                    btn.innerHTML = '&gt;';
+                }
+            } else {
+                if (sidebarStatus.right) {
+                    el.classList.remove('w-0', 'overflow-hidden', 'opacity-0');
+                    el.classList.add('w-80');
+                    btn.innerHTML = '&gt;';
+                } else {
+                    el.classList.add('w-0', 'overflow-hidden', 'opacity-0');
+                    el.classList.remove('w-80');
+                    btn.innerHTML = '&lt;';
+                }
+            }
+            
+            setTimeout(() => {
+                clampTransformLimits();
+                updateMapTransform();
+            }, 320);
+        }
+
+        function switchMainTab(tabId) {
+            const tabs = ['karakter', 'battlemap'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const content = document.getElementById(`main-tab-content-${t}`);
+                if (t === tabId) {
+                    btn.classList.add('border-b-2', 'border-rpg-accent', 'text-white');
+                    content.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('border-b-2', 'border-rpg-accent', 'text-white');
+                    content.classList.add('hidden');
+                }
+            });
+
+            if (tabId === 'battlemap') {
+                setTimeout(() => {
+                    resetZoom();
+                }, 100);
+            }
+        }
+
+        function createNewRoom() {
+            const rawName = document.getElementById('create-room-name').value.trim();
+            const rawUser = document.getElementById('create-user-name').value.trim();
+
+            if (!rawName || !rawUser) {
+                alert("Lütfen bir harita oturum adı ve kullanıcı adı girin.");
+                return;
+            }
+
+            const code = 'REALM-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+            state.roomCode = code;
+            state.roomName = rawName;
+            state.username = rawUser;
+            state.hostName = rawUser; 
+            state.players = [{ name: rawUser, lastSeen: Date.now() }];
+            state.tokens = [];
+            state.roster = [];
+            state.enemies = [];
+            state.mapWidth = 884;
+            state.mapHeight = 670;
+            state.chatLogs = [{
+                sender: "Sistem",
+                text: `${rawUser} yeni oyun masasını hazırladı.`,
+                timestamp: Date.now(),
+                isSystem: true
+            }];
+
+            saveToLocalStorage();
+            loadAndDisplayRoom();
+        }
+
+        function joinRoom() {
+            const rawCode = document.getElementById('join-room-code').value.trim().toUpperCase();
+            const rawUser = document.getElementById('join-user-name').value.trim();
+
+            if (!rawCode || !rawUser) {
+                alert("Davet Kodu ve Karakter adı alanları boş bırakılamaz.");
+                return;
+            }
+
+            const storedState = localStorage.getItem(`realm_room_${rawCode}`);
+            if (!storedState) {
+                alert(`"${rawCode}" koduna ait aktif bir masa bulunamadı.`);
+                return;
+            }
+
+            const parsedState = JSON.parse(storedState);
+            state = parsedState;
+            state.username = rawUser;
+
+            if (!state.players.find(p => p.name.toLowerCase() === rawUser.toLowerCase())) {
+                state.players.push({ name: rawUser, lastSeen: Date.now() });
+            }
+
+            state.chatLogs.push({
+                sender: "Sistem",
+                text: `${rawUser} oyun masasına katıldı.`,
+                timestamp: Date.now(),
+                isSystem: true
+            });
+
+            saveToLocalStorage();
+            loadAndDisplayRoom();
+        }
+
+        function exitRoom() {
+            if (confirm("Bu dünyadan ayrılmak istediğinizden emin misiniz?")) {
+                if (state.roomCode) {
+                    state.players = state.players.filter(p => p.name !== state.username);
+                    saveToLocalStorage();
+                }
+                
+                state.roomCode = null;
+                document.getElementById('lobby-screen').classList.remove('hidden');
+                document.getElementById('app-nav').classList.add('hidden');
+                document.getElementById('game-playground').classList.add('hidden');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        function loadAndDisplayRoom() {
+            document.getElementById('char-display-code').innerText = state.roomCode;
+            document.getElementById('nav-user-display').innerText = state.username;
+            
+            document.getElementById('lobby-screen').classList.add('hidden');
+            document.getElementById('app-nav').classList.remove('hidden');
+            document.getElementById('game-playground').classList.remove('hidden');
+            
+            const board = document.getElementById('map-board');
+            board.style.width = state.mapWidth + 'px';
+            board.style.height = state.mapHeight + 'px';
+
+            const btnNewEnemy = document.getElementById('btn-new-enemy');
+            const dmOnlyHint = document.getElementById('dm-only-hint');
+            if (state.username.toLowerCase() === state.hostName.toLowerCase()) {
+                btnNewEnemy.classList.remove('hidden');
+                dmOnlyHint.innerText = "Yönetici yetkileriniz aktif.";
+            } else {
+                btnNewEnemy.classList.add('hidden');
+                dmOnlyHint.innerText = `Sadece oda kurucusu (${state.hostName}) düşman oluşturabilir.`;
+            }
+
+            applyMapDisplay();
+            updateGridSize(state.gridSize);
+            renderTokens();
+            renderPlayers();
+            renderChat();
+            renderCharacterRoster();
+
+            window.history.replaceState({}, document.title, `?room=${state.roomCode}`);
+            window.addEventListener('storage', handleCrossTabSync);
+            
+            switchMainTab('karakter');
+        }
+
+        function saveToLocalStorage() {
+            if (!state.roomCode) return;
+            localStorage.setItem(`realm_room_${state.roomCode}`, JSON.stringify(state));
+            
+            localStorage.setItem(`realm_update_trigger`, JSON.stringify({
+                roomCode: state.roomCode,
+                timestamp: Date.now()
+            }));
+        }
+
+        function handleCrossTabSync(e) {
+            if (e.key === 'realm_update_trigger' && e.newValue) {
+                const trigger = JSON.parse(e.newValue);
+                if (trigger.roomCode === state.roomCode) {
+                    const updatedData = localStorage.getItem(`realm_room_${state.roomCode}`);
+                    if (updatedData) {
+                        const parsed = JSON.parse(updatedData);
+                        state.roomName = parsed.roomName;
+                        state.gridSize = parsed.gridSize;
+                        state.gridVisible = parsed.gridVisible;
+                        state.selectedMap = parsed.selectedMap;
+                        state.customMapUrl = parsed.customMapUrl;
+                        state.mapWidth = parsed.mapWidth || 884;
+                        state.mapHeight = parsed.mapHeight || 670;
+                        state.tokens = parsed.tokens || [];
+                        state.roster = parsed.roster || [];
+                        state.enemies = parsed.enemies || [];
+                        state.players = parsed.players;
+                        state.chatLogs = parsed.chatLogs;
+                        
+                        const board = document.getElementById('map-board');
+                        board.style.width = state.mapWidth + 'px';
+                        board.style.height = state.mapHeight + 'px';
+
+                        applyMapDisplay();
+                        document.getElementById('slider-grid-size').value = state.gridSize;
+                        document.getElementById('display-grid-size').innerText = state.gridSize + 'px';
+                        renderTokens();
+                        renderPlayers();
+                        renderChat();
+                        renderCharacterRoster();
+                    }
+                }
+            }
+        }
+
+        // Davet Bağlantısını Kopyala
+        function copyInviteLinkOnly() {
+            const inviteURL = `${window.location.origin}${window.location.pathname}?room=${state.roomCode}`;
+            navigator.clipboard.writeText(inviteURL).then(() => {
+                alert("Doğrudan davet bağlantısı kopyalandı!");
+            });
+        }
+
+        // SADECE DAVET KODUNU KOPYALA (Kullanıcı Talebi)
+        function copyInviteLink() {
+            navigator.clipboard.writeText(state.roomCode).then(() => {
+                alert(`Davet kodu kopyalandı! KOD: ${state.roomCode}`);
+            });
+        }
+
+        function applyMapDisplay() {
+            const board = document.getElementById('map-board');
+            let imgUrl = MAP_PRESETS[state.selectedMap];
+            
+            if (state.selectedMap === 'custom_map') {
+                imgUrl = state.customMapUrl || "input_file_0.png";
+            }
+            
+            board.style.backgroundImage = `url('${imgUrl}')`;
+            document.getElementById('map-select-preset').value = state.selectedMap;
+        }
+
+        function changeMapPreset() {
+            const val = document.getElementById('map-select-preset').value;
+            state.selectedMap = val;
+            applyMapDisplay();
+            saveToLocalStorage();
+        }
+
+        function updateGridSize(size) {
+            state.gridSize = parseInt(size);
+            document.getElementById('display-grid-size').innerText = size + 'px';
+            document.getElementById('grid-overlay').style.setProperty('--grid-size', size + 'px');
+            
+            if (state.gridVisible) {
+                document.getElementById('grid-overlay').style.display = 'block';
+            } else {
+                document.getElementById('grid-overlay').style.display = 'none';
+            }
+            saveToLocalStorage();
+        }
+
+        function toggleGridVisible() {
+            state.gridVisible = !state.gridVisible;
+            const btn = document.getElementById('btn-grid-toggle');
+            if (state.gridVisible) {
+                btn.innerText = "Açık";
+                btn.className = "text-[9px] bg-rpg-accent/20 text-rpg-accent border border-rpg-accent/30 px-2 py-0.5 rounded font-bold";
+            } else {
+                btn.innerText = "Kapalı";
+                btn.className = "text-[9px] bg-gray-800 text-gray-500 border border-gray-700 px-2 py-0.5 rounded font-bold";
+            }
+            updateGridSize(state.gridSize);
+        }
+
+        function openNewCharacterSheet() {
+            editingTokenId = null;
+            isEditingEnemyMode = false;
+            currentUploadedImageBase64 = null;
+            
+            document.getElementById('sheet-title').innerText = "YENİ KARAKTER SAYFASI YARAT";
+            document.getElementById('sheet-btn-delete').classList.add('hidden');
+
+            document.getElementById('sheet-name').value = "anan'ın kahramanı";
+            document.getElementById('sheet-class').value = "🛡️ Fighter";
+            document.getElementById('sheet-race').value = "İnsan";
+            document.getElementById('sheet-level').value = 1;
+            document.getElementById('sheet-hp').value = 10;
+            document.getElementById('sheet-max-hp').value = 10;
+            document.getElementById('sheet-ac').value = 10;
+            
+            document.getElementById('sheet-str').value = 10;
+            document.getElementById('sheet-dex').value = 10;
+            document.getElementById('sheet-con').value = 10;
+            document.getElementById('sheet-int').value = 10;
+            document.getElementById('sheet-wis').value = 10;
+            document.getElementById('sheet-cha').value = 10;
+
+            document.getElementById('sheet-inventory').value = "";
+            document.getElementById('sheet-notes').value = "";
+
+            document.getElementById('preview-avatar-container').innerHTML = `<span id="preview-avatar-text" class="text-xl">🛡️</span>`;
+
+            document.getElementById('character-sheet-modal').classList.remove('hidden');
+        }
+
+        function openNewEnemySheet() {
+            editingTokenId = null;
+            isEditingEnemyMode = true;
+            currentUploadedImageBase64 = null;
+            
+            document.getElementById('sheet-title').innerText = "YENİ DÜŞMAN / CANAVAR YARAT";
+            document.getElementById('sheet-btn-delete').classList.add('hidden');
+
+            document.getElementById('sheet-name').value = "Gece Goblini";
+            document.getElementById('sheet-class').value = "🪓 Barbarian";
+            document.getElementById('sheet-race').value = "Goblin";
+            document.getElementById('sheet-level').value = 1;
+            document.getElementById('sheet-hp').value = 8;
+            document.getElementById('sheet-max-hp').value = 8;
+            document.getElementById('sheet-ac').value = 12;
+            
+            document.getElementById('sheet-str').value = 8;
+            document.getElementById('sheet-dex').value = 14;
+            document.getElementById('sheet-con').value = 10;
+            document.getElementById('sheet-int').value = 6;
+            document.getElementById('sheet-wis').value = 8;
+            document.getElementById('sheet-cha').value = 5;
+
+            document.getElementById('sheet-inventory').value = "Paslı Pala, Sapan";
+            document.getElementById('sheet-notes').value = "Işıktan nefret eder.";
+
+            document.getElementById('preview-avatar-container').innerHTML = `<span id="preview-avatar-text" class="text-xl">💀</span>`;
+
+            document.getElementById('character-sheet-modal').classList.remove('hidden');
+        }
+
+        function openEditSheet(tokenId, isEnemy) {
+            const pool = isEnemy ? state.enemies : state.roster;
+            const target = pool.find(t => t.id === tokenId);
+            if (!target) return;
+
+            editingTokenId = tokenId;
+            isEditingEnemyMode = isEnemy;
+            currentUploadedImageBase64 = target.avatarUrl || null;
+
+            document.getElementById('sheet-title').innerText = `${target.name.toUpperCase()} - DÜZENLE`;
+            document.getElementById('sheet-btn-delete').classList.remove('hidden');
+
+            document.getElementById('sheet-name').value = target.name;
+            document.getElementById('sheet-class').value = target.class;
+            document.getElementById('sheet-race').value = target.race;
+            document.getElementById('sheet-level').value = target.level;
+            document.getElementById('sheet-hp').value = target.hp;
+            document.getElementById('sheet-max-hp').value = target.maxHp;
+            document.getElementById('sheet-ac').value = target.ac;
+
+            document.getElementById('sheet-str').value = target.str;
+            document.getElementById('sheet-dex').value = target.dex;
+            document.getElementById('sheet-con').value = target.con;
+            document.getElementById('sheet-int').value = target.int;
+            document.getElementById('sheet-wis').value = target.wis;
+            document.getElementById('sheet-cha').value = target.cha;
+
+            document.getElementById('sheet-inventory').value = target.inventory || "";
+            document.getElementById('sheet-notes').value = target.notes || "";
+
+            const previewContainer = document.getElementById('preview-avatar-container');
+            if (target.avatarUrl) {
+                previewContainer.innerHTML = `<img src="${target.avatarUrl}" class="w-full h-full object-cover">`;
+            } else {
+                previewContainer.innerHTML = `<span id="preview-avatar-text" class="text-xl">${target.icon || "🛡️"}</span>`;
+            }
+
+            document.getElementById('character-sheet-modal').classList.remove('hidden');
+        }
+
+        function closeSheetModal() {
+            document.getElementById('character-sheet-modal').classList.add('hidden');
+        }
+
+        function saveSheetModal() {
+            const name = document.getElementById('sheet-name').value.trim() || "İsimsiz";
+            const className = document.getElementById('sheet-class').value;
+            const race = document.getElementById('sheet-race').value.trim() || "Belirtilmemiş";
+            const level = parseInt(document.getElementById('sheet-level').value) || 1;
+            const hp = parseInt(document.getElementById('sheet-hp').value) || 10;
+            const maxHp = parseInt(document.getElementById('sheet-max-hp').value) || 10;
+            const ac = parseInt(document.getElementById('sheet-ac').value) || 10;
+
+            const str = parseInt(document.getElementById('sheet-str').value) || 10;
+            const dex = parseInt(document.getElementById('sheet-dex').value) || 10;
+            const con = parseInt(document.getElementById('sheet-con').value) || 10;
+            const int = parseInt(document.getElementById('sheet-int').value) || 10;
+            const wis = parseInt(document.getElementById('sheet-wis').value) || 10;
+            const cha = parseInt(document.getElementById('sheet-cha').value) || 10;
+
+            const inventory = document.getElementById('sheet-inventory').value;
+            const notes = document.getElementById('sheet-notes').value;
+
+            const icon = className.split(' ')[0] || "🛡️";
+
+            if (editingTokenId === null) {
+                const newId = (isEditingEnemyMode ? 'enemy-' : 'char-') + Math.random().toString(36).substr(2, 9);
+                const entity = {
+                    id: newId,
+                    name,
+                    class: className,
+                    race,
+                    level,
+                    hp,
+                    maxHp,
+                    ac,
+                    str, dex, con, int, wis, cha,
+                    inventory,
+                    notes,
+                    icon,
+                    avatarUrl: currentUploadedImageBase64, 
+                    color: isEditingEnemyMode ? '#ef4444' : '#f59e0b'
+                };
+
+                if (isEditingEnemyMode) {
+                    state.enemies.push(entity);
+                    addSystemLog(`Yeni düşman kurgulandı: "${name}"`);
+                } else {
+                    state.roster.push(entity);
+                    addSystemLog(`Yeni karakter oluşturuldu: "${name}"`);
+                }
+            } else {
+                const pool = isEditingEnemyMode ? state.enemies : state.roster;
+                const target = pool.find(t => t.id === editingTokenId);
+                if (target) {
+                    target.name = name;
+                    target.class = className;
+                    target.race = race;
+                    target.level = level;
+                    target.hp = hp;
+                    target.maxHp = maxHp;
+                    target.ac = ac;
+                    target.str = str;
+                    target.dex = dex;
+                    target.con = con;
+                    target.int = int;
+                    target.wis = wis;
+                    target.cha = cha;
+                    target.inventory = inventory;
+                    target.notes = notes;
+                    target.icon = icon;
+                    target.avatarUrl = currentUploadedImageBase64;
+
+                    state.tokens.forEach(tok => {
+                        if (tok.rosterId === editingTokenId) {
+                            tok.name = name;
+                            tok.hp = hp;
+                            tok.maxHp = maxHp;
+                            tok.ac = ac;
+                            tok.avatarUrl = currentUploadedImageBase64;
+                            tok.icon = icon;
+                        }
+                    });
+
+                    addSystemLog(`"${name}" kart bilgileri güncellendi.`);
+                }
+            }
+
+            renderCharacterRoster();
+            renderTokens();
+            saveToLocalStorage();
+            closeSheetModal();
+        }
+
+        function deleteSheetToken() {
+            if (!editingTokenId) return;
+            if (confirm("Bu kahramanı/düşmanı arşivden ve haritadan tamamen silmek istediğinize emin misiniz?")) {
+                if (isEditingEnemyMode) {
+                    state.enemies = state.enemies.filter(t => t.id !== editingTokenId);
+                } else {
+                    state.roster = state.roster.filter(t => t.id !== editingTokenId);
+                }
+
+                state.tokens = state.tokens.filter(tok => tok.rosterId !== editingTokenId);
+
+                addSystemLog("Karakter kartı ve ilişkili harita token'ları tamamen silindi.");
+                renderCharacterRoster();
+                renderTokens();
+                saveToLocalStorage();
+                closeSheetModal();
+            }
+        }
+
+        function spawnToMap(id, isEnemy) {
+            const pool = isEnemy ? state.enemies : state.roster;
+            const target = pool.find(t => t.id === id);
+            if (!target) return;
+
+            const offset = Math.floor(Math.random() * 3) * state.gridSize;
+
+            const activeToken = {
+                id: 'active-' + Math.random().toString(36).substr(2, 9),
+                rosterId: target.id,
+                name: target.name,
+                hp: target.hp,
+                maxHp: target.maxHp,
+                ac: target.ac,
+                color: target.color,
+                icon: target.icon,
+                avatarUrl: target.avatarUrl,
+                x: state.gridSize + offset,
+                y: state.gridSize + offset
+            };
+
+            state.tokens.push(activeToken);
+            renderTokens();
+            saveToLocalStorage();
+            addSystemLog(`"${target.name}" savaş meydanına yerleştirildi.`);
+            
+            switchMainTab('battlemap');
+        }
+
+        function renderCharacterRoster() {
+            const charGrid = document.getElementById('character-cards-grid');
+            charGrid.innerHTML = "";
+
+            if (state.roster.length === 0) {
+                charGrid.innerHTML = `
+                    <div class="col-span-full border border-[#8A6529]/40 bg-[#1F1404]/60 p-6 rounded-lg text-center text-xs text-gray-500">
+                        Oluşturulmuş bir grup üyesi karakteri bulunmuyor. "+ Yeni Karakter" butonuyla başlayın.
+                    </div>
+                `;
+            }
+
+            state.roster.forEach(char => {
+                const card = document.createElement('div');
+                card.className = "bg-[#2E1E07] border border-[#8A6529] rounded-lg p-4 text-[#CBB58F] shadow-lg flex flex-col justify-between";
+                
+                const hpPercent = Math.max(0, Math.min(100, (char.hp / char.maxHp) * 100));
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-bold text-base uppercase text-white tracking-wide truncate max-w-[180px]">${char.name}</h4>
+                                <p class="text-[10px] text-[#A68858] italic">Lvl ${char.level} - ${char.race} ${char.class}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-2xl font-serif font-bold text-red-500">${char.ac}</span>
+                                <span class="block text-[8px] uppercase tracking-wider text-gray-400">AC</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="flex justify-between text-xs mb-1 font-bold">
+                                <span>HP</span>
+                                <span>${char.hp} / ${char.maxHp}</span>
+                            </div>
+                            <div class="w-full h-2.5 bg-black/60 border border-[#8A6529]/30 rounded overflow-hidden">
+                                <div class="h-full bg-red-600 transition-all" style="width: ${hpPercent}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-6 gap-1 mb-4 text-center">
+                            <div class="bg-[#1F1404] border border-[#8A6529]/40 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">STR</div>
+                                <div class="text-xs font-bold text-white">${char.str}</div>
+                            </div>
+                            <div class="bg-[#1F1404] border border-[#8A6529]/40 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">DEX</div>
+                                <div class="text-xs font-bold text-white">${char.dex}</div>
+                            </div>
+                            <div class="bg-[#1F1404] border border-[#8A6529]/40 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">CON</div>
+                                <div class="text-xs font-bold text-white">${char.con}</div>
+                            </div>
+                            <div class="bg-[#1F1404] border border-[#8A6529]/40 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">INT</div>
+                                <div class="text-xs font-bold text-white">${char.int}</div>
+                            </div>
+                            <div class="bg-[#1F1404] border border-[#8A6529]/40 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">WIS</div>
+                                <div class="text-xs font-bold text-white">${char.wis}</div>
+                            </div>
+                            <div class="bg-[#1F1404] border border-[#8A6529]/40 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">CHA</div>
+                                <div class="text-xs font-bold text-white">${char.cha}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 border-t border-[#8A6529]/20 pt-3 mt-1">
+                        <button onclick="openEditSheet('${char.id}', false)" class="w-full bg-[#1F1404] hover:bg-[#3D250D] border border-[#8A6529] py-1.5 rounded text-xs font-bold transition-all text-center">Düzenle</button>
+                        <button onclick="spawnToMap('${char.id}', false)" class="w-full bg-[#6B000D] hover:bg-[#8B0000] text-white py-1.5 rounded text-xs font-bold transition-all text-center">Haritaya Koy</button>
+                    </div>
+                `;
+                charGrid.appendChild(card);
+            });
+
+            const enemyGrid = document.getElementById('enemy-cards-grid');
+            enemyGrid.innerHTML = "";
+
+            if (state.enemies.length === 0) {
+                enemyGrid.innerHTML = `
+                    <div class="col-span-full border border-red-950 bg-[#1F1404]/30 p-6 rounded-lg text-center text-xs text-gray-500">
+                        Oluşturulmuş düşman veya canavar bulunmuyor.
+                    </div>
+                `;
+            }
+
+            state.enemies.forEach(enemy => {
+                const card = document.createElement('div');
+                card.className = "bg-[#2E1E07] border border-red-900/60 rounded-lg p-4 text-[#CBB58F] shadow-lg flex flex-col justify-between";
+                
+                const hpPercent = Math.max(0, Math.min(100, (enemy.hp / enemy.maxHp) * 100));
+                const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-bold text-base uppercase text-red-400 tracking-wide truncate max-w-[180px]">${enemy.name}</h4>
+                                <p class="text-[10px] text-gray-500 italic">Düşman - Lvl ${enemy.level} ${enemy.race}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-2xl font-serif font-bold text-red-700">${enemy.ac}</span>
+                                <span class="block text-[8px] uppercase tracking-wider text-gray-500">AC</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="flex justify-between text-xs mb-1 font-bold">
+                                <span>HP</span>
+                                <span>${enemy.hp} / ${enemy.maxHp}</span>
+                            </div>
+                            <div class="w-full h-2.5 bg-black/60 border border-red-950/40 rounded overflow-hidden">
+                                <div class="h-full bg-red-700 transition-all" style="width: ${hpPercent}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-6 gap-1 mb-4 text-center">
+                            <div class="bg-[#1F1404] border border-[#8A6529]/20 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">STR</div>
+                                <div class="text-xs font-bold text-white">${enemy.str}</div>
+                            </div>
+                            <div class="bg-[#1F1404] border border-[#8A6529]/20 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">DEX</div>
+                                <div class="text-xs font-bold text-white">${enemy.dex}</div>
+                            </div>
+                            <div class="bg-[#1F1404] border border-[#8A6529]/20 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">CON</div>
+                                <div class="text-xs font-bold text-white">${enemy.con}</div>
+                            </div>
+                            <div class="bg-[#1F1404] border border-[#8A6529]/20 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">INT</div>
+                                <div class="text-xs font-bold text-white">${enemy.int}</div>
+                            </div>
+                            <div class="bg-[#1F1404] border border-[#8A6529]/20 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">WIS</div>
+                                <div class="text-xs font-bold text-white">${enemy.wis}</div>
+                            </div>
+                            <div class="bg-[#1F1404] border border-[#8A6529]/20 rounded p-1">
+                                <div class="text-[8px] text-gray-500 font-bold">CHA</div>
+                                <div class="text-xs font-bold text-white">${enemy.cha}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 border-t border-[#8A6529]/10 pt-3 mt-1">
+                        ${isHost ? `<button onclick="openEditSheet('${enemy.id}', true)" class="w-full bg-[#1F1404] hover:bg-[#3D250D] border border-[#8A6529]/40 py-1.5 rounded text-xs font-bold transition-all text-center">Düzenle</button>` : `<span class="text-[10px] text-gray-500 flex items-center justify-center">Sadece Host</span>`}
+                        ${isHost ? `<button onclick="spawnToMap('${enemy.id}', true)" class="w-full bg-red-950 border border-red-800 hover:bg-red-900 text-white py-1.5 rounded text-xs font-bold transition-all text-center">Haritaya Koy</button>` : `<span class="text-[10px] text-gray-500 flex items-center justify-center">İzleyici Modu</span>`}
+                    </div>
+                `;
+                enemyGrid.appendChild(card);
+            });
+        }
+
+        function renderTokens() {
+            const layer = document.getElementById('tokens-layer');
+            layer.innerHTML = "";
+
+            state.tokens.forEach(token => {
+                const div = document.createElement('div');
+                div.id = token.id;
+                
+                div.className = "absolute cursor-pointer flex flex-col items-center select-none z-10 hover:scale-105 transition-transform duration-75";
+                div.style.width = state.gridSize + 'px';
+                div.style.height = 'auto'; 
+                div.style.left = token.x + 'px';
+                div.style.top = token.y + 'px';
+
+                const hpPercent = Math.max(0, Math.min(100, (token.hp / token.maxHp) * 100));
+                let barColor = "bg-green-500";
+                if (hpPercent < 35) barColor = "bg-red-500";
+                else if (hpPercent < 65) barColor = "bg-yellow-500";
+
+                const avatarHTML = token.avatarUrl 
+                    ? `<img src="${token.avatarUrl}" class="w-full h-full object-cover rounded-full">` 
+                    : `<span class="text-base">${token.icon || "🛡️"}</span>`;
+
+                const sizeStyle = `width: ${state.gridSize * 0.85}px; height: ${state.gridSize * 0.85}px;`;
+
+                div.innerHTML = `
+                    <div class="rounded-full border-[3px] flex items-center justify-center bg-gray-900 shadow-xl relative" style="${sizeStyle} border-color: ${token.color || '#f59e0b'};">
+                        ${avatarHTML}
+                        <span class="absolute -bottom-1 -right-1 bg-black border border-gray-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px] text-white font-bold">${token.ac}</span>
+                    </div>
+
+                    <div class="w-full bg-black/80 border border-black rounded-full overflow-hidden mt-1.5 mb-0.5" style="height: 6px;">
+                        <div class="h-full ${barColor}" style="width: ${hpPercent}%"></div>
+                    </div>
+
+                    <div class="bg-black/90 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-full leading-tight">
+                        ${token.name}
+                    </div>
+                `;
+
+                div.addEventListener('mousedown', (e) => startDrag(e, token.id));
+                div.addEventListener('touchstart', (e) => startDrag(e, token.id), { passive: false });
+
+                layer.appendChild(div);
+            });
+        }
+
+        function startDrag(e, tokenId) {
+            e.stopPropagation();
+            const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+
+            const token = state.tokens.find(t => t.id === tokenId);
+            if (!token) return;
+
+            dragInfo.isDragging = true;
+            dragInfo.tokenId = tokenId;
+            dragInfo.startX = clientX;
+            dragInfo.startY = clientY;
+            dragInfo.tokenLeft = token.x;
+            dragInfo.tokenTop = token.y;
+
+            document.addEventListener('mousemove', dragToken);
+            document.addEventListener('touchmove', dragToken, { passive: false });
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchend', stopDrag);
+        }
+
+        function dragToken(e) {
+            if (!dragInfo.isDragging) return;
+            e.preventDefault();
+            const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+
+            const dx = (clientX - dragInfo.startX) / zoomLevel;
+            const dy = (clientY - dragInfo.startY) / zoomLevel;
+
+            const tokenEl = document.getElementById(dragInfo.tokenId);
+            if (tokenEl) {
+                tokenEl.style.left = (dragInfo.tokenLeft + dx) + 'px';
+                tokenEl.style.top = (dragInfo.tokenTop + dy) + 'px';
+            }
+        }
+
+        function stopDrag(e) {
+            if (!dragInfo.isDragging) return;
+            document.removeEventListener('mousemove', dragToken);
+            document.removeEventListener('touchmove', dragToken);
+            document.removeEventListener('mouseup', stopDrag);
+            document.removeEventListener('touchend', stopDrag);
+
+            const tokenEl = document.getElementById(dragInfo.tokenId);
+            const token = state.tokens.find(t => t.id === dragInfo.tokenId);
+
+            if (tokenEl && token) {
+                const pxX = parseFloat(tokenEl.style.left);
+                const pxY = parseFloat(tokenEl.style.top);
+                
+                const gridX = Math.max(0, Math.round(pxX / state.gridSize) * state.gridSize);
+                const gridY = Math.max(0, Math.round(pxY / state.gridSize) * state.gridSize);
+
+                token.x = gridX;
+                token.y = gridY;
+
+                tokenEl.style.left = gridX + 'px';
+                tokenEl.style.top = gridY + 'px';
+            }
+
+            dragInfo.isDragging = false;
+            dragInfo.tokenId = null;
+            saveToLocalStorage();
+        }
+
+        function rollDice(sides) {
+            const modifierInput = document.getElementById('battle-roll-modifier');
+            const modifier = parseInt(modifierInput.value) || 0;
+            const baseResult = Math.floor(Math.random() * sides) + 1;
+            const finalResult = baseResult + modifier;
+            
+            const rollMeta = modifier !== 0 
+                ? `${baseResult} ${modifier >= 0 ? '+' : ''}${modifier} = ${finalResult}` 
+                : `${finalResult}`;
+
+            let displayMsg = `<strong>${state.username}</strong> bir <strong>D${sides}</strong> fırlattı: <span class="text-rpg-gold font-bold text-sm bg-black border border-rpg-border px-1.5 py-0.5 rounded ml-1">${rollMeta}</span>`;
+            
+            if (sides === 20) {
+                if (baseResult === 20) {
+                    displayMsg += ` <strong class="text-green-500 text-[10px] tracking-wide ml-1 border border-green-500/30 px-1 bg-green-500/10 rounded">★ Kritik Başarı!</strong>`;
+                } else if (baseResult === 1) {
+                    displayMsg += ` <strong class="text-red-500 text-[10px] tracking-wide ml-1 border border-red-500/30 px-1 bg-red-500/10 rounded">☠ Kritik Fumble!</strong>`;
+                }
+            }
+
+            state.chatLogs.push({
+                sender: "Zar",
+                text: displayMsg,
+                timestamp: Date.now(),
+                isRoll: true
+            });
+
+            saveToLocalStorage();
+            renderChat();
+        }
+
+        function sendBattleChatMessage() {
+            const input = document.getElementById('battle-chat-input');
+            const txt = input.value.trim();
+            if (!txt) return;
+
+            state.chatLogs.push({
+                sender: state.username,
+                text: txt,
+                timestamp: Date.now(),
+                isSystem: false
+            });
+
+            input.value = "";
+            saveToLocalStorage();
+            renderChat();
+        }
+
+        function handleBattleChatKeyPress(e) {
+            if (e.key === 'Enter') {
+                sendBattleChatMessage();
+            }
+        }
+
+        function addSystemLog(txt) {
+            state.chatLogs.push({
+                sender: "Sistem",
+                text: txt,
+                timestamp: Date.now(),
+                isSystem: true
+            });
+            saveToLocalStorage();
+            renderChat();
+        }
+
+        function renderChat() {
+            const box = document.getElementById('battle-chat-logs');
+            if (!box) return;
+            box.innerHTML = "";
+
+            state.chatLogs.forEach(log => {
+                const div = document.createElement('div');
+                if (log.isSystem) {
+                    div.className = "bg-rpg-accent/10 border border-rpg-accent/20 p-2.5 rounded text-gray-300";
+                    div.innerHTML = `<span class="text-rpg-gold font-bold">Masa Rehberi:</span> ${log.text}`;
+                } else if (log.isRoll) {
+                    div.className = "bg-rpg-gold/10 border border-rpg-gold/20 p-2.5 rounded text-gray-300";
+                    div.innerHTML = `🎲 ${log.text}`;
+                } else {
+                    div.className = "bg-[#1F1404] border border-rpg-border/60 p-2.5 rounded text-gray-300";
+                    div.innerHTML = `<span class="text-rpg-accent font-bold">${log.sender}:</span> ${log.text}`;
+                }
+                box.appendChild(div);
+            });
+            
+            setTimeout(() => {
+                box.scrollTop = box.scrollHeight;
+            }, 50);
+        }
+
+        function renderPlayers() {
+            const list = document.getElementById('realm-player-list');
+            if (!list) return;
+            list.innerHTML = "";
+
+            state.players.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-2 bg-[#1F1404] px-2.5 py-1.5 rounded text-xs border border-rpg-border";
+                const isCurrent = p.name.toLowerCase() === state.username.toLowerCase();
+                const selfBadge = isCurrent ? `<span class="text-[9px] bg-rpg-accent/30 text-rpg-accent border border-rpg-accent/40 rounded px-1 ml-auto">Siz</span>` : "";
+                
+                div.innerHTML = `
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    <span class="text-gray-200 font-semibold truncate">${p.name}</span>
+                    ${selfBadge}
+                `;
+                list.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
