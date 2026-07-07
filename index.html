@@ -390,6 +390,10 @@
         <div class="bg-[#4E3510] border-2 border-[#8A6529] p-6 rounded-lg w-full max-w-xl shadow-2xl relative text-[#CBB58F] font-serif">
             <h2 id="sheet-title" class="text-[#D4B46A] text-sm uppercase font-bold tracking-wider mb-4 border-b border-[#8A6529] pb-2 text-center">YENİ KARAKTER SAYFASI YARAT</h2>
 
+            <div id="sheet-player-restriction-note" class="hidden mb-3 bg-rpg-accent/10 border border-rpg-accent/30 text-[10px] text-[#E8C9A5] rounded px-3 py-2 leading-relaxed">
+                ℹ️ Oyuncu olarak yalnızca <b>İsim</b>, <b>Sınıf</b>, <b>Irk</b> ve <b>Özel Fotoğraf</b> alanlarını düzenleyebilirsiniz. HP, AC, Level, Yetenek Puanları, Envanter ve Notlar yalnızca oda yöneticisi (Host) tarafından ayarlanır.
+            </div>
+
             <div class="grid grid-cols-2 gap-4 mb-3">
                 <div>
                     <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">İSİM</label>
@@ -2315,10 +2319,32 @@
             }
         }
 
+        // Sadece Host'un düzenleyebileceği alanlar: oyuncular yalnızca isim, sınıf, ırk ve fotoğraf ayarlayabilir.
+        const HOST_ONLY_SHEET_FIELDS = [
+            'sheet-level', 'sheet-hp', 'sheet-max-hp', 'sheet-ac', 'sheet-size',
+            'sheet-str', 'sheet-dex', 'sheet-con', 'sheet-int', 'sheet-wis', 'sheet-cha',
+            'sheet-inventory', 'sheet-notes'
+        ];
+
+        function setSheetFieldsLockedForPlayer(locked) {
+            HOST_ONLY_SHEET_FIELDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.disabled = locked;
+                el.classList.toggle('opacity-40', locked);
+                el.classList.toggle('cursor-not-allowed', locked);
+            });
+
+            const note = document.getElementById('sheet-player-restriction-note');
+            if (note) note.classList.toggle('hidden', !locked);
+        }
+
         function openNewCharacterSheet() {
             editingTokenId = null;
             isEditingEnemyMode = false;
             currentUploadedImageBase64 = null;
+
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
             
             document.getElementById('sheet-title').innerText = "YENİ KARAKTER SAYFASI YARAT";
             document.getElementById('sheet-btn-delete').classList.add('hidden');
@@ -2343,6 +2369,8 @@
             document.getElementById('sheet-notes').value = "";
 
             document.getElementById('preview-avatar-container').innerHTML = `<span id="preview-avatar-text" class="text-xl">🛡️</span>`;
+
+            setSheetFieldsLockedForPlayer(!isHostNow);
 
             document.getElementById('character-sheet-modal').classList.remove('hidden');
         }
@@ -2381,11 +2409,15 @@
 
             document.getElementById('preview-avatar-container').innerHTML = `<span id="preview-avatar-text" class="text-xl">💀</span>`;
 
+            setSheetFieldsLockedForPlayer(false);
+
             document.getElementById('character-sheet-modal').classList.remove('hidden');
         }
 
         function openEditSheet(tokenId, isEnemy) {
-            if (isEnemy && state.username.toLowerCase() !== state.hostName.toLowerCase()) {
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+
+            if (isEnemy && !isHostNow) {
                 alert("Düşman kartlarını düzenleme yetkisi sadece yöneticidedir.");
                 return;
             }
@@ -2393,6 +2425,11 @@
             const pool = isEnemy ? state.enemies : state.roster;
             const target = pool.find(t => t.id === tokenId);
             if (!target) return;
+
+            if (!isEnemy && !isHostNow && target.owner && target.owner.toLowerCase() !== state.username.toLowerCase()) {
+                alert("Bu karakter başka bir oyuncuya ait olduğu için düzenleyemezsiniz. Sadece kendi kahramanınızı düzenleyebilirsiniz.");
+                return;
+            }
 
             editingTokenId = tokenId;
             isEditingEnemyMode = isEnemy;
@@ -2427,6 +2464,8 @@
                 previewContainer.innerHTML = `<span id="preview-avatar-text" class="text-xl">${target.icon || "🛡️"}</span>`;
             }
 
+            setSheetFieldsLockedForPlayer(!isEnemy && !isHostNow);
+
             document.getElementById('character-sheet-modal').classList.remove('hidden');
         }
 
@@ -2435,24 +2474,53 @@
         }
 
         function saveSheetModal() {
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            // Oyuncular (host olmayanlar), kendi karakterlerinde bile sadece isim/sınıf/ırk/fotoğraf değiştirebilir.
+            // Düşmanlar zaten sadece host tarafından oluşturulup düzenlenebildiği için burada her zaman false olur.
+            const isRestrictedPlayerEdit = !isEditingEnemyMode && !isHostNow;
+
             const name = document.getElementById('sheet-name').value.trim() || "İsimsiz";
             const className = document.getElementById('sheet-class').value;
             const race = document.getElementById('sheet-race').value.trim() || "Belirtilmemiş";
-            const level = parseInt(document.getElementById('sheet-level').value) || 1;
-            const hp = parseInt(document.getElementById('sheet-hp').value) || 10;
-            const maxHp = parseInt(document.getElementById('sheet-max-hp').value) || 10;
-            const ac = parseInt(document.getElementById('sheet-ac').value) || 10;
-            const tokenSize = parseInt(document.getElementById('sheet-size').value) || 80; 
 
-            const str = parseInt(document.getElementById('sheet-str').value) || 10;
-            const dex = parseInt(document.getElementById('sheet-dex').value) || 10;
-            const con = parseInt(document.getElementById('sheet-con').value) || 10;
-            const int = parseInt(document.getElementById('sheet-int').value) || 10;
-            const wis = parseInt(document.getElementById('sheet-wis').value) || 10;
-            const cha = parseInt(document.getElementById('sheet-cha').value) || 10;
+            // Var olan kaydı (varsa) referans alarak kısıtlı alanları koruyoruz.
+            const existingEntity = editingTokenId !== null
+                ? (isEditingEnemyMode ? state.enemies : state.roster).find(t => t.id === editingTokenId)
+                : null;
 
-            const inventory = document.getElementById('sheet-inventory').value;
-            const notes = document.getElementById('sheet-notes').value;
+            let level, hp, maxHp, ac, tokenSize, str, dex, con, int, wis, cha, inventory, notes;
+
+            if (isRestrictedPlayerEdit) {
+                level = existingEntity ? existingEntity.level : 1;
+                hp = existingEntity ? existingEntity.hp : 10;
+                maxHp = existingEntity ? existingEntity.maxHp : 10;
+                ac = existingEntity ? existingEntity.ac : 10;
+                tokenSize = existingEntity ? (existingEntity.size || 80) : 80;
+                str = existingEntity ? existingEntity.str : 10;
+                dex = existingEntity ? existingEntity.dex : 10;
+                con = existingEntity ? existingEntity.con : 10;
+                int = existingEntity ? existingEntity.int : 10;
+                wis = existingEntity ? existingEntity.wis : 10;
+                cha = existingEntity ? existingEntity.cha : 10;
+                inventory = existingEntity ? (existingEntity.inventory || "") : "";
+                notes = existingEntity ? (existingEntity.notes || "") : "";
+            } else {
+                level = parseInt(document.getElementById('sheet-level').value) || 1;
+                hp = parseInt(document.getElementById('sheet-hp').value) || 10;
+                maxHp = parseInt(document.getElementById('sheet-max-hp').value) || 10;
+                ac = parseInt(document.getElementById('sheet-ac').value) || 10;
+                tokenSize = parseInt(document.getElementById('sheet-size').value) || 80;
+
+                str = parseInt(document.getElementById('sheet-str').value) || 10;
+                dex = parseInt(document.getElementById('sheet-dex').value) || 10;
+                con = parseInt(document.getElementById('sheet-con').value) || 10;
+                int = parseInt(document.getElementById('sheet-int').value) || 10;
+                wis = parseInt(document.getElementById('sheet-wis').value) || 10;
+                cha = parseInt(document.getElementById('sheet-cha').value) || 10;
+
+                inventory = document.getElementById('sheet-inventory').value;
+                notes = document.getElementById('sheet-notes').value;
+            }
 
             const icon = className.split(' ')[0] || "🛡️";
 
@@ -2475,7 +2543,8 @@
                     notes,
                     icon,
                     avatarUrl: currentUploadedImageBase64, 
-                    color: isEditingEnemyMode ? '#ef4444' : '#f59e0b'
+                    color: isEditingEnemyMode ? '#ef4444' : '#f59e0b',
+                    owner: isEditingEnemyMode ? null : state.username
                 };
 
                 if (isEditingEnemyMode) {
@@ -2507,6 +2576,11 @@
                     savedEntity.notes = notes;
                     savedEntity.icon = icon;
                     savedEntity.avatarUrl = currentUploadedImageBase64;
+
+                    // Eski karakterlerde sahiplik bilgisi yoksa, düzenleyen kişiye geriye dönük olarak atanır.
+                    if (!isEditingEnemyMode && !savedEntity.owner) {
+                        savedEntity.owner = state.username;
+                    }
 
                     state.tokens.forEach(tok => {
                         if (tok.rosterId === editingTokenId) {
@@ -2566,9 +2640,20 @@
         }
 
         function spawnToMap(id, isEnemy) {
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
             const pool = isEnemy ? state.enemies : state.roster;
             const target = pool.find(t => t.id === id);
             if (!target) return;
+
+            if (isEnemy && !isHostNow) {
+                alert("Sadece oda yöneticisi (Host) düşmanları haritaya koyabilir.");
+                return;
+            }
+
+            if (!isEnemy && !isHostNow && target.owner && target.owner.toLowerCase() !== state.username.toLowerCase()) {
+                alert("Sadece kendi oluşturduğunuz kahramanı haritaya koyabilirsiniz.");
+                return;
+            }
 
             const randomX = Math.floor(Math.random() * 200) + 100;
             const randomY = Math.floor(Math.random() * 200) + 100;
@@ -2618,12 +2703,18 @@
                 card.className = "bg-[#2E1E07] border border-[#8A6529] rounded-lg p-4 text-[#CBB58F] shadow-lg flex flex-col justify-between";
                 const hpPercent = Math.max(0, Math.min(100, (char.hp / char.maxHp) * 100));
 
+                const isHostForCard = state.username.toLowerCase() === state.hostName.toLowerCase();
+                const isOwnerOfCard = char.owner && char.owner.toLowerCase() === state.username.toLowerCase();
+                const canManageCard = isHostForCard || isOwnerOfCard;
+                const ownerLabel = char.owner ? char.owner : "Host";
+
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <h4 class="font-bold text-base uppercase text-white tracking-wide truncate max-w-[180px]">${char.name}</h4>
                                 <p class="text-[10px] text-[#A68858] italic">Lvl ${char.level} - ${char.race} ${char.class}</p>
+                                <p class="text-[9px] text-gray-500">Sahip: ${ownerLabel}</p>
                             </div>
                             <div class="text-right">
                                 <span class="text-2xl font-serif font-bold text-red-500">${char.ac}</span>
@@ -2670,8 +2761,8 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 border-t border-[#8A6529]/20 pt-3 mt-1">
-                        <button onclick="openEditSheet('${char.id}', false)" class="w-full bg-[#1F1404] hover:bg-[#3D250D] border border-[#8A6529] py-1.5 rounded text-xs font-bold transition-all text-center">Düzenle</button>
-                        <button onclick="spawnToMap('${char.id}', false)" class="w-full bg-[#6B000D] hover:bg-[#8B0000] text-white py-1.5 rounded text-xs font-bold transition-all text-center">Haritaya Koy</button>
+                        ${canManageCard ? `<button onclick="openEditSheet('${char.id}', false)" class="w-full bg-[#1F1404] hover:bg-[#3D250D] border border-[#8A6529] py-1.5 rounded text-xs font-bold transition-all text-center">Düzenle</button>` : `<span class="text-[10px] text-gray-500 flex items-center justify-center">Sadece Sahibi</span>`}
+                        ${canManageCard ? `<button onclick="spawnToMap('${char.id}', false)" class="w-full bg-[#6B000D] hover:bg-[#8B0000] text-white py-1.5 rounded text-xs font-bold transition-all text-center">Haritaya Koy</button>` : `<span class="text-[10px] text-gray-500 flex items-center justify-center">Sadece Sahibi Koyabilir</span>`}
                     </div>
                 `;
                 charGrid.appendChild(card);
