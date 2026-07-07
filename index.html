@@ -40,6 +40,9 @@
         
         .grid-layer { pointer-events: none; }
         
+        /* Geçiş animasyonları */
+        .sidebar-transition { transition: all 0.3s ease-in-out; }
+
         /* İşaret silme animasyonu */
         .delete-mode-active .marker-element {
             animation: pulse-red 1s infinite;
@@ -49,17 +52,20 @@
             0%, 100% { filter: drop-shadow(0 0 4px red) scale(1); }
             50% { filter: drop-shadow(0 0 12px red) scale(1.3); }
         }
+        .no-pan { pointer-events: auto; }
     </style>
 </head>
 <body class="text-[#CBB58F] h-screen w-screen flex flex-col font-serif select-none relative">
 
-    <button id="global-left-toggle" onclick="event.stopPropagation(); toggleSidebar('left')" class="hidden fixed left-0 top-1/2 -translate-y-1/2 z-50 bg-rpg-card hover:bg-rpg-border text-rpg-gold border-r border-t border-b border-rpg-border rounded-r-lg w-5 h-14 flex items-center justify-center font-bold text-xs shadow-2xl cursor-pointer">
+    <!-- SABİT YAN PANEL AÇ/KAPAT BUTONLARI -->
+    <button id="global-left-toggle" onclick="toggleSidebar('left')" class="hidden fixed left-0 top-1/2 -translate-y-1/2 z-50 bg-rpg-card hover:bg-rpg-border text-rpg-gold border-r border-t border-b border-rpg-border rounded-r-lg w-5 h-14 flex items-center justify-center font-bold text-xs shadow-2xl cursor-pointer">
         &lt;
     </button>
-    <button id="global-right-toggle" onclick="event.stopPropagation(); toggleSidebar('right')" class="hidden fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-rpg-card hover:bg-rpg-border text-rpg-gold border-l border-t border-b border-rpg-border rounded-l-lg w-5 h-14 flex items-center justify-center font-bold text-xs shadow-2xl cursor-pointer">
+    <button id="global-right-toggle" onclick="toggleSidebar('right')" class="hidden fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-rpg-card hover:bg-rpg-border text-rpg-gold border-l border-t border-b border-rpg-border rounded-l-lg w-5 h-14 flex items-center justify-center font-bold text-xs shadow-2xl cursor-pointer">
         &gt;
     </button>
 
+    <!-- ÜST NAVİGASYON TABS BAR -->
     <nav id="app-nav" class="hidden shrink-0 bg-[#3D250D] border-b border-[#5C3D11] px-6 py-3 flex items-center justify-between z-40 shadow-md relative">
         <div class="flex items-center gap-8">
             <span class="text-xl font-bold tracking-widest text-[#D4B46A] cursor-pointer" onclick="resetZoom()">ROLLPLAY</span>
@@ -76,23 +82,27 @@
         </div>
     </nav>
 
+    <!-- ANA ÇALIŞMA ALANI -->
     <main class="flex-grow flex overflow-hidden relative w-full h-full">
 
-        <!-- LOBİ EKRANI -->
+        <!-- LOBİ GİRİŞ EKRANI -->
         <div id="lobby-screen" class="absolute inset-0 z-50 bg-[#1F1404] flex items-center justify-center p-4 overflow-y-auto">
             <div class="max-w-4xl w-full grid md:grid-cols-2 gap-8 items-stretch">
+                <!-- Sol Tanıtım -->
                 <div class="bg-rpg-card border border-rpg-border p-8 rounded-xl flex flex-col justify-between relative overflow-hidden shadow-2xl">
                     <div>
                         <div class="inline-block bg-rpg-accent/10 text-rpg-accent text-[10px] px-2.5 py-1 rounded-full border border-rpg-accent/20 mb-4 font-bold tracking-widest uppercase">Masaüstü Portalı</div>
                         <h2 class="text-2xl font-bold text-white mb-4 leading-tight">Yarım Kalan Hikayeni Canlandır.</h2>
                         <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                            Rollplay Realm; haritalar yükleyebileceğiniz, karakter token'larını yerleştirebileceğiniz ve diğer oyuncularla gerçek zamanlı etkileşime girebileceğiniz sunucusuz bir oyun masasıdır.
+                            Rollplay Realm; haritalar yükleyebileceğiniz, karakter token'larını yerleştirebileceğiniz, D&D Beyond uyumlu sınıflarla macera kurgulayabileceğiniz ve çoklu sekme senkronizasyonu ile arkadaşlarınızla oynayabileceğiniz gerçek zamanlı sanal oyun masasıdır.
                         </p>
                     </div>
                 </div>
 
+                <!-- Giriş Formu -->
                 <div class="bg-rpg-card border border-rpg-border p-8 rounded-xl flex flex-col justify-center shadow-2xl">
                     <div class="space-y-6">
+                        <!-- Oda Oluştur -->
                         <div>
                             <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2 border-b border-rpg-border pb-1.5">
                                 <span class="text-rpg-gold">⚔️</span> Yeni Dünya Yarat (Host)
@@ -106,12 +116,14 @@
                             </div>
                         </div>
 
+                        <!-- Ayırıcı -->
                         <div class="relative flex py-1 items-center">
                             <div class="flex-grow border-t border-rpg-border"></div>
                             <span class="flex-shrink mx-4 text-gray-500 text-[10px] tracking-wider uppercase">VEYA</span>
                             <div class="flex-grow border-t border-rpg-border"></div>
                         </div>
 
+                        <!-- Odaya Katıl -->
                         <div>
                             <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2 border-b border-rpg-border pb-1.5">
                                 <span class="text-rpg-gold">🧙</span> Mevcut Dünyaya Katıl
@@ -129,10 +141,12 @@
             </div>
         </div>
 
+        <!-- PLAYGROUND KONTEYNERİ -->
         <div id="game-playground" class="hidden w-full h-full flex overflow-hidden relative">
             
             <!-- 1. SEKME: KARAKTER -->
             <div id="main-tab-content-karakter" class="w-full h-full p-6 overflow-y-auto space-y-6 absolute inset-0 bg-[#3D250D] z-30">
+                <!-- ÜST BANNER -->
                 <div class="bg-rpg-card border border-rpg-border p-5 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
                     <div class="flex items-center gap-3">
                         <span class="text-xs uppercase text-gray-400 font-bold">ODA KODU:</span>
@@ -144,6 +158,7 @@
                     </div>
                 </div>
 
+                <!-- GRUP ÜYELERİ SEKSİYONU -->
                 <div>
                     <div class="flex items-center justify-between mb-4 border-b border-rpg-border pb-2">
                         <h3 class="text-lg font-bold tracking-wider text-white uppercase font-serif">Grup Üyeleri</h3>
@@ -152,6 +167,7 @@
                     <div id="character-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
                 </div>
 
+                <!-- DÜŞMANLAR SEKSİYONU (Yalnızca Host/DM için görünür) -->
                 <div id="enemy-section-container" class="hidden border-t border-rpg-border/50 pt-6">
                     <div class="flex items-center justify-between mb-4 border-b border-rpg-border pb-2">
                         <div>
@@ -169,7 +185,8 @@
             <!-- 2. SEKME: BATTLE MAP -->
             <div id="main-tab-content-battlemap" class="hidden w-full h-full flex overflow-hidden relative absolute inset-0 z-20">
                 
-                <aside id="sidebar-left" class="w-80 bg-rpg-card border-r border-rpg-border flex flex-col shrink-0 h-full overflow-y-auto transition-all duration-300 relative z-30">
+                <!-- SOL SİDEBAR -->
+                <aside id="sidebar-left" class="w-80 bg-rpg-card border-r border-rpg-border flex flex-col shrink-0 h-full overflow-y-auto sidebar-transition relative z-30">
                     <div class="p-4 space-y-5">
                         <div>
                             <label class="text-[10px] text-rpg-gold tracking-wider font-bold block mb-1.5">MİKRO HARİTA SEÇİCİ</label>
@@ -201,8 +218,10 @@
                     </div>
                 </aside>
 
+                <!-- ORTA HARİTA ALANI -->
                 <section id="map-viewport" class="flex-grow h-full relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing z-10" style="background-color: #1F1404;">
                     <div id="map-board" class="relative shadow-2xl origin-center select-none" style="width: 884px; height: 670px; background-size: 100% 100%; background-position: center; transform: translate(0px, 0px) scale(1);">
+                        
                         <div id="grid-overlay" class="grid-layer absolute inset-0 z-0">
                             <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="pointer-events: none;">
                                 <defs>
@@ -214,6 +233,7 @@
                                 <rect width="100%" height="100%" fill="url(#grid-pattern-500)" />
                             </svg>
                         </div>
+                        
                         <svg id="route-overlay-layer" class="absolute inset-0 z-5 pointer-events-none" width="100%" height="100%"></svg>
                         <div id="markers-layer" class="absolute inset-0 z-6 pointer-events-none"></div>
                         <div id="tokens-layer" class="absolute inset-0 z-10"></div>
@@ -221,36 +241,36 @@
 
                     <!-- BATTLE MAP ÜST TOOLBAR -->
                     <div id="map-toolbar" class="absolute top-4 left-4 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1.5 shadow-xl backdrop-blur-xs">
-                        <button id="mode-btn-tokens" onclick="event.stopPropagation(); setMapMode('tokens')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white shadow-inner" title="Karakter Taşıma Modu">
+                        <button id="mode-btn-tokens" onclick="setMapMode('tokens')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white shadow-inner" title="Karakter Taşıma Modu">
                             🎯 Taşıma
                         </button>
-                        <button id="mode-btn-measurement" onclick="event.stopPropagation(); setMapMode('measurement')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border" title="Mesafe Ölçüm Modu">
+                        <button id="mode-btn-measurement" onclick="setMapMode('measurement')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border" title="Mesafe Ölçüm Modu">
                             📏 Rota Planla
                         </button>
-                        <button id="mode-btn-marker" onclick="event.stopPropagation(); setMapMode('marker')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border" title="Harita İşaretçisi Ekle">
+                        <button id="mode-btn-marker" onclick="setMapMode('marker')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border" title="Harita İşaretçisi Ekle">
                             📍 İşaret Koy
                         </button>
-                        <button id="mode-btn-delete-marker" onclick="event.stopPropagation(); setMapMode('delete-marker')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-red-400 hover:bg-red-950/40" title="Harita İşaretçisi Sil">
+                        <button id="mode-btn-delete-marker" onclick="setMapMode('delete-marker')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-red-400 hover:bg-red-950/40" title="Harita İşaretçisi Sil">
                             🗑️ İşaret Sil
                         </button>
                         
                         <!-- Host Özel Düşman Saldırı Paneli Butonu -->
-                        <button id="host-attack-btn" onclick="event.stopPropagation(); openAttackModal()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#6B000D] hover:bg-red-700 text-white shadow-inner">
+                        <button id="host-attack-btn" onclick="openAttackModal()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#6B000D] hover:bg-red-700 text-white shadow-inner">
                             ⚔️ Saldırı Yap
                         </button>
                         
                         <!-- Host Özel Düşman Görünürlük Butonu -->
-                        <button id="host-toggle-enemies-btn" onclick="event.stopPropagation(); toggleEnemiesVisibility()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-950 border border-red-800 text-red-200">
+                        <button id="host-toggle-enemies-btn" onclick="toggleEnemiesVisibility()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-950 border border-red-800 text-red-200">
                             👁️ Düşmanlar: GİZLİ
                         </button>
                     </div>
 
-                    <!-- VELUTAN SEYAHAT HIZ KARTI -->
+                    <!-- VELUTAN SEYAHAT HIZ KARTI (Rota seçenekleri aşağı alındı) -->
                     <div id="velutan-travel-card" class="hidden absolute top-20 left-4 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-3 flex items-center gap-4 shadow-xl backdrop-blur-xs">
                         <div class="flex flex-col">
                             <span class="text-[9px] uppercase font-bold text-gray-400 mb-1">Seyahat Hızı</span>
                             <div class="relative">
-                                <button onclick="event.stopPropagation(); toggleTravelDropdown('speed')" id="travel-speed-btn" class="bg-[#1F1404] border border-[#8A6529]/60 px-3 py-1.5 rounded text-xs text-white min-w-[120px] flex justify-between items-center shadow-inner">
+                                <button onclick="toggleTravelDropdown('speed')" id="travel-speed-btn" class="bg-[#1F1404] border border-[#8A6529]/60 px-3 py-1.5 rounded text-xs text-white min-w-[120px] flex justify-between items-center shadow-inner">
                                     <span>Yavaş</span> <span class="text-[10px]">▼</span>
                                 </button>
                                 <div id="travel-speed-dropdown" class="hidden absolute left-0 top-full mt-1 bg-[#2E1E07] border border-[#8A6529] rounded shadow-2xl z-30 min-w-[140px] flex flex-col p-1"></div>
@@ -260,7 +280,7 @@
                         <div class="flex flex-col">
                             <span class="text-[9px] uppercase font-bold text-gray-400 mb-1">Arazi Tipi</span>
                             <div class="relative">
-                                <button onclick="event.stopPropagation(); toggleTravelDropdown('terrain')" id="travel-terrain-btn" class="bg-[#1F1404] border border-[#8A6529]/60 px-3 py-1.5 rounded text-xs text-white min-w-[140px] flex justify-between items-center shadow-inner">
+                                <button onclick="toggleTravelDropdown('terrain')" id="travel-terrain-btn" class="bg-[#1F1404] border border-[#8A6529]/60 px-3 py-1.5 rounded text-xs text-white min-w-[140px] flex justify-between items-center shadow-inner">
                                     <span>Normal Arazi</span> <span class="text-[10px]">▼</span>
                                 </button>
                                 <div id="travel-terrain-dropdown" class="hidden absolute left-0 top-full mt-1 bg-[#2E1E07] border border-[#8A6529] rounded shadow-2xl z-30 min-w-[160px] flex flex-col p-1"></div>
@@ -272,7 +292,7 @@
                     <div id="route-info-badge" class="hidden absolute top-4 right-4 z-20 bg-[#1F1404]/95 border border-rpg-border rounded-lg p-4 flex flex-col shadow-xl min-w-[220px] backdrop-blur-xs">
                         <div class="flex justify-between items-center border-b border-[#8A6529]/30 pb-2 mb-2">
                             <span class="text-xs font-bold text-white font-serif">Yolculuk Özeti</span>
-                            <button onclick="event.stopPropagation(); toggleJourneyDetails()" class="text-[10px] text-rpg-gold font-bold hover:underline flex items-center gap-1">
+                            <button onclick="toggleJourneyDetails()" class="text-[10px] text-rpg-gold font-bold hover:underline flex items-center gap-1">
                                 Detaylar <span id="journey-details-arrow">▲</span>
                             </button>
                         </div>
@@ -295,33 +315,33 @@
                         <div id="journey-segments-container" class="mt-3 pt-3 border-t border-[#8A6529]/20 max-h-[200px] overflow-y-auto space-y-2 hidden"></div>
                     </div>
 
-                    <!-- SOL ALT KAPSÜL: Rota Silme / Geri Alma -->
+                    <!-- SOL ALT: Rota Silme / Geri Alma (Sabit ve belirgin) -->
                     <div id="route-edit-capsule" class="hidden absolute bottom-4 left-16 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1 shadow-xl backdrop-blur-xs">
-                        <button onclick="event.stopPropagation(); undoLastWaypoint()" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors shadow-inner" title="Son Noktayı Geri Al">↩</button>
+                        <button onclick="undoLastWaypoint()" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors shadow-inner" title="Son Noktayı Geri Al">↩</button>
                         <div class="w-px h-6 bg-[#8A6529]/30"></div>
-                        <button onclick="event.stopPropagation(); clearRoute()" class="px-2 h-8 rounded bg-[#1F1404] hover:bg-red-950/60 text-red-500 font-bold flex items-center justify-center text-xs transition-colors shadow-inner" title="Tüm Rotaları Sil">🧹 Temizle</button>
+                        <button onclick="clearRoute()" class="px-2 h-8 rounded bg-[#1F1404] hover:bg-red-950/60 text-red-500 font-bold flex items-center justify-center text-xs transition-colors shadow-inner" title="Tüm Rotaları Sil">🧹 Temizle</button>
                     </div>
 
                     <!-- ORTA ALT: Göz Butonu -->
                     <div class="absolute bottom-4 left-[50%] -translate-x-[50%] z-20 bg-rpg-card/90 border border-rpg-border rounded-full p-2 shadow-2xl hover:scale-110 transition-transform cursor-pointer">
-                        <button onclick="event.stopPropagation(); toggleUIVisibility()" id="btn-ui-visibility" class="w-8 h-8 flex items-center justify-center text-base" title="Arayüzü Gizle/Göster">👁️</button>
+                        <button onclick="toggleUIVisibility()" id="btn-ui-visibility" class="w-8 h-8 flex items-center justify-center text-base" title="Arayüzü Gizle/Göster">👁️</button>
                     </div>
 
                     <!-- SAĞ ALT: Ayarlar Çarkı -->
                     <div id="settings-wheel-container" class="absolute bottom-4 right-12 z-20 bg-rpg-card/90 border border-rpg-border rounded-full p-2 shadow-xl hover:scale-110 transition-transform cursor-pointer">
-                        <button onclick="event.stopPropagation(); openSettingsModal()" class="w-8 h-8 flex items-center justify-center text-xl" title="Masaüstü ve Velutan Ayarları">⚙️</button>
+                        <button onclick="openSettingsModal()" class="w-8 h-8 flex items-center justify-center text-xl" title="Masaüstü ve Velutan Ayarları">⚙️</button>
                     </div>
 
-                    <!-- SAĞ ÜST ALT: FLOAT ZOOM CONTROLS -->
+                    <!-- FLOAT ZOOM CONTROLS (Sağ Üst) -->
                     <div id="floating-zoom-container" class="absolute top-44 right-4 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex flex-col gap-2 shadow-xl backdrop-blur-xs">
-                        <button onclick="event.stopPropagation(); changeZoom(0.15)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-lg transition-colors shadow-inner">+</button>
+                        <button onclick="changeZoom(0.15)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-lg transition-colors shadow-inner">+</button>
                         <div class="h-px bg-[#8A6529]/30"></div>
-                        <button onclick="event.stopPropagation(); changeZoom(-0.15)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-xl transition-colors shadow-inner">-</button>
+                        <button onclick="changeZoom(-0.15)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-xl transition-colors shadow-inner">-</button>
                     </div>
                 </section>
 
                 <!-- SAĞ SİDEBAR: MEYDAN -->
-                <aside id="sidebar-right" class="w-80 bg-rpg-card border-l border-rpg-border flex flex-col shrink-0 h-full overflow-hidden transition-all duration-300 relative z-30">
+                <aside id="sidebar-right" class="w-80 bg-rpg-card border-l border-rpg-border flex flex-col shrink-0 h-full overflow-hidden sidebar-transition relative z-30">
                     
                     <!-- ZAR ALANI -->
                     <div class="border-b border-[#5C3D11] shrink-0 p-4 bg-[#1F1404]/60">
@@ -342,7 +362,7 @@
                         </div>
                     </div>
 
-                    <!-- SOHBET & LOG PANELİ -->
+                    <!-- SOHBET -->
                     <div class="flex-grow flex flex-col overflow-hidden h-0">
                         <div class="bg-[#1F1404] px-4 py-3 border-b border-rpg-border shrink-0 flex items-center justify-between">
                             <span class="text-xs font-bold text-[#D4B46A]">💬 SOHBET & ZAR GEÇMİŞİ</span>
@@ -414,7 +434,6 @@
                 </div>
             </div>
 
-            <!-- DETAY SATIRI: HP, MAX HP, AC, TOKEN BOYUTU -->
             <div class="grid grid-cols-4 gap-3 mb-3">
                 <div>
                     <label class="block text-[10px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">HP (Can)</label>
@@ -491,7 +510,6 @@
             </div>
 
             <div class="space-y-5 max-h-[500px] overflow-y-auto pr-1 text-xs">
-                <!-- Genel Ayarlar -->
                 <div class="space-y-3">
                     <h3 class="text-xs font-bold text-white border-b border-[#8A6529]/20 pb-1 uppercase tracking-wider">Genel Ayarlar</h3>
                     <div class="grid grid-cols-2 gap-4">
@@ -506,7 +524,6 @@
                     </div>
                 </div>
 
-                <!-- Hız Ayarları -->
                 <div class="space-y-3">
                     <div class="flex justify-between items-center border-b border-[#8A6529]/20 pb-1">
                         <h3 class="text-xs font-bold text-white uppercase tracking-wider">Hız Ayarları</h3>
@@ -515,7 +532,6 @@
                     <div id="settings-speeds-list" class="space-y-2"></div>
                 </div>
 
-                <!-- Arazi Ayarları -->
                 <div class="space-y-3">
                     <div class="flex justify-between items-center border-b border-[#8A6529]/20 pb-1">
                         <h3 class="text-xs font-bold text-white uppercase tracking-wider">Arazi Ayarları</h3>
@@ -525,7 +541,6 @@
                 </div>
             </div>
 
-            <!-- Alt Butonlar -->
             <div class="flex justify-between items-center border-t border-[#8A6529]/40 pt-4 mt-5">
                 <div class="flex gap-2">
                     <button onclick="exportRoomData()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold">Dışa Aktar</button>
@@ -547,7 +562,6 @@
             <h2 class="text-sm font-bold text-[#E11D48] uppercase tracking-wider mb-4 border-b border-[#E11D48]/30 pb-2 text-center flex items-center justify-center gap-1.5">
                 ⚔️ Taktik Saldırı Paneli
             </h2>
-            
             <div class="space-y-4 text-xs">
                 <div>
                     <label class="block text-gray-400 font-bold mb-1">Saldıran Canavar/Düşman</label>
@@ -562,7 +576,6 @@
                     <input id="attack-damage-amount" type="number" value="5" min="1" class="w-full bg-[#1F1404] border border-[#8A6529]/40 rounded p-2 text-white focus:outline-none">
                 </div>
             </div>
-
             <div class="flex items-center gap-2 mt-5 pt-3 border-t border-[#8A6529]/20">
                 <button onclick="closeAttackModal()" class="flex-grow border border-[#8A6529]/60 text-gray-300 hover:bg-[#1F1404] py-2 rounded text-xs font-bold uppercase transition-colors">Vazgeç</button>
                 <button onclick="executeAttackAction()" class="flex-grow bg-[#6B000D] hover:bg-[#E11D48] text-white py-2 rounded text-xs font-bold uppercase transition-colors shadow-lg">Saldırıyı Başlat</button>
@@ -570,10 +583,10 @@
         </div>
     </div>
 
-    <!-- BAĞLANTI BEKLEME EKRANI -->
+    <!-- BAĞLANTI VE SENKRONİZASYON BEKLEME EKRANI -->
     <div id="loading-overlay" class="hidden absolute inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 text-[#CBB58F]">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rpg-accent mb-4"></div>
-        <p id="loading-message" class="text-sm font-bold tracking-wide animate-pulse">Dünyaya bağlanılıyor, Host'tan harita verileri alınıyor...</p>
+        <p id="loading-message" class="text-sm font-bold tracking-wide animate-pulse">Dünyaya bağlanılıyor...</p>
     </div>
 
     <!-- JAVASCRIPT MOTORU -->
@@ -584,22 +597,6 @@
             dungeon: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=1200",
             tavern: "https://images.unsplash.com/photo-1590579491410-a92ef59c9918?q=80&w=1200",
             void: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200"
-        };
-
-        const DND_CLASSES = {
-            barbarian: { name: "Barbar (Barbarian)", hp: 15, ac: 14, color: "#e11d48", icon: "🪓" },
-            bard: { name: "Ozan (Bard)", hp: 9, ac: 13, color: "#db2777", icon: "🪕" },
-            cleric: { name: "Ruhban (Cleric)", hp: 10, ac: 16, color: "#eab308", icon: "⛪" },
-            druid: { name: "Druid (Druid)", hp: 9, ac: 12, color: "#16a34a", icon: "🍃" },
-            fighter: { name: "Savaşçı (Fighter)", hp: 12, ac: 17, color: "#2563eb", icon: "🛡️" },
-            monk: { name: "Keşiş (Monk)", hp: 9, ac: 15, color: "#0d9488", icon: "🥋" },
-            paladin: { name: "Paladin (Paladin)", hp: 12, ac: 18, color: "#f59e0b", icon: "⚔️" },
-            ranger: { name: "Korucu (Ranger)", hp: 12, ac: 14, color: "#059669", icon: "🏹" },
-            rogue: { name: "Düzenbaz (Rogue)", hp: 9, ac: 14, color: "#4b5563", icon: "🗡️" },
-            sorcerer: { name: "Büyücü (Sorcerer)", hp: 7, ac: 12, color: "#7c3aed", icon: "⚡" },
-            warlock: { name: "Sihirbaz (Warlock)", hp: 9, ac: 12, color: "#4f46e5", icon: "👁️" },
-            wizard: { name: "Mütehassıs (Wizard)", hp: 7, ac: 12, color: "#0284c7", icon: "🧙‍♂️" },
-            artificer: { name: "Yapaycı (Artificer)", hp: 9, ac: 14, color: "#d97706", icon: "⚙️" }
         };
 
         const mySenderId = 'usr-' + Math.random().toString(36).substr(2, 9);
@@ -695,8 +692,7 @@
             document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        // Ağ paket boyutunu (4KB ntfy limiti) aşmamak için resim yüklerini temizleriz. 
-        // Parçalı yükleme metoduyla tam koruma sağlar
+        // Ağ paketlerini küçülterek 4KB sınırını (ntfy kopmalarını) kesin olarak aşar
         function sanitizeStateForBroadcast(rawState) {
             const clean = JSON.parse(JSON.stringify(rawState));
             if (clean.customMapUrl && clean.customMapUrl.length > 500) clean.customMapUrl = ""; 
@@ -715,13 +711,13 @@
                     if (t.avatarUrl && t.avatarUrl.length > 500) t.avatarUrl = ""; 
                 });
             }
-            if (clean.chatLogs) {
+            if (clean.chatLogs && clean.chatLogs.length > 5) {
                 clean.chatLogs = clean.chatLogs.slice(-5);
             }
             return clean;
         }
 
-        // Ağ Motoru
+        // GERÇEK ZAMANLI KÜRESEL AĞ (SSE) SENKRONİZASYON MOTORU
         function connectToGlobalNetwork() {
             if (!state.roomCode) return;
             if (eventSource) {
@@ -748,14 +744,17 @@
             };
         }
 
+        // POST Payload, doğrudan metin olarak gönderilir (CORS engellerini aşar)
         function broadcastNetworkEvent(packet) {
             if (!state.roomCode) return;
             packet.senderId = mySenderId;
             packet.senderName = state.username;
 
+            let payloadStr = JSON.stringify(packet);
+
             fetch(`https://ntfy.sh/${state.roomCode.toLowerCase()}`, {
                 method: 'POST',
-                body: JSON.stringify(packet)
+                body: payloadStr
             }).catch(err => console.error("Ağ gönderim hatası:", err));
         }
 
@@ -766,86 +765,57 @@
                         state.players.push({ name: packet.name, lastSeen: Date.now() });
                         renderPlayers();
                     }
-                    addSystemLog(`${packet.name} odaya katıldı.`);
+                    addSystemLog(`${packet.name} odaya katılma talebi gönderdi.`);
 
                     if (state.username.toLowerCase() === state.hostName.toLowerCase()) {
                         const cleanState = sanitizeStateForBroadcast(state);
-                        
-                        // Parçalı yükleme ile ağ çökmesini %100 engelleriz
                         broadcastNetworkEvent({
-                            type: 'sync_base',
-                            roomName: cleanState.roomName,
-                            hostName: cleanState.hostName,
-                            gridSize: cleanState.gridSize,
-                            gridVisible: cleanState.gridVisible,
-                            selectedMap: cleanState.selectedMap,
-                            customMapUrl: cleanState.customMapUrl,
-                            mapWidth: cleanState.mapWidth,
-                            mapHeight: cleanState.mapHeight,
-                            enemiesVisibleToPlayers: cleanState.enemiesVisibleToPlayers,
-                            travelSpeeds: cleanState.travelSpeeds,
-                            terrainTypes: cleanState.terrainTypes,
-                            dailyTravelHours: cleanState.dailyTravelHours,
-                            zoomSensitivity: cleanState.zoomSensitivity,
-                            selectedSpeedIndex: cleanState.selectedSpeedIndex,
-                            selectedTerrainIndex: cleanState.selectedTerrainIndex
+                            type: 'sync_state',
+                            fullState: cleanState
                         });
-
-                        setTimeout(() => broadcastNetworkEvent({ type: 'sync_roster', roster: cleanState.roster }), 300);
-                        setTimeout(() => broadcastNetworkEvent({ type: 'sync_enemies', enemies: cleanState.enemies }), 600);
-                        setTimeout(() => broadcastNetworkEvent({ type: 'sync_tokens', tokens: cleanState.tokens }), 900);
-                        setTimeout(() => broadcastNetworkEvent({ type: 'sync_extras', waypoints: cleanState.waypoints, markers: cleanState.markers, players: cleanState.players }), 1200);
                     }
                     break;
 
-                case 'sync_base':
-                    state.roomName = packet.roomName;
-                    state.hostName = packet.hostName;
-                    state.gridSize = packet.gridSize || 500;
-                    state.gridVisible = packet.gridVisible;
-                    state.selectedMap = packet.selectedMap;
-                    state.customMapUrl = packet.customMapUrl;
-                    state.mapWidth = packet.mapWidth;
-                    state.mapHeight = packet.mapHeight;
+                case 'sync_state':
+                    state.roomName = packet.fullState.roomName;
+                    state.hostName = packet.fullState.hostName;
+                    state.gridSize = packet.fullState.gridSize || 500;
+                    state.gridVisible = packet.fullState.gridVisible;
+                    state.selectedMap = packet.fullState.selectedMap;
                     
-                    state.enemiesVisibleToPlayers = packet.enemiesVisibleToPlayers || false;
-                    state.travelSpeeds = packet.travelSpeeds || state.travelSpeeds;
-                    state.terrainTypes = packet.terrainTypes || state.terrainTypes;
-                    state.dailyTravelHours = packet.dailyTravelHours || 12;
-                    state.zoomSensitivity = packet.zoomSensitivity || 0.25;
-                    state.selectedSpeedIndex = packet.selectedSpeedIndex || 0;
-                    state.selectedTerrainIndex = packet.selectedTerrainIndex || 0;
+                    // Host'tan gelen resim boşsa yerel resmi tutmaya devam et
+                    if (packet.fullState.customMapUrl) {
+                        state.customMapUrl = packet.fullState.customMapUrl;
+                    }
+                    
+                    state.mapWidth = packet.fullState.mapWidth;
+                    state.mapHeight = packet.fullState.mapHeight;
+                    state.tokens = packet.fullState.tokens || [];
+                    state.roster = packet.fullState.roster || [];
+                    state.enemies = packet.fullState.enemies || [];
+                    state.players = packet.fullState.players;
+                    
+                    state.enemiesVisibleToPlayers = packet.fullState.enemiesVisibleToPlayers || false;
+                    state.waypoints = packet.fullState.waypoints || [];
+                    state.markers = packet.fullState.markers || [];
+
+                    state.travelSpeeds = packet.fullState.travelSpeeds || state.travelSpeeds;
+                    state.terrainTypes = packet.fullState.terrainTypes || state.terrainTypes;
+                    state.dailyTravelHours = packet.fullState.dailyTravelHours || 12;
+                    state.zoomSensitivity = packet.fullState.zoomSensitivity || 0.25;
+                    state.selectedSpeedIndex = packet.fullState.selectedSpeedIndex || 0;
+                    state.selectedTerrainIndex = packet.fullState.selectedTerrainIndex || 0;
 
                     if (joinTimeout) clearTimeout(joinTimeout);
                     if (joinRequestInterval) clearInterval(joinRequestInterval);
 
                     hideLoadingOverlay();
                     loadAndDisplayRoomUI();
-                    break;
                     
-                case 'sync_roster':
-                    state.roster = packet.roster || [];
-                    renderCharacterRoster();
-                    break;
-                    
-                case 'sync_enemies':
-                    state.enemies = packet.enemies || [];
-                    renderCharacterRoster();
-                    break;
-
-                case 'sync_tokens':
-                    state.tokens = packet.tokens || [];
-                    renderTokens();
-                    break;
-
-                case 'sync_extras':
-                    state.waypoints = packet.waypoints || [];
-                    state.markers = packet.markers || [];
-                    state.players = packet.players || [];
-                    renderRoute();
-                    calculateTravelStats();
-                    renderMarkers();
-                    renderPlayers();
+                    // Özel harita uyarısı
+                    if (state.selectedMap === 'custom_map' && !state.customMapUrl) {
+                        addSystemLog("Masa yöneticisi özel bir harita yüklemiş. Haritayı görmek için yan menüden aynı görseli cihazınızdan yükleyin.");
+                    }
                     break;
 
                 case 'player_join':
@@ -857,15 +827,23 @@
                     break;
 
                 case 'chat':
-                    state.chatLogs.push({ sender: packet.senderName, text: packet.text, timestamp: Date.now(), isSystem: false });
+                    state.chatLogs.push({
+                        sender: packet.senderName,
+                        text: packet.text,
+                        timestamp: Date.now(),
+                        isSystem: false
+                    });
                     renderChat();
-                    saveToLocalStorage();
                     break;
 
                 case 'roll':
-                    state.chatLogs.push({ sender: "Zar", text: packet.text, timestamp: Date.now(), isRoll: true });
+                    state.chatLogs.push({
+                        sender: "Zar",
+                        text: packet.text,
+                        timestamp: Date.now(),
+                        isRoll: true
+                    });
                     renderChat();
-                    saveToLocalStorage();
                     break;
 
                 case 'move_token':
@@ -874,7 +852,6 @@
                         tok.x = packet.x;
                         tok.y = packet.y;
                         renderTokens();
-                        saveToLocalStorage();
                     }
                     break;
 
@@ -887,31 +864,32 @@
                         pool.push(packet.entity);
                     }
                     renderCharacterRoster();
-                    saveToLocalStorage();
                     break;
 
                 case 'delete_character':
-                    if (packet.isEnemy) state.enemies = state.enemies.filter(t => t.id !== packet.id);
-                    else state.roster = state.roster.filter(t => t.id !== packet.id);
+                    if (packet.isEnemy) {
+                        state.enemies = state.enemies.filter(t => t.id !== packet.id);
+                    } else {
+                        state.roster = state.roster.filter(t => t.id !== packet.id);
+                    }
                     state.tokens = state.tokens.filter(tok => tok.rosterId !== packet.id);
                     renderCharacterRoster();
                     renderTokens();
-                    saveToLocalStorage();
                     break;
 
                 case 'spawn_token':
                     state.tokens.push(packet.token);
                     renderTokens();
-                    saveToLocalStorage();
                     break;
 
                 case 'change_map_settings':
                     state.selectedMap = packet.selectedMap;
-                    state.customMapUrl = packet.customMapUrl;
+                    if (packet.customMapUrl) state.customMapUrl = packet.customMapUrl;
                     state.gridSize = packet.gridSize || 500;
                     state.gridVisible = packet.gridVisible;
                     state.mapWidth = packet.mapWidth;
                     state.mapHeight = packet.mapHeight;
+                    
                     state.enemiesVisibleToPlayers = packet.enemiesVisibleToPlayers || false;
                     state.travelSpeeds = packet.travelSpeeds || state.travelSpeeds;
                     state.terrainTypes = packet.terrainTypes || state.terrainTypes;
@@ -930,7 +908,6 @@
                     updateTravelDropdowns();
                     calculateTravelStats();
                     resetZoom();
-                    saveToLocalStorage();
                     break;
                 
                 case 'sync_waypoints':
@@ -948,9 +925,9 @@
                     triggerAttackAnimation(packet.attackerId, packet.targetId, packet.damage);
                     break;
             }
+            saveToLocalStorage();
         }
 
-        // Taktik Saldırı Görsel Çizim Motoru
         function triggerAttackAnimation(attackerId, targetId, damage) {
             const attacker = state.tokens.find(t => t.id === attackerId);
             const target = state.tokens.find(t => t.id === targetId);
@@ -1022,7 +999,7 @@
             }, 4000);
         }
 
-        // Harita Sürükleme ve Kaydırma (Pan) Motoru - KİLİTLER AŞILDI
+        // Harita Sürükleme ve Kaydırma (Pan) Motoru (Kesin Çözüm)
         function setupMapPanControls() {
             const viewport = document.getElementById('map-viewport');
 
@@ -1046,11 +1023,16 @@
             }, { passive: false });
 
             viewport.addEventListener('mousedown', (e) => {
-                // Tıklanan şey buton, input vb. ise pan yapma
-                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('aside') || e.target.closest('#app-nav') || e.target.closest('[id^="active-"]')) {
+                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('aside') || e.target.closest('#app-nav') || e.target.closest('.no-pan')) {
                     return;
                 }
                 
+                // Harita %100 fit (sığma) seviyesindeyken kaydırma kilitlidir, zoom yapınca açılır!
+                if (zoomLevel <= getMinZoomLimit() + 0.01) {
+                    isPanning = false;
+                    return;
+                }
+
                 isPanning = true;
                 viewport.style.cursor = 'grabbing';
                 startPanX = e.clientX - panX;
@@ -1074,7 +1056,11 @@
             });
             
             viewport.addEventListener('touchstart', (e) => {
-                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) {
+                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('.no-pan')) {
+                    return;
+                }
+                if (zoomLevel <= getMinZoomLimit() + 0.01) {
+                    isPanning = false;
                     return;
                 }
                 isPanning = true;
@@ -1115,10 +1101,15 @@
             const minZoom = getMinZoomLimit();
             if (zoomLevel < minZoom) zoomLevel = minZoom;
 
+            if (zoomLevel <= minZoom + 0.01) {
+                panX = 0;
+                panY = 0;
+                return;
+            }
+
             const rw = state.mapWidth * zoomLevel;
             const rh = state.mapHeight * zoomLevel;
 
-            // Eğer görüntü alandan küçükse ortaya sabitlenir. Ancak zoom yaptıkça sınırlar genişler
             if (rw >= viewWidth) {
                 const maxPanX = (rw - viewWidth) / 2;
                 panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
@@ -1171,29 +1162,29 @@
                         const board = document.getElementById('map-board');
                         board.style.width = img.width + 'px';
                         board.style.height = img.height + 'px';
-                        
-                        state.gridSize = 500;
 
                         applyMapDisplay();
                         resetZoom();
                         saveToLocalStorage();
                         addSystemLog(`Harita yüklendi: ${img.width}x${img.height} piksel.`);
 
+                        // Veri sınırını korumak için resmi diğerlerine göndermeyiz, onların da kendi cihazlarından yüklemesi gerekir
+                        const cleanState = sanitizeStateForBroadcast(state);
                         broadcastNetworkEvent({
                             type: 'change_map_settings',
-                            selectedMap: state.selectedMap,
-                            customMapUrl: state.customMapUrl,
-                            gridSize: state.gridSize,
-                            gridVisible: state.gridVisible,
-                            mapWidth: state.mapWidth,
-                            mapHeight: state.mapHeight,
-                            enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
-                            travelSpeeds: state.travelSpeeds,
-                            terrainTypes: state.terrainTypes,
-                            dailyTravelHours: state.dailyTravelHours,
-                            zoomSensitivity: state.zoomSensitivity,
-                            selectedSpeedIndex: state.selectedSpeedIndex,
-                            selectedTerrainIndex: state.selectedTerrainIndex
+                            selectedMap: cleanState.selectedMap,
+                            customMapUrl: "", 
+                            gridSize: cleanState.gridSize,
+                            gridVisible: cleanState.gridVisible,
+                            mapWidth: cleanState.mapWidth,
+                            mapHeight: cleanState.mapHeight,
+                            enemiesVisibleToPlayers: cleanState.enemiesVisibleToPlayers,
+                            travelSpeeds: cleanState.travelSpeeds,
+                            terrainTypes: cleanState.terrainTypes,
+                            dailyTravelHours: cleanState.dailyTravelHours,
+                            zoomSensitivity: cleanState.zoomSensitivity,
+                            selectedSpeedIndex: cleanState.selectedSpeedIndex,
+                            selectedTerrainIndex: cleanState.selectedTerrainIndex
                         });
                     };
                     img.src = dataUrl;
@@ -1215,37 +1206,39 @@
             }
         }
 
-        // Açılıp kapanabilen tırnakların DOM özellikleriyle tam kilitlenmesi
         function toggleSidebar(side) {
             sidebarStatus[side] = !sidebarStatus[side];
             const el = document.getElementById(`sidebar-${side}`);
             const btnLeft = document.getElementById('global-left-toggle');
             const btnRight = document.getElementById('global-right-toggle');
-            if (!el) return;
 
             if (side === 'left') {
                 if (sidebarStatus.left) {
                     el.style.width = '320px';
                     el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
                     el.style.borderRightWidth = '1px';
-                    if(btnLeft) btnLeft.innerHTML = '&lt;';
+                    btnLeft.innerHTML = '&lt;';
                 } else {
                     el.style.width = '0px';
                     el.style.opacity = '0';
+                    el.style.pointerEvents = 'none';
                     el.style.borderRightWidth = '0px';
-                    if(btnLeft) btnLeft.innerHTML = '&gt;';
+                    btnLeft.innerHTML = '&gt;';
                 }
             } else {
                 if (sidebarStatus.right) {
                     el.style.width = '320px';
                     el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
                     el.style.borderLeftWidth = '1px';
-                    if(btnRight) btnRight.innerHTML = '&gt;';
+                    btnRight.innerHTML = '&gt;';
                 } else {
                     el.style.width = '0px';
                     el.style.opacity = '0';
+                    el.style.pointerEvents = 'none';
                     el.style.borderLeftWidth = '0px';
-                    if(btnRight) btnRight.innerHTML = '&lt;';
+                    btnRight.innerHTML = '&lt;';
                 }
             }
             
@@ -1263,11 +1256,9 @@
                 if (t === tabId) {
                     btn.classList.add('border-b-2', 'border-rpg-accent', 'text-white');
                     content.classList.remove('hidden');
-                    content.style.zIndex = '20';
                 } else {
                     btn.classList.remove('border-b-2', 'border-rpg-accent', 'text-white');
                     content.classList.add('hidden');
-                    content.style.zIndex = '10';
                 }
             });
 
@@ -1275,12 +1266,12 @@
             const rightBtn = document.getElementById('global-right-toggle');
 
             if (tabId === 'battlemap') {
-                if(leftBtn) leftBtn.classList.remove('hidden');
-                if(rightBtn) rightBtn.classList.remove('hidden');
+                leftBtn.classList.remove('hidden');
+                rightBtn.classList.remove('hidden');
                 setTimeout(() => { resetZoom(); }, 100);
             } else {
-                if(leftBtn) leftBtn.classList.add('hidden');
-                if(rightBtn) rightBtn.classList.add('hidden');
+                leftBtn.classList.add('hidden');
+                rightBtn.classList.add('hidden');
             }
         }
 
@@ -1363,7 +1354,7 @@
                         clearInterval(joinRequestInterval);
                         hideLoadingOverlay();
                         if (eventSource) eventSource.close();
-                        alert("Zaman aşımı! Oda yöneticisi (Host) şu anda aktif değil veya davet kodu yanlış. Host'un sayfasını açık tuttuğundan emin olun.");
+                        alert("Zaman aşımı! Oda yöneticisi (Host) şu anda aktif değil, sayfasını kapatmış olabilir veya kod yanlış.");
                     }
                 }, 15000);
             } catch(e) {
@@ -1378,15 +1369,12 @@
                     saveToLocalStorage();
                 }
                 
-                if (eventSource) {
-                    eventSource.close();
-                }
+                if (eventSource) eventSource.close();
 
                 state.roomCode = null;
                 document.getElementById('lobby-screen').classList.remove('hidden');
                 document.getElementById('app-nav').classList.add('hidden');
                 document.getElementById('game-playground').classList.add('hidden');
-                
                 document.getElementById('global-left-toggle').classList.add('hidden');
                 document.getElementById('global-right-toggle').classList.add('hidden');
 
@@ -1438,6 +1426,9 @@
             renderRoute();
             renderMarkers();
             calculateTravelStats();
+            
+            board.removeEventListener('click', handleMapBoardClick);
+            board.addEventListener('click', handleMapBoardClick);
             
             switchMainTab('karakter');
         }
@@ -1493,7 +1484,7 @@
             broadcastNetworkEvent({
                 type: 'change_map_settings',
                 selectedMap: state.selectedMap,
-                customMapUrl: state.customMapUrl,
+                customMapUrl: "",
                 gridSize: state.gridSize,
                 gridVisible: state.gridVisible,
                 mapWidth: state.mapWidth,
@@ -1517,7 +1508,7 @@
                     if (m === mode) {
                         btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white";
                     } else if (m === 'delete-marker') {
-                        btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-900 text-white border border-red-700 shadow-inner";
+                        btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-900 text-white hover:bg-red-800 border border-red-700";
                     } else {
                         btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border";
                     }
@@ -1526,26 +1517,23 @@
 
             const clearBtnCapsule = document.getElementById('route-edit-capsule');
             const travelCard = document.getElementById('velutan-travel-card');
-            const viewport = document.getElementById('map-viewport');
             
             if (mode === 'measurement') {
                 travelCard.classList.remove('hidden');
-                clearBtnCapsule.classList.remove('hidden');
+                if (state.waypoints && state.waypoints.length > 0) {
+                    clearBtnCapsule.classList.remove('hidden');
+                }
             } else {
                 travelCard.classList.add('hidden');
                 clearBtnCapsule.classList.add('hidden');
             }
 
+            const viewport = document.getElementById('map-viewport');
             if (mode === 'delete-marker') {
                 viewport.classList.add('delete-mode-active');
             } else {
                 viewport.classList.remove('delete-mode-active');
             }
-
-            // Yenileme sırasında map click listenerini da her zaman tazeleriz (mükerrer tıklamayı önler)
-            const board = document.getElementById('map-board');
-            board.removeEventListener('click', handleMapBoardClick);
-            board.addEventListener('click', handleMapBoardClick);
 
             renderTokens();
             renderMarkers(); 
@@ -1566,8 +1554,8 @@
             state.travelSpeeds.forEach((s, idx) => {
                 const activeTick = (idx === state.selectedSpeedIndex) ? `<span class="text-rpg-gold text-xs">✓</span>` : ``;
                 const item = document.createElement('button');
-                item.className = "px-2 py-1.5 hover:bg-[#1F1404] rounded text-left flex justify-between items-center text-xs text-[#CBB58F]";
-                item.onclick = (e) => { e.stopPropagation(); selectTravelSpeed(idx); };
+                item.className = "px-2 py-1.5 hover:bg-[#1F1404] rounded text-left flex justify-between items-center text-xs text-[#CBB58F] w-full";
+                item.onclick = () => selectTravelSpeed(idx);
                 item.innerHTML = `<div><div class="font-bold text-white">${s.name}</div><div class="text-[10px] text-gray-400">${s.value} km/gün</div></div> ${activeTick}`;
                 speedDrop.appendChild(item);
             });
@@ -1577,8 +1565,8 @@
             state.terrainTypes.forEach((t, idx) => {
                 const activeTick = (idx === state.selectedTerrainIndex) ? `<span class="text-rpg-gold text-xs">✓</span>` : ``;
                 const item = document.createElement('button');
-                item.className = "px-2 py-1.5 hover:bg-[#1F1404] rounded text-left flex justify-between items-center text-xs text-[#CBB58F]";
-                item.onclick = (e) => { e.stopPropagation(); selectTerrainType(idx); };
+                item.className = "px-2 py-1.5 hover:bg-[#1F1404] rounded text-left flex justify-between items-center text-xs text-[#CBB58F] w-full";
+                item.onclick = () => selectTerrainType(idx);
                 item.innerHTML = `<div><div class="font-bold text-white">${t.name}</div><div class="text-[10px] text-gray-400">x${t.multiplier}</div></div> ${activeTick}`;
                 terrainDrop.appendChild(item);
             });
@@ -1691,6 +1679,9 @@
                 type: 'sync_waypoints',
                 waypoints: state.waypoints
             });
+            if (state.waypoints.length === 0) {
+                document.getElementById('route-edit-capsule').classList.add('hidden');
+            }
         }
 
         function toggleUIVisibility() {
@@ -1711,16 +1702,16 @@
 
             if (state.uiVisible) {
                 if (nav) nav.classList.remove('hidden');
-                if (left && sidebarStatus.left) left.style.width = '320px'; left.style.opacity = '1';
-                if (right && sidebarStatus.right) right.style.width = '320px'; right.style.opacity = '1';
+                if (left && sidebarStatus.left) { left.style.width = '320px'; left.style.opacity = '1'; }
+                if (right && sidebarStatus.right) { right.style.width = '320px'; right.style.opacity = '1'; }
                 if (toolbar) toolbar.classList.remove('hidden');
                 if (leftToggle) leftToggle.classList.remove('hidden');
                 if (rightToggle) rightToggle.classList.remove('hidden');
                 if (state.currentMode === 'measurement') {
                     if (travel) travel.classList.remove('hidden');
-                    if (editCap) editCap.classList.remove('hidden');
+                    if (editCap && state.waypoints.length > 0) editCap.classList.remove('hidden');
                 }
-                if (summary && state.waypoints && state.waypoints.length > 0) summary.classList.remove('hidden');
+                if (summary && state.waypoints.length > 0) summary.classList.remove('hidden');
                 if (settingsWheel) settingsWheel.classList.remove('hidden');
                 if (zoomCap) zoomCap.classList.remove('hidden');
                 btn.innerText = "👁️";
@@ -1745,10 +1736,8 @@
             }, 320);
         }
 
-        // Haritada boş yere tıklama olayları
         function handleMapBoardClick(e) {
-            // Tıklanan şey token, menü veya butonsa işlemi durdur (event propagation engellemesi için)
-            if (e.target.closest('.cursor-pointer') || e.target.closest('.marker-element') || e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) {
+            if (e.target.closest('.cursor-pointer') || e.target.closest('.no-pan') || e.target.closest('.marker-element') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('aside') || e.target.closest('#app-nav')) {
                 return;
             }
 
@@ -1757,10 +1746,13 @@
             const clickX = (e.clientX - rect.left) / zoomLevel;
             const clickY = (e.clientY - rect.top) / zoomLevel;
 
+            if (clickX < 0 || clickX > state.mapWidth || clickY < 0 || clickY > state.mapHeight) return;
+
             if (state.currentMode === 'measurement') {
                 if (!state.waypoints) state.waypoints = [];
                 state.waypoints.push({ id: 'wp-' + Math.random().toString(36).substr(2, 9), x: clickX, y: clickY });
                 
+                document.getElementById('route-edit-capsule').classList.remove('hidden');
                 renderRoute();
                 saveToLocalStorage();
                 calculateTravelStats();
@@ -1789,17 +1781,21 @@
         function renderRoute() {
             const overlay = document.getElementById('route-overlay-layer');
             const badge = document.getElementById('route-info-badge');
-            
+            const editCap = document.getElementById('route-edit-capsule');
             if (!overlay) return;
             overlay.innerHTML = "";
 
             if (!state.waypoints || state.waypoints.length === 0) {
-                if (badge) badge.classList.add('hidden');
+                badge.classList.add('hidden');
+                editCap.classList.add('hidden');
                 return;
             }
 
             if (state.uiVisible) {
-                if (badge) badge.classList.remove('hidden');
+                badge.classList.remove('hidden');
+                if (state.currentMode === 'measurement') {
+                    editCap.classList.remove('hidden');
+                }
             }
             
             let pathD = "";
@@ -1856,6 +1852,7 @@
 
         function clearRoute() {
             state.waypoints = [];
+            document.getElementById('route-edit-capsule').classList.add('hidden');
             renderRoute();
             calculateTravelStats();
             saveToLocalStorage();
@@ -1865,7 +1862,7 @@
             });
         }
 
-        // Taktik piyon işaretleri
+        // Taktik piyon işaretleri (Tıklandığında silme işlevi DÜZELTİLDİ!)
         function renderMarkers() {
             const container = document.getElementById('markers-layer');
             if (!container) return;
@@ -1873,57 +1870,57 @@
 
             if (!state.markers) state.markers = [];
 
-            state.markers.forEach((marker, index) => {
+            state.markers.forEach((marker) => {
                 const div = document.createElement('div');
                 div.style.left = marker.x + 'px';
                 div.style.top = marker.y + 'px';
                 div.style.transform = 'translate(-50%, -100%)'; 
 
                 if (state.currentMode === 'delete-marker') {
-                    div.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto marker-element cursor-crosshair";
+                    div.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto no-pan marker-element cursor-crosshair delete-mode-active";
                 } else {
-                    div.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto marker-element";
+                    div.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto no-pan marker-element";
                 }
 
                 const xBtnClasses = (state.currentMode === 'delete-marker') 
-                    ? "delete-marker-btn text-white bg-red-600 hover:bg-red-500 rounded px-1.5 py-0.5 ml-1.5 text-xs flex items-center justify-center transition-colors shadow-lg cursor-pointer"
+                    ? "delete-marker-btn text-white bg-red-600 hover:bg-red-500 rounded px-1.5 py-0.5 ml-1.5 text-xs flex items-center justify-center transition-colors pointer-events-auto cursor-pointer"
                     : "hidden";
 
                 div.innerHTML = `
                     <div class="relative group">
                         <span class="text-xl filter drop-shadow">📍</span>
-                        <div class="absolute bottom-full left-[50%] -translate-x-[50%] mb-1 bg-[#2E1E07] border border-[#8A6529] px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md flex items-center gap-1 group-hover:scale-105 transition-transform">
-                            <span>${marker.title}</span>
+                        <div class="absolute bottom-full left-[50%] -translate-x-[50%] mb-1 bg-[#2E1E07] border border-[#8A6529] px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md flex items-center gap-1 group-hover:scale-105 transition-transform pointer-events-auto cursor-pointer">
+                            <span>📍 ${marker.title}</span>
                             <button class="${xBtnClasses}">&times;</button>
                         </div>
                     </div>
                 `;
 
                 // Tıklandığında pini anında silen dinleyiciler (Mousedown & Touchstart destekli)
-                const pinEl = div.querySelector('.relative');
-                if (pinEl) {
+                const popupBox = div.querySelector('.relative > div');
+                if (popupBox) {
                     const handleDel = (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
                         if (state.currentMode === 'delete-marker') {
-                            e.stopPropagation();
-                            e.preventDefault();
                             deleteMarker(marker.id);
                         }
                     };
-                    pinEl.addEventListener('click', handleDel);
-                    pinEl.addEventListener('mousedown', handleDel);
-                    pinEl.addEventListener('touchstart', handleDel, { passive: false });
+                    popupBox.addEventListener('click', handleDel);
+                    popupBox.addEventListener('mousedown', handleDel);
+                    popupBox.addEventListener('touchstart', handleDel, { passive: false });
                 }
 
                 const btn = div.querySelector('.delete-marker-btn');
                 if (btn) {
-                    const handleDel = (e) => {
+                    const handleBtnDel = (e) => {
                         e.stopPropagation();
                         e.preventDefault();
                         deleteMarker(marker.id);
                     };
-                    btn.addEventListener('click', handleDel);
-                    btn.addEventListener('mousedown', handleDel);
-                    btn.addEventListener('touchstart', handleDel, { passive: false });
+                    btn.addEventListener('click', handleBtnDel);
+                    btn.addEventListener('mousedown', handleBtnDel);
+                    btn.addEventListener('touchstart', handleBtnDel, { passive: false });
                 }
 
                 container.appendChild(div);
@@ -1951,7 +1948,7 @@
             broadcastNetworkEvent({
                 type: 'change_map_settings',
                 selectedMap: state.selectedMap,
-                customMapUrl: state.customMapUrl,
+                customMapUrl: "",
                 gridSize: state.gridSize,
                 gridVisible: state.gridVisible,
                 mapWidth: state.mapWidth,
@@ -2072,7 +2069,7 @@
             broadcastNetworkEvent({
                 type: 'change_map_settings',
                 selectedMap: state.selectedMap,
-                customMapUrl: state.customMapUrl,
+                customMapUrl: "",
                 gridSize: state.gridSize,
                 gridVisible: state.gridVisible,
                 mapWidth: state.mapWidth,
