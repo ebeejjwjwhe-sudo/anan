@@ -108,7 +108,7 @@
                                 <span class="text-rpg-gold">🧙</span> Mevcut Dünyaya Katıl
                             </h3>
                             <div class="space-y-3">
-                                <input id="join-room-code" type="text" placeholder="Davet Kodu Giriin (REALM-XXXX)" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none text-white uppercase font-mono">
+                                <input id="join-room-code" type="text" placeholder="Davet Kodu Girin (REALM-XXXX)" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none text-white uppercase font-mono">
                                 <input id="join-user-name" type="text" placeholder="Karakter Adınız" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none text-white">
                                 <button onclick="joinRoom()" class="w-full bg-rpg-accent hover:bg-rpg-accentHover text-white font-bold py-2.5 rounded transition-all text-xs tracking-wide">
                                     Maceraya Katıl
@@ -123,7 +123,7 @@
         <!-- PLAYGROUND KONTEYNERİ -->
         <div id="game-playground" class="hidden w-full h-full flex overflow-hidden">
             
-            <!-- 1. SEKME: KARAKTER (input_file_2.png Birebir Arayüzü) -->
+            <!-- 1. SEKME: KARAKTER -->
             <div id="main-tab-content-karakter" class="w-full h-full p-6 overflow-y-auto space-y-6">
                 <!-- ÜST BANNER -->
                 <div class="bg-rpg-card border border-rpg-border p-5 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
@@ -146,7 +146,7 @@
                     <div id="character-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
 
-                <!-- DÜŞMANLAR SEKSİYONU -->
+                <!-- DÜŞMANLAR SEKSİYONU (Yalnızca Host/DM için görünür) -->
                 <div id="enemy-section-container" class="hidden border-t border-rpg-border/50 pt-6">
                     <div class="flex items-center justify-between mb-4 border-b border-rpg-border pb-2">
                         <div>
@@ -187,7 +187,7 @@
                             </label>
                         </div>
 
-                        <!-- Taktiksel Katman Sınırı -->
+                        <!-- Taktiksel Katman Sınırı (Yazı kaldırıldı, sadeleştirildi) -->
                         <div class="border-t border-rpg-border/60 pt-4 flex justify-between items-center text-xs">
                             <button onclick="toggleGridVisible()" id="btn-grid-toggle" class="w-full text-center bg-rpg-accent/20 text-rpg-accent border border-rpg-accent/30 py-2 rounded font-bold transition-colors">Grid: Açık</button>
                         </div>
@@ -228,7 +228,7 @@
                         <div id="tokens-layer" class="absolute inset-0 z-10"></div>
                     </div>
 
-                    <!-- MAP MODES TOOLBAR (velutanmap.com özellikleri) -->
+                    <!-- MAP MODES TOOLBAR -->
                     <div id="map-toolbar" class="absolute top-4 left-4 z-15 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1.5 shadow-xl backdrop-blur-xs">
                         <button id="mode-btn-tokens" onclick="setMapMode('tokens')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white" title="Karakter Taşıma Modu">
                             🎯 Taşıma
@@ -431,6 +431,7 @@
                 </div>
             </div>
 
+            <!-- DOSYA VE FOTOĞRAF YÜKLEME ALANI -->
             <div class="grid grid-cols-2 gap-4 mb-3 border-t border-b border-[#8A6529]/30 py-2.5 my-2">
                 <div>
                     <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">ÖZEL FOTOĞRAF YÜKLE</label>
@@ -689,6 +690,7 @@
         let currentUploadedImageBase64 = null;
         let eventSource = null; 
         let joinTimeout = null; 
+        let joinRequestInterval = null; // Katılma veri isteme loop tırnağı
 
         let zoomLevel = 1.0;
         let panX = 0;
@@ -714,13 +716,22 @@
             right: true
         };
 
-        // ntfy 4KB mesaj boyut limitini aşmamak için ağır base64 görsellerini ağ paketinden temizleyen temizleyici
+        function showLoadingOverlay(msg) {
+            document.getElementById('loading-message').innerText = msg;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoadingOverlay() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // Ağ paketini hafifletmek ve 4KB ntfy sınırına takılmamak için görsel base64 verilerini arındırır
         function sanitizeStateForBroadcast(rawState) {
             const clean = JSON.parse(JSON.stringify(rawState));
             if (clean.roster) {
                 clean.roster.forEach(c => {
                     if (c.avatarUrl && c.avatarUrl.length > 1000) {
-                        c.avatarUrl = ""; // Ağ paketini hafifletmek için temizle
+                        c.avatarUrl = ""; 
                     }
                 });
             }
@@ -775,6 +786,7 @@
             };
         }
 
+        // Sadeleştirilmiş POST ile CORS OPTIONS engellemelerini tamamen aşarız
         function broadcastNetworkEvent(packet) {
             if (!state.roomCode) return;
             packet.senderId = mySenderId;
@@ -796,7 +808,6 @@
                     addSystemLog(`${packet.name} odaya katılma talebi gönderdi.`);
 
                     if (state.username.toLowerCase() === state.hostName.toLowerCase()) {
-                        // Paket boyutunu küçültmek için temizlenmiş state fırlatırız
                         const cleanState = sanitizeStateForBroadcast(state);
                         broadcastNetworkEvent({
                             type: 'sync_state',
@@ -832,6 +843,9 @@
 
                     if (joinTimeout) {
                         clearTimeout(joinTimeout);
+                    }
+                    if (joinRequestInterval) {
+                        clearInterval(joinRequestInterval);
                     }
 
                     hideLoadingOverlay();
@@ -954,13 +968,12 @@
             }
         }
 
-        // Taktik Saldırı Görsel Çizim Motoru (Hasar Eksiltmeli)
+        // Taktik Saldırı Görsel Çizim Motoru
         function triggerAttackAnimation(attackerId, targetId, damage) {
             const attacker = state.tokens.find(t => t.id === attackerId);
             const target = state.tokens.find(t => t.id === targetId);
             if (!attacker || !target) return;
 
-            // Oyuncunun anlık canından hasar miktarını kuruşu kuruşuna eksilt
             target.hp = Math.max(0, target.hp - damage);
 
             const rosterChar = state.roster.find(c => c.id === target.rosterId);
@@ -1027,7 +1040,7 @@
             }, 4000);
         }
 
-        // Harita Sürükleme ve Kaydırma (Pan) Motoru (İstenilen 100% kilidi düzeltildi!)
+        // Harita Sürükleme ve Kaydırma (Pan) Motoru (İstenilen 100% zoom kilidi pürüzsüzleştirildi!)
         function setupMapPanControls() {
             const viewport = document.getElementById('map-viewport');
 
@@ -1051,11 +1064,11 @@
             }, { passive: false });
 
             viewport.addEventListener('mousedown', (e) => {
-                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('aside') || e.target.closest('#app-nav')) {
+                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('aside') || e.target.closest('#app-nav') || e.target.closest('[id^="active-"]')) {
                     return;
                 }
                 
-                // Harita %100 (Fit / Sığma) seviyesinde veya daha geride iken kaydırmayı tamamen kilitleriz!
+                // Harita %100 (Fit / Sığma) seviyesinde veya daha geride iken sürüklemeyi deaktif yaparız!
                 if (zoomLevel <= getMinZoomLimit() + 0.005) {
                     isPanning = false;
                     return;
@@ -1131,7 +1144,7 @@
                 zoomLevel = minZoom;
             }
 
-            // Sınır kilitlerini minimum sığmada sıfırlarız
+            // Sınır kilitlerini minimum sığmada tam olarak ortalarız
             if (zoomLevel <= minZoom + 0.005) {
                 panX = 0;
                 panY = 0;
@@ -1237,7 +1250,7 @@
             }
         }
 
-        // Açılıp kapanabilen tırnakların bir daha açılabilmesi için DOM özellikleriyle tam kilitledik (Yeni!)
+        // Açılıp kapanabilen tırnakların bir daha açılabilmesi için DOM özellikleriyle kilitleme
         function toggleSidebar(side) {
             sidebarStatus[side] = !sidebarStatus[side];
             const el = document.getElementById(`sidebar-${side}`);
@@ -1338,6 +1351,7 @@
             loadAndDisplayRoomUI();
         }
 
+        // ÇOKLU CİHAZ (TELEFON VB.) BAĞLANTI SİSTEMİ (Loop bağlantısı eklendi!)
         function joinRoom() {
             const rawCode = document.getElementById('join-room-code').value.trim().toUpperCase();
             const rawUser = document.getElementById('join-user-name').value.trim();
@@ -1355,22 +1369,30 @@
 
             connectToGlobalNetwork();
 
-            setTimeout(() => {
+            // Senkronizasyon başarılı olana kadar her 2 saniyede bir Host'a durum sorgusu yollarız
+            if (joinRequestInterval) clearInterval(joinRequestInterval);
+            joinRequestInterval = setInterval(() => {
+                if (state.hostName) {
+                    clearInterval(joinRequestInterval);
+                    return;
+                }
                 broadcastNetworkEvent({
                     type: 'request_state_on_join',
                     name: rawUser
                 });
-            }, 1000);
+            }, 2000);
 
+            // 15 Saniye içinde Host'tan veri dönmezse zaman aşımı uyarısı fırlatırız
             joinTimeout = setTimeout(() => {
                 if (!state.hostName) {
+                    clearInterval(joinRequestInterval);
                     hideLoadingOverlay();
                     if (eventSource) {
                         eventSource.close();
                     }
                     alert("Zaman aşımı! Oda yöneticisi (Host) çevrimdışı olabilir veya davet kodu yanlış.");
                 }
-            }, 10000);
+            }, 15000);
         }
 
         function exitRoom() {
@@ -1813,7 +1835,6 @@
                     const dx = pt.x - prev.x;
                     const dy = pt.y - prev.y;
                     const pixels = Math.sqrt(dx * dx + dy * dy);
-                    const cellW = state.mapWidth / 5;
                     const segmentMiles = pixels; 
                     totalDistance += segmentMiles;
 
@@ -1864,7 +1885,7 @@
             });
         }
 
-        // Taktik piyon işaretleri (İşaret Silme Moduyla kusursuzlaştırıldı!)
+        // Taktik piyon işaretleri (Hassas Deletion Mode eklendi!)
         function renderMarkers() {
             const container = document.getElementById('markers-layer');
             if (!container) return;
@@ -1890,7 +1911,25 @@
                     </div>
                 `;
 
-                // Tıklandığında pini anında silen dinleyici
+                // Tıklandığında pini anında silen dinleyiciler (Mousedown & Touchstart destekli)
+                const pinEl = div.querySelector('.relative');
+                if (pinEl) {
+                    pinEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (state.currentMode === 'delete-marker') {
+                            deleteMarker(index);
+                        }
+                    });
+                    pinEl.addEventListener('mousedown', (e) => {
+                        if (state.currentMode === 'delete-marker') {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            deleteMarker(index);
+                        }
+                    });
+                }
+
                 const btn = div.querySelector('.delete-marker-btn');
                 if (btn) {
                     btn.addEventListener('click', (e) => {
@@ -1898,16 +1937,12 @@
                         e.preventDefault();
                         deleteMarker(index);
                     });
-                }
-
-                // Eğer "İşaret Sil" modu aktifse, pine tıklandığında da anında silinmesi sağlanır
-                div.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    if (state.currentMode === 'delete-marker') {
+                    btn.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
                         deleteMarker(index);
-                    }
-                });
+                    });
+                }
 
                 container.appendChild(div);
             });
@@ -2381,8 +2416,11 @@
             const target = pool.find(t => t.id === id);
             if (!target) return;
 
-            const randomX = Math.floor(Math.random() * 200) + 100;
-            const randomY = Math.floor(Math.random() * 200) + 100;
+            const cellW = 500;
+            const cellH = 500;
+
+            const randomCol = Math.floor(Math.random() * 2);
+            const randomRow = Math.floor(Math.random() * 2);
 
             const activeToken = {
                 id: 'active-' + Math.random().toString(36).substr(2, 9),
@@ -2395,8 +2433,8 @@
                 color: target.color,
                 icon: target.icon,
                 avatarUrl: target.avatarUrl,
-                x: randomX,
-                y: randomY
+                x: randomCol * cellW,
+                y: randomRow * cellH
             };
 
             state.tokens.push(activeToken);
