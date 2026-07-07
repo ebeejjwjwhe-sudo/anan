@@ -9,6 +9,7 @@
     <!-- Firebase (gerçek zamanlı senkronizasyon için, ntfy.sh yerine) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -612,11 +613,15 @@
         };
 
         let db = null;
+        let storageRef = null;
         let fbReady = false;
         try {
             if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "BURAYA_YAPISTIR" && firebaseConfig.databaseURL) {
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.database();
+                if (firebaseConfig.storageBucket) {
+                    storageRef = firebase.storage();
+                }
                 fbReady = true;
             } else {
                 console.warn("[Firebase] firebaseConfig doldurulmamış. Online senkronizasyon çalışmayacak.");
@@ -1296,33 +1301,62 @@
 
         function handleLocalMapUpload(event) {
             const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const dataUrl = e.target.result;
-                    state.customMapUrl = dataUrl;
-                    state.selectedMap = 'custom_map';
-                    
-                    const img = new Image();
-                    img.onload = function() {
-                        state.mapWidth = img.width;
-                        state.mapHeight = img.height;
-                        
-                        const board = document.getElementById('map-board');
-                        board.style.width = img.width + 'px';
-                        board.style.height = img.height + 'px';
+            if (!file) return;
 
+            // Önce ekranda anında görünsün diye yerel önizleme (bu, boyut hesaplamak için de kullanılır)
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const localPreviewUrl = e.target.result;
+                state.customMapUrl = localPreviewUrl;
+                state.selectedMap = 'custom_map';
+
+                const img = new Image();
+                img.onload = function() {
+                    state.mapWidth = img.width;
+                    state.mapHeight = img.height;
+
+                    const board = document.getElementById('map-board');
+                    board.style.width = img.width + 'px';
+                    board.style.height = img.height + 'px';
+
+                    applyMapDisplay();
+                    resetZoom();
+                    saveToLocalStorage();
+                    addSystemLog(`Harita yükleniyor: ${img.width}x${img.height} piksel. Diğer oyunculara aktarılıyor...`);
+
+                    // ================================================================
+                    // ÖNEMLİ DÜZELTME: Eskiden burada resim base64 olarak Realtime
+                    // Database'e gönderilmeye çalışılıyordu, çok büyük olduğu için
+                    // KASITLI OLARAK boş string gönderiliyordu (yorum: "veri sınırını
+                    // korumak için resmi diğerlerine göndermeyiz"). Bu yüzden her
+                    // cihazda farklı harita görünüyordu — herkesin AYNI dosyayı elle
+                    // yüklemesi gerekiyordu. Gerçek çözüm: resmi Firebase STORAGE'a
+                    // yükleyip sadece kısa bir bağlantı (URL) paylaşmak. Böylece
+                    // herkes gerçekten aynı haritayı, otomatik olarak görür.
+                    // ================================================================
+                    if (!storageRef) {
+                        addSystemLog("⚠️ Firebase Storage yapılandırılmamış olduğu için harita diğer oyunculara otomatik gönderilemiyor. (firebaseConfig.storageBucket eksik olabilir)");
+                        return;
+                    }
+
+                    const path = `rooms/${state.roomCode.toLowerCase()}/maps/${Date.now()}_${file.name}`;
+                    const ref = storageRef.ref().child(path);
+
+                    ref.put(file).then((snapshot) => {
+                        return snapshot.ref.getDownloadURL();
+                    }).then((downloadUrl) => {
+                        // Artık gerçek, herkesin erişebileceği kısa bir link var —
+                        // hem kendi state'imize hem de tüm oyunculara bunu yayınlıyoruz.
+                        state.customMapUrl = downloadUrl;
                         applyMapDisplay();
-                        resetZoom();
                         saveToLocalStorage();
-                        addSystemLog(`Harita yüklendi: ${img.width}x${img.height} piksel.`);
+                        addSystemLog("✅ Harita tüm oyunculara başarıyla aktarıldı.");
 
-                        // Veri sınırını korumak için resmi diğerlerine göndermeyiz, onların da kendi cihazlarından yüklemesi gerekir
                         const cleanState = sanitizeStateForBroadcast(state);
                         broadcastNetworkEvent({
                             type: 'change_map_settings',
-                            selectedMap: cleanState.selectedMap,
-                            customMapUrl: "", 
+                            selectedMap: 'custom_map',
+                            customMapUrl: downloadUrl,
                             gridSize: cleanState.gridSize,
                             gridVisible: cleanState.gridVisible,
                             mapWidth: cleanState.mapWidth,
@@ -1335,11 +1369,14 @@
                             selectedSpeedIndex: cleanState.selectedSpeedIndex,
                             selectedTerrainIndex: cleanState.selectedTerrainIndex
                         });
-                    };
-                    img.src = dataUrl;
+                    }).catch((err) => {
+                        console.error('[Harita Yükleme Hatası]', err);
+                        addSystemLog("❌ Harita yüklenemedi: " + err.message + " (Firebase Storage kurallarınızı kontrol edin)");
+                    });
                 };
-                reader.readAsDataURL(file);
-            }
+                img.src = localPreviewUrl;
+            };
+            reader.readAsDataURL(file);
         }
 
         function handleKarakterResimYukle(event) {
@@ -1614,12 +1651,7 @@
         function applyMapDisplay() {
             const board = document.getElementById('map-board');
             let imgUrl = MAP_PRESETS[state.selectedMap];
-            // ÖNEMLİ DÜZELTME: "custom_map" seçiliyken ve host henüz kendi haritasını
-            // yüklemediyse, kod var olmayan sahte bir dosyaya ("input_file_0.png")
-            // düşüyordu — bu dosya sitenizde hiç yok, bu yüzden harita simsiyah
-            // görünüyordu. Artık bunun yerine gerçek bir hazır harita (zindan
-            // görseli) gösteriliyor, ekran asla bomboş kalmıyor.
-            if (state.selectedMap === 'custom_map') imgUrl = state.customMapUrl || MAP_PRESETS.dungeon;
+            if (state.selectedMap === 'custom_map') imgUrl = state.customMapUrl || "input_file_0.png";
             board.style.backgroundImage = `url('${imgUrl}')`;
             document.getElementById('map-select-preset').value = state.selectedMap;
         }
