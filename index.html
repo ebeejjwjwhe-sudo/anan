@@ -1,7 +1,5 @@
-# Let's draft the complete index.html contents in Python, and then programmatically verify
-# that there are no duplicate "function [name]" string patterns in the Javascript block.
 
-html_content = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -15,7 +13,7 @@ html_content = """<!DOCTYPE html>
                 extend: {
                     colors: {
                         rpg: {
-                            bg: '#4E3510', 
+                            bg: '#3D250D', 
                             card: '#2E1E07',
                             border: '#8A6529',
                             accent: '#E11D48',
@@ -35,26 +33,11 @@ html_content = """<!DOCTYPE html>
             background-size: 8px 8px;
             background-position: 0 0, 4px 4px;
         }
-        
-        /* Özelleştirilmiş Scrollbar */
-        ::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1F1404;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #8A6529;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #CBB58F;
-        }
-        
-        .grid-layer {
-            pointer-events: none;
-        }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #1F1404; }
+        ::-webkit-scrollbar-thumb { background: #8A6529; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #CBB58F; }
+        .grid-layer { pointer-events: none; }
     </style>
 </head>
 <body class="text-[#CBB58F] h-screen w-screen flex flex-col font-serif select-none overflow-hidden">
@@ -141,7 +124,7 @@ html_content = """<!DOCTYPE html>
         <!-- PLAYGROUND KONTEYNERİ -->
         <div id="game-playground" class="hidden w-full h-full flex overflow-hidden">
             
-            <!-- 1. SEKME: KARAKTER (input_file_2.png Birebir Arayüzü) -->
+            <!-- 1. SEKME: KARAKTER -->
             <div id="main-tab-content-karakter" class="w-full h-full p-6 overflow-y-auto space-y-6">
                 <!-- ÜST BANNER -->
                 <div class="bg-rpg-card border border-rpg-border p-5 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
@@ -164,14 +147,14 @@ html_content = """<!DOCTYPE html>
                     <div id="character-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
 
-                <!-- DÜŞMANLAR SEKSİYONU -->
-                <div class="border-t border-rpg-border/50 pt-6">
+                <!-- DÜŞMANLAR SEKSİYONU (Yalnızca Host/DM için görünür) -->
+                <div id="enemy-section-container" class="hidden border-t border-rpg-border/50 pt-6">
                     <div class="flex items-center justify-between mb-4 border-b border-rpg-border pb-2">
                         <div>
                             <h3 class="text-lg font-bold tracking-wider text-red-400 uppercase font-serif flex items-center gap-1.5">
                                 ☠️ Düşmanlar & Yaratıklar
                             </h3>
-                            <p id="dm-only-hint" class="text-[10px] text-gray-500 mt-0.5">Sadece Oda Yöneticisi (Host) yaratabilir ve düzenleyebilir.</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5">Yalnızca oda yöneticisi olarak sizin tarafınızdan yönetilebilir.</p>
                         </div>
                         <button id="btn-new-enemy" onclick="openNewEnemySheet()" class="hidden bg-red-950 border border-red-800 hover:bg-red-900 text-red-200 px-4 py-2 rounded text-xs font-bold uppercase transition-all tracking-wider">+ Yeni Düşman</button>
                     </div>
@@ -208,7 +191,7 @@ html_content = """<!DOCTYPE html>
                         <!-- Taktiksel Katman Sınırı -->
                         <div class="border-t border-rpg-border/60 pt-4 space-y-3">
                             <div class="flex justify-between items-center text-xs">
-                                <span class="text-gray-300 font-semibold">Taktiksel Grid (5x5)</span>
+                                <span class="text-gray-300 font-semibold">Taktiksel Grid (500x500)</span>
                                 <button onclick="toggleGridVisible()" id="btn-grid-toggle" class="text-[9px] bg-rpg-accent/20 text-rpg-accent border border-rpg-accent/30 px-2 py-0.5 rounded font-bold">Açık</button>
                             </div>
                         </div>
@@ -221,27 +204,26 @@ html_content = """<!DOCTYPE html>
                     </div>
 
                     <!-- SOL PANELİ GİZLEME BUTONU -->
-                    <button onclick="toggleSidebar('left')" class="absolute top-[48%] -right-4 bg-rpg-card hover:bg-rpg-border text-rpg-gold border border-rpg-border rounded-r-lg w-4 h-12 flex items-center justify-center font-bold text-[10px] z-20 cursor-pointer shadow-lg" id="btn-toggle-left">
+                    <button id="sidebar-left-toggle-btn" onclick="toggleSidebar('left')" class="absolute top-[48%] -right-4 bg-rpg-card hover:bg-rpg-border text-rpg-gold border border-rpg-border rounded-r-lg w-4 h-12 flex items-center justify-center font-bold text-[10px] z-20 cursor-pointer shadow-lg">
                         &lt;
                     </button>
                 </aside>
 
                 <!-- ORTA HARİTA ALANI -->
-                <section id="map-viewport" class="flex-grow h-full relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing" style="background-color: #1F1404; background-image: radial-gradient(rgba(0,0,0,0.15) 1px, transparent 0); background-size: 8px 8px;">
-                    <!-- Harita Konteyneri -->
+                <section id="map-viewport" class="flex-grow h-full relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing" style="background-color: #1F1404; background-image: radial-gradient(rgba(0,0,0,0.15) 1px, transparent 0), radial-gradient(rgba(0,0,0,0.15) 1px, transparent 0); background-size: 8px 8px;">
+                    <!-- Harita Konteyneri (Taktik grid 500x500 pikselli olarak kilitlendi) -->
                     <div id="map-board" class="relative shadow-2xl origin-center select-none" style="width: 884px; height: 670px; background-size: 100% 100%; background-position: center; transform: translate(0px, 0px) scale(1);">
                         
-                        <!-- 5x5 SVG GRID overlay -->
+                        <!-- 500x500 Taktiksel Grid overlay -->
                         <div id="grid-overlay" class="grid-layer absolute inset-0 z-0">
                             <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="pointer-events: none;">
-                                <line x1="20%" y1="0" x2="20%" y2="100%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
-                                <line x1="40%" y1="0" x2="40%" y2="100%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
-                                <line x1="60%" y1="0" x2="60%" y2="100%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
-                                <line x1="80%" y1="0" x2="80%" y2="100%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
-                                <line x1="0" y1="20%" x2="100%" y2="20%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
-                                <line x1="0" y1="40%" x2="100%" y2="40%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
-                                <line x1="0" y1="60%" x2="100%" y2="60%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
-                                <line x1="0" y1="80%" x2="100%" y2="80%" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                                <defs>
+                                    <pattern id="grid-pattern-500" width="500" height="500" patternUnits="userSpaceOnUse">
+                                        <rect width="500" height="500" fill="none"/>
+                                        <path d="M 500 0 L 0 0 0 500" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                                    </pattern>
+                                </defs>
+                                <rect width="100%" height="100%" fill="url(#grid-pattern-500)" />
                             </svg>
                         </div>
                         
@@ -255,8 +237,8 @@ html_content = """<!DOCTYPE html>
                         <div id="tokens-layer" class="absolute inset-0 z-10"></div>
                     </div>
 
-                    <!-- MAP MODES TOOLBAR -->
-                    <div class="absolute top-4 left-4 z-15 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1.5 shadow-xl backdrop-blur-xs">
+                    <!-- MAP MODES TOOLBAR (velutanmap.com özellikleri) -->
+                    <div id="map-toolbar" class="absolute top-4 left-4 z-15 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1.5 shadow-xl backdrop-blur-xs">
                         <button id="mode-btn-tokens" onclick="setMapMode('tokens')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white" title="Karakter Taşıma Modu">
                             🎯 Taşıma
                         </button>
@@ -266,9 +248,6 @@ html_content = """<!DOCTYPE html>
                         <button id="mode-btn-marker" onclick="setMapMode('marker')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border" title="Harita İşaretçisi Ekle">
                             📍 İşaret Koy
                         </button>
-                        <button id="btn-clear-route" onclick="clearRoute()" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-red-400 hover:bg-red-950/40 hidden" title="Rotayı Temizle">
-                            🧹 Rotaları Sil
-                        </button>
                         
                         <!-- Host Özel Düşman Görünürlük Butonu -->
                         <button id="host-toggle-enemies-btn" onclick="toggleEnemiesVisibility()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-950 border border-red-800 text-red-200" title="Düşmanları Oyunculara Göster/Gizle">
@@ -276,18 +255,86 @@ html_content = """<!DOCTYPE html>
                         </button>
                     </div>
 
-                    <!-- FLOATING ROUTE TOTAL DISTANCE BADGE -->
-                    <div id="route-info-badge" class="hidden absolute top-4 right-4 z-15 bg-rpg-card/90 border border-rpg-border rounded-lg px-4 py-2 flex flex-col items-center shadow-xl">
-                        <span class="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Toplam Rota Mesafesi</span>
-                        <span id="route-total-distance" class="text-lg font-bold text-rpg-gold font-mono">0.0 Mil</span>
+                    <!-- VELUTAN SEYAHAT HIZI VE ARAZİ TİPİ KARTI (Yeni!) -->
+                    <div id="velutan-travel-card" class="hidden absolute top-4 left-44 z-15 bg-rpg-card/95 border border-rpg-border rounded-lg p-3 flex items-center gap-4 shadow-xl backdrop-blur-xs">
+                        <div class="flex flex-col">
+                            <span class="text-[9px] uppercase font-bold text-gray-400 mb-1">Seyahat Hızı</span>
+                            <div class="relative">
+                                <button onclick="toggleTravelDropdown('speed')" id="travel-speed-btn" class="bg-[#1F1404] border border-[#8A6529]/60 px-3 py-1.5 rounded text-xs text-white min-w-[120px] flex justify-between items-center">
+                                    <span>Yavaş</span> <span class="text-[10px]">▼</span>
+                                </button>
+                                <div id="travel-speed-dropdown" class="hidden absolute left-0 top-full mt-1 bg-[#2E1E07] border border-[#8A6529] rounded shadow-2xl z-20 min-w-[140px] flex flex-col p-1">
+                                    <!-- Dinamik yüklenir -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <span class="text-[9px] uppercase font-bold text-gray-400 mb-1">Arazi Tipi</span>
+                            <div class="relative">
+                                <button onclick="toggleTravelDropdown('terrain')" id="travel-terrain-btn" class="bg-[#1F1404] border border-[#8A6529]/60 px-3 py-1.5 rounded text-xs text-white min-w-[140px] flex justify-between items-center">
+                                    <span>Normal Arazi</span> <span class="text-[10px]">▼</span>
+                                </button>
+                                <div id="travel-terrain-dropdown" class="hidden absolute left-0 top-full mt-1 bg-[#2E1E07] border border-[#8A6529] rounded shadow-2xl z-20 min-w-[160px] flex flex-col p-1">
+                                    <!-- Dinamik yüklenir -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- FLOATING ZOOM CONTROLS -->
-                    <div class="absolute bottom-4 left-4 z-15 bg-rpg-card/90 border border-rpg-border rounded-lg p-1.5 flex items-center gap-2 shadow-xl backdrop-blur-xs">
-                        <button onclick="changeZoom(-0.08)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors">-</button>
-                        <span id="zoom-display" class="text-xs font-mono font-bold text-rpg-gold min-w-[40px] text-center">100%</span>
+                    <!-- VELUTAN YOLCULUK ÖZETİ PANELİ (Yeni!) -->
+                    <div id="route-info-badge" class="hidden absolute top-4 right-4 z-15 bg-[#1F1404]/90 border border-rpg-border rounded-lg p-4 flex flex-col shadow-xl min-w-[220px]">
+                        <div class="flex justify-between items-center border-b border-[#8A6529]/30 pb-2 mb-2">
+                            <span class="text-xs font-bold text-white font-serif">Yolculuk Özeti</span>
+                            <button onclick="toggleJourneyDetails()" class="text-[10px] text-rpg-gold font-bold hover:underline flex items-center gap-1">
+                                Detaylar <span id="journey-details-arrow">▲</span>
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-1.5 text-xs text-gray-300">
+                            <div class="flex justify-between">
+                                <span>Toplam Mesafe:</span>
+                                <span id="route-total-distance" class="font-bold text-white">0 km</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Dinlenmeli:</span>
+                                <span id="travel-time-rested" class="font-bold text-rpg-gold">0 gün</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Durmaksızın:</span>
+                                <span id="travel-time-continuous" class="font-bold text-[#E11D48]">0 gün</span>
+                            </div>
+                        </div>
+
+                        <!-- Segment Ayrıntıları Akordeon -->
+                        <div id="journey-segments-container" class="mt-3 pt-3 border-t border-[#8A6529]/20 max-h-[200px] overflow-y-auto space-y-2 hidden">
+                            <!-- Dinamik rota bacakları buraya dolacak -->
+                        </div>
+                    </div>
+
+                    <!-- SOL ALT VE SAĞ ALT KONTROL KAPÜLLERİ (velutanmap.com stili) -->
+                    <!-- Sol Alt: Rota Silme/Geri Alma -->
+                    <div id="route-edit-capsule" class="hidden absolute bottom-4 left-36 z-15 bg-rpg-card/90 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1 shadow-xl">
+                        <button onclick="undoLastWaypoint()" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors" title="Son Noktayı Geri Al">↩</button>
+                        <div class="w-px h-6 bg-[#8A6529]/30"></div>
+                        <button onclick="clearRoute()" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-red-950/40 text-red-500 font-bold flex items-center justify-center text-sm transition-colors" title="Tüm Rotaları Sil">🧹</button>
+                    </div>
+
+                    <!-- Ortada Alt: Arayüz Gizleme Göz Butonu -->
+                    <div class="absolute bottom-4 left-[50%] -translate-x-[50%] z-20 bg-rpg-card/90 border border-rpg-border rounded-full p-2 shadow-2xl hover:scale-110 transition-transform cursor-pointer">
+                        <button onclick="toggleUIVisibility()" id="btn-ui-visibility" class="w-8 h-8 flex items-center justify-center text-base" title="Arayüzü Gizle/Göster">👁️</button>
+                    </div>
+
+                    <!-- Sağ Alt: Ayarlar Çarkı -->
+                    <div id="settings-wheel-container" class="absolute bottom-4 right-4 z-15 bg-rpg-card/90 border border-rpg-border rounded-full p-2 shadow-xl hover:scale-110 transition-transform cursor-pointer">
+                        <button onclick="openSettingsModal()" class="w-8 h-8 flex items-center justify-center text-xl" title="Masaüstü ve Velutan Ayarları">⚙️</button>
+                    </div>
+
+                    <!-- FLOAT ZOOM CONTROLS (Sağ Üst) -->
+                    <div id="floating-zoom-container" class="absolute top-4 right-4 z-15 bg-rpg-card/90 border border-rpg-border rounded-lg p-1.5 flex flex-col gap-2 shadow-xl">
                         <button onclick="changeZoom(0.08)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors">+</button>
-                        <button onclick="resetZoom()" class="px-2 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-gray-300 text-[11px] font-bold transition-colors">Sıfırla</button>
+                        <div class="h-px bg-[#8A6529]/30"></div>
+                        <button onclick="changeZoom(-0.08)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors">-</button>
                     </div>
                 </section>
 
@@ -328,7 +375,7 @@ html_content = """<!DOCTYPE html>
                     </div>
 
                     <!-- SAĞ PANELİ GİZLEME BUTONU -->
-                    <button onclick="toggleSidebar('right')" class="absolute top-[48%] -left-4 bg-rpg-card hover:bg-rpg-border text-rpg-gold border border-rpg-border rounded-l-lg w-4 h-12 flex items-center justify-center font-bold text-[10px] z-20 cursor-pointer shadow-lg" id="btn-toggle-right">
+                    <button id="sidebar-right-toggle-btn" onclick="toggleSidebar('right')" class="absolute top-[48%] -left-4 bg-rpg-card hover:bg-rpg-border text-rpg-gold border border-rpg-border rounded-l-lg w-4 h-12 flex items-center justify-center font-bold text-[10px] z-20 cursor-pointer shadow-lg">
                         &gt;
                     </button>
                 </aside>
@@ -460,6 +507,70 @@ html_content = """<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- GELECEKTEKİ VELUTAN VE MASAÜSTÜ AYARLARI MODALI (input_file_13.png Stili) -->
+    <div id="settings-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-[#131720] border-2 border-[#8A6529] p-6 rounded-lg w-full max-w-2xl shadow-2xl relative text-[#CBB58F] font-sans">
+            
+            <div class="flex justify-between items-center border-b border-[#8A6529]/40 pb-3 mb-4">
+                <h2 class="text-base font-bold text-rpg-gold flex items-center gap-2">⚙️ Ayarlar</h2>
+                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white font-bold text-xl">&times;</button>
+            </div>
+
+            <div class="space-y-5 max-h-[500px] overflow-y-auto pr-1 text-xs">
+                <!-- Genel Ayarlar -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold text-white border-b border-[#8A6529]/20 pb-1 uppercase tracking-wider">Genel Ayarlar</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] uppercase text-gray-400 font-bold mb-1">Günlük Hareket Süresi (saat)</label>
+                            <input id="settings-daily-hours" type="number" value="12" class="w-full bg-[#1F1404] border border-[#8A6529]/40 rounded p-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase text-gray-400 font-bold mb-1">Zoom Hassasiyeti</label>
+                            <input id="settings-zoom-sensitivity" type="number" step="0.05" value="0.25" class="w-full bg-[#1F1404] border border-[#8A6529]/40 rounded p-2 text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hız Ayarları -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center border-b border-[#8A6529]/20 pb-1">
+                        <h3 class="text-xs font-bold text-white uppercase tracking-wider">Hız Ayarları</h3>
+                        <button onclick="addSettingsSpeed()" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold">+ Yeni Hız</button>
+                    </div>
+                    <div id="settings-speeds-list" class="space-y-2">
+                        <!-- Dinamik hız listesi -->
+                    </div>
+                </div>
+
+                <!-- Arazi Ayarları -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center border-b border-[#8A6529]/20 pb-1">
+                        <h3 class="text-xs font-bold text-white uppercase tracking-wider">Arazi Ayarları</h3>
+                        <button onclick="addSettingsTerrain()" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold">+ Yeni Arazi</button>
+                    </div>
+                    <div id="settings-terrains-list" class="space-y-2">
+                        <!-- Dinamik arazi listesi -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alt Butonlar -->
+            <div class="flex justify-between items-center border-t border-[#8A6529]/40 pt-4 mt-5">
+                <div class="flex gap-2">
+                    <button onclick="exportRoomData()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold">Dışa Aktar</button>
+                    <button onclick="importRoomData()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold">İçe Aktar</button>
+                    <button onclick="resetAllSettings()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-xs font-bold">Sıfırla</button>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="closeSettingsModal()" class="border border-[#8A6529]/60 text-gray-300 hover:bg-[#1F1404] px-4 py-2 rounded text-xs font-bold">İptal</button>
+                    <button onclick="applySettingsModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded text-xs font-bold">Uygula</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <!-- BAĞLANTI VE SENKRONİZASYON BEKLEME EKRANI -->
     <div id="loading-overlay" class="hidden absolute inset-0 z-40 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 text-[#CBB58F]">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rpg-accent mb-4"></div>
@@ -499,7 +610,7 @@ html_content = """<!DOCTYPE html>
             roomName: "",
             username: "Oyuncu",
             hostName: "", 
-            gridSize: 176.8, 
+            gridSize: 500, // 500x500 Grid Sabiti
             gridVisible: true,
             selectedMap: "custom_map",
             customMapUrl: "",
@@ -513,7 +624,22 @@ html_content = """<!DOCTYPE html>
             enemiesVisibleToPlayers: false, 
             currentMode: 'tokens', 
             waypoints: [], 
-            markers: [] 
+            markers: [],
+            // Velutanmap Yolculuk ve Ayar Bilgileri
+            travelSpeeds: [
+                { name: "Yavaş", value: 30 },
+                { name: "Normal", value: 45 },
+                { name: "Hızlı", value: 60 }
+            ],
+            terrainTypes: [
+                { name: "Normal Arazi", multiplier: 1, color: "#f59e0b" },
+                { name: "Zorlu Arazi", multiplier: 2, color: "#ef4444" }
+            ],
+            dailyTravelHours: 12,
+            zoomSensitivity: 0.25,
+            selectedSpeedIndex: 0,
+            selectedTerrainIndex: 0,
+            uiVisible: true
         };
 
         let currentUploadedImageBase64 = null;
@@ -544,14 +670,22 @@ html_content = """<!DOCTYPE html>
             right: true
         };
 
-        function showLoadingOverlay(msg) {
-            document.getElementById('loading-message').innerText = msg;
-            document.getElementById('loading-overlay').classList.remove('hidden');
-        }
+        // Sayfa Hazırlık Dinleyicisi
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryRoom = urlParams.get('room');
+            if (queryRoom) {
+                document.getElementById('join-room-code').value = queryRoom.toUpperCase();
+            }
 
-        function hideLoadingOverlay() {
-            document.getElementById('loading-overlay').classList.add('hidden');
-        }
+            setupMapPanControls();
+            
+            window.addEventListener('resize', () => {
+                if (state.roomCode) {
+                    clampTransformLimits();
+                }
+            });
+        });
 
         // GERÇEK ZAMANLI KÜRESEL AĞ SENKRONİZASYON MOTORU
         function connectToGlobalNetwork() {
@@ -626,7 +760,14 @@ html_content = """<!DOCTYPE html>
                                 players: state.players,
                                 enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
                                 waypoints: state.waypoints,
-                                markers: state.markers
+                                markers: state.markers,
+                                // Velutanmap Ayarları Eşitleme
+                                travelSpeeds: state.travelSpeeds,
+                                terrainTypes: state.terrainTypes,
+                                dailyTravelHours: state.dailyTravelHours,
+                                zoomSensitivity: state.zoomSensitivity,
+                                selectedSpeedIndex: state.selectedSpeedIndex,
+                                selectedTerrainIndex: state.selectedTerrainIndex
                             }
                         });
                     }
@@ -635,7 +776,7 @@ html_content = """<!DOCTYPE html>
                 case 'sync_state':
                     state.roomName = packet.fullState.roomName;
                     state.hostName = packet.fullState.hostName;
-                    state.gridSize = packet.fullState.gridSize;
+                    state.gridSize = packet.fullState.gridSize || 500;
                     state.gridVisible = packet.fullState.gridVisible;
                     state.selectedMap = packet.fullState.selectedMap;
                     state.customMapUrl = packet.fullState.customMapUrl;
@@ -649,6 +790,14 @@ html_content = """<!DOCTYPE html>
                     state.enemiesVisibleToPlayers = packet.fullState.enemiesVisibleToPlayers || false;
                     state.waypoints = packet.fullState.waypoints || [];
                     state.markers = packet.fullState.markers || [];
+
+                    // Velutan harita eşitlemeleri
+                    state.travelSpeeds = packet.fullState.travelSpeeds || state.travelSpeeds;
+                    state.terrainTypes = packet.fullState.terrainTypes || state.terrainTypes;
+                    state.dailyTravelHours = packet.fullState.dailyTravelHours || 12;
+                    state.zoomSensitivity = packet.fullState.zoomSensitivity || 0.25;
+                    state.selectedSpeedIndex = packet.fullState.selectedSpeedIndex || 0;
+                    state.selectedTerrainIndex = packet.fullState.selectedTerrainIndex || 0;
 
                     if (joinTimeout) {
                         clearTimeout(joinTimeout);
@@ -731,12 +880,18 @@ html_content = """<!DOCTYPE html>
                 case 'change_map_settings':
                     state.selectedMap = packet.selectedMap;
                     state.customMapUrl = packet.customMapUrl;
-                    state.gridSize = packet.gridSize;
+                    state.gridSize = packet.gridSize || 500;
                     state.gridVisible = packet.gridVisible;
                     state.mapWidth = packet.mapWidth;
                     state.mapHeight = packet.mapHeight;
                     
                     state.enemiesVisibleToPlayers = packet.enemiesVisibleToPlayers || false;
+                    state.travelSpeeds = packet.travelSpeeds || state.travelSpeeds;
+                    state.terrainTypes = packet.terrainTypes || state.terrainTypes;
+                    state.dailyTravelHours = packet.dailyTravelHours || 12;
+                    state.zoomSensitivity = packet.zoomSensitivity || 0.25;
+                    state.selectedSpeedIndex = packet.selectedSpeedIndex || 0;
+                    state.selectedTerrainIndex = packet.selectedTerrainIndex || 0;
 
                     const b = document.getElementById('map-board');
                     b.style.width = state.mapWidth + 'px';
@@ -745,6 +900,8 @@ html_content = """<!DOCTYPE html>
                     applyMapDisplay();
                     updateGridSize(state.gridSize);
                     updateHostEnemiesToggleButton();
+                    updateTravelDropdowns();
+                    calculateTravelStats();
                     resetZoom();
                     saveToLocalStorage();
                     break;
@@ -752,6 +909,7 @@ html_content = """<!DOCTYPE html>
                 case 'sync_waypoints':
                     state.waypoints = packet.waypoints || [];
                     renderRoute();
+                    calculateTravelStats();
                     break;
                 
                 case 'sync_markers':
@@ -761,29 +919,32 @@ html_content = """<!DOCTYPE html>
             }
         }
 
-        // Harita Sürükleme ve Kaydırma (Pan) Motoru
+        // Harita Sürükleme ve Kaydırma (Pan) Motoru (velutanmap.com hassasiyeti)
         function setupMapPanControls() {
             const viewport = document.getElementById('map-viewport');
 
             viewport.addEventListener('wheel', (e) => {
                 e.preventDefault();
-                const zoomFactor = 1.08;
+                const sens = state.zoomSensitivity || 0.25;
+                const zoomFactor = 1 + (sens * 0.4); 
+                
                 let targetZoom = zoomLevel;
                 if (e.deltaY < 0) {
-                    targetZoom = Math.min(zoomLevel * zoomFactor, 3.5);
+                    targetZoom = zoomLevel * zoomFactor;
                 } else {
-                    targetZoom = Math.max(zoomLevel / zoomFactor, 0.15);
+                    targetZoom = zoomLevel / zoomFactor;
                 }
                 
                 const minZoom = getMinZoomLimit();
-                zoomLevel = Math.max(minZoom, targetZoom);
+                zoomLevel = Math.max(minZoom, Math.min(3.5, targetZoom));
                 
                 clampTransformLimits();
                 updateMapTransform();
             }, { passive: false });
 
             viewport.addEventListener('mousedown', (e) => {
-                if (e.target.closest('.cursor-pointer')) {
+                // Token, menü veya butona tıklanınca sürüklemeyi bloklarız
+                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('aside') || e.target.closest('#app-nav')) {
                     return;
                 }
                 isPanning = true;
@@ -809,7 +970,7 @@ html_content = """<!DOCTYPE html>
             });
             
             viewport.addEventListener('touchstart', (e) => {
-                if (e.target.closest('.cursor-pointer')) {
+                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) {
                     return;
                 }
                 isPanning = true;
@@ -838,7 +999,6 @@ html_content = """<!DOCTYPE html>
             if (!viewport) return 0.25;
             const viewWidth = viewport.clientWidth;
             const viewHeight = viewport.clientHeight;
-            
             return Math.min(viewWidth / state.mapWidth, viewHeight / state.mapHeight) * 0.95;
         }
 
@@ -908,8 +1068,6 @@ html_content = """<!DOCTYPE html>
                         const board = document.getElementById('map-board');
                         board.style.width = img.width + 'px';
                         board.style.height = img.height + 'px';
-                        
-                        state.gridSize = img.width / 5;
 
                         applyMapDisplay();
                         resetZoom();
@@ -924,7 +1082,13 @@ html_content = """<!DOCTYPE html>
                             gridVisible: state.gridVisible,
                             mapWidth: state.mapWidth,
                             mapHeight: state.mapHeight,
-                            enemiesVisibleToPlayers: state.enemiesVisibleToPlayers
+                            enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
+                            travelSpeeds: state.travelSpeeds,
+                            terrainTypes: state.terrainTypes,
+                            dailyTravelHours: state.dailyTravelHours,
+                            zoomSensitivity: state.zoomSensitivity,
+                            selectedSpeedIndex: state.selectedSpeedIndex,
+                            selectedTerrainIndex: state.selectedTerrainIndex
                         });
                     };
                     img.src = dataUrl;
@@ -1020,7 +1184,7 @@ html_content = """<!DOCTYPE html>
             state.enemies = [];
             state.mapWidth = 884;
             state.mapHeight = 670;
-            state.gridSize = 884 / 5; 
+            state.gridSize = 500; // 500x500 ızgara sabiti
             state.enemiesVisibleToPlayers = false;
             state.waypoints = [];
             state.markers = [];
@@ -1102,32 +1266,35 @@ html_content = """<!DOCTYPE html>
             const board = document.getElementById('map-board');
             board.style.width = state.mapWidth + 'px';
             board.style.height = state.mapHeight + 'px';
-            
-            state.gridSize = state.mapWidth / 5;
 
             const btnNewEnemy = document.getElementById('btn-new-enemy');
-            const dmOnlyHint = document.getElementById('dm-only-hint');
+            const enemyContainer = document.getElementById('enemy-section-container');
             const hostEnemiesBtn = document.getElementById('host-toggle-enemies-btn');
             
-            if (state.username.toLowerCase() === state.hostName.toLowerCase()) {
+            const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+            
+            // Düşman panelleri ve yetkileri sadece Host için çizilir
+            if (isHost) {
                 btnNewEnemy.classList.remove('hidden');
                 hostEnemiesBtn.classList.remove('hidden');
-                dmOnlyHint.innerText = "Yönetici yetkileriniz aktif.";
+                enemyContainer.classList.remove('hidden');
             } else {
                 btnNewEnemy.classList.add('hidden');
                 hostEnemiesBtn.classList.add('hidden');
-                dmOnlyHint.innerText = `Sadece oda kurucusu (${state.hostName}) düşman oluşturabilir.`;
+                enemyContainer.classList.add('hidden');
             }
 
             applyMapDisplay();
             updateGridSize(state.gridSize);
             updateHostEnemiesToggleButton();
+            updateTravelDropdowns();
             renderTokens();
             renderPlayers();
             renderChat();
             renderCharacterRoster();
             renderRoute();
             renderMarkers();
+            calculateTravelStats();
             
             board.addEventListener('click', handleMapBoardClick);
             
@@ -1139,8 +1306,7 @@ html_content = """<!DOCTYPE html>
             localStorage.setItem(`realm_room_${state.roomCode}`, JSON.stringify(state));
         }
 
-        function handleCrossTabSync(e) {
-        }
+        function handleCrossTabSync(e) {}
 
         function copyInviteLinkOnly() {
             const inviteURL = `${window.location.origin}${window.location.pathname}?room=${state.roomCode}`;
@@ -1167,27 +1333,8 @@ html_content = """<!DOCTYPE html>
             document.getElementById('map-select-preset').value = state.selectedMap;
         }
 
-        function changeMapPreset() {
-            const val = document.getElementById('map-select-preset').value;
-            state.selectedMap = val;
-            applyMapDisplay();
-            saveToLocalStorage();
-
-            broadcastNetworkEvent({
-                type: 'change_map_settings',
-                selectedMap: state.selectedMap,
-                customMapUrl: state.customMapUrl,
-                gridSize: state.gridSize,
-                gridVisible: state.gridVisible,
-                mapWidth: state.mapWidth,
-                mapHeight: state.mapHeight,
-                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers
-            });
-        }
-
         function updateGridSize(size) {
-            state.gridSize = state.mapWidth / 5; 
-            
+            state.gridSize = 500; // 500x500 Grid Kilidi
             const overlay = document.getElementById('grid-overlay');
             if (state.gridVisible) {
                 overlay.style.display = 'block';
@@ -1217,9 +1364,17 @@ html_content = """<!DOCTYPE html>
                 gridVisible: state.gridVisible,
                 mapWidth: state.mapWidth,
                 mapHeight: state.mapHeight,
-                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers
+                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
+                travelSpeeds: state.travelSpeeds,
+                terrainTypes: state.terrainTypes,
+                dailyTravelHours: state.dailyTravelHours,
+                zoomSensitivity: state.zoomSensitivity,
+                selectedSpeedIndex: state.selectedSpeedIndex,
+                selectedTerrainIndex: state.selectedTerrainIndex
             });
         }
+
+        // VELUTAN ETKİLEŞİMLERİ (Ölçüm ve İşaretçiler)
 
         function setMapMode(mode) {
             state.currentMode = mode;
@@ -1233,16 +1388,262 @@ html_content = """<!DOCTYPE html>
                 }
             });
 
-            const clearBtn = document.getElementById('btn-clear-route');
-            if (mode === 'measurement' && state.waypoints && state.waypoints.length > 0) {
-                clearBtn.classList.remove('hidden');
+            // Rota silme ve seyahat kartlarının görünürlüğü
+            const clearBtnCapsule = document.getElementById('route-edit-capsule');
+            const travelCard = document.getElementById('velutan-travel-card');
+            
+            if (mode === 'measurement') {
+                travelCard.classList.remove('hidden');
+                if (state.waypoints && state.waypoints.length > 0) {
+                    clearBtnCapsule.classList.remove('hidden');
+                }
             } else {
-                clearBtn.classList.add('hidden');
+                travelCard.classList.add('hidden');
+                clearBtnCapsule.classList.add('hidden');
             }
 
             renderTokens();
         }
 
+        // Seyahat Seçim Alanı Güncellemesi (input_file_7.png stili)
+        function updateTravelDropdowns() {
+            const speedBtn = document.getElementById('travel-speed-btn');
+            const terrainBtn = document.getElementById('travel-terrain-btn');
+
+            const speed = state.travelSpeeds[state.selectedSpeedIndex] || { name: 'Normal', value: 45 };
+            const terrain = state.terrainTypes[state.selectedTerrainIndex] || { name: 'Normal Arazi', multiplier: 1 };
+
+            speedBtn.innerHTML = `<span>${speed.name}</span> <span class="text-[10px]">▼</span>`;
+            terrainBtn.innerHTML = `<span>${terrain.name}</span> <span class="text-[10px]">▼</span>`;
+
+            // Dropdown listelerini doldur
+            const speedDrop = document.getElementById('travel-speed-dropdown');
+            speedDrop.innerHTML = "";
+            state.travelSpeeds.forEach((s, idx) => {
+                const activeTick = (idx === state.selectedSpeedIndex) ? `<span class="text-rpg-gold text-xs">✓</span>` : ``;
+                const item = document.createElement('button');
+                item.className = "px-2 py-1.5 hover:bg-[#1F1404] rounded text-left flex justify-between items-center text-xs";
+                item.onclick = () => selectTravelSpeed(idx);
+                item.innerHTML = `<div><div class="font-bold text-white">${s.name}</div><div class="text-[10px] text-gray-400">${s.value} km/gün</div></div> ${activeTick}`;
+                speedDrop.appendChild(item);
+            });
+
+            const terrainDrop = document.getElementById('travel-terrain-dropdown');
+            terrainDrop.innerHTML = "";
+            state.terrainTypes.forEach((t, idx) => {
+                const activeTick = (idx === state.selectedTerrainIndex) ? `<span class="text-rpg-gold text-xs">✓</span>` : ``;
+                const item = document.createElement('button');
+                item.className = "px-2 py-1.5 hover:bg-[#1F1404] rounded text-left flex justify-between items-center text-xs";
+                item.onclick = () => selectTerrainType(idx);
+                item.innerHTML = `<div><div class="font-bold text-white">${t.name}</div><div class="text-[10px] text-gray-400">x${t.multiplier}</div></div> ${activeTick}`;
+                terrainDrop.appendChild(item);
+            });
+        }
+
+        function toggleTravelDropdown(type) {
+            const speedDrop = document.getElementById('travel-speed-dropdown');
+            const terrainDrop = document.getElementById('travel-terrain-dropdown');
+
+            if (type === 'speed') {
+                speedDrop.classList.toggle('hidden');
+                terrainDrop.classList.add('hidden');
+            } else {
+                terrainDrop.classList.toggle('hidden');
+                speedDrop.classList.add('hidden');
+            }
+        }
+
+        function selectTravelSpeed(idx) {
+            state.selectedSpeedIndex = idx;
+            document.getElementById('travel-speed-dropdown').classList.add('hidden');
+            updateTravelDropdowns();
+            calculateTravelStats();
+            saveToLocalStorage();
+
+            broadcastNetworkEvent({
+                type: 'change_map_settings',
+                selectedMap: state.selectedMap,
+                customMapUrl: state.customMapUrl,
+                gridSize: state.gridSize,
+                gridVisible: state.gridVisible,
+                mapWidth: state.mapWidth,
+                mapHeight: state.mapHeight,
+                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
+                travelSpeeds: state.travelSpeeds,
+                terrainTypes: state.terrainTypes,
+                dailyTravelHours: state.dailyTravelHours,
+                zoomSensitivity: state.zoomSensitivity,
+                selectedSpeedIndex: state.selectedSpeedIndex,
+                selectedTerrainIndex: state.selectedTerrainIndex
+            });
+        }
+
+        function selectTerrainType(idx) {
+            state.selectedTerrainIndex = idx;
+            document.getElementById('travel-terrain-dropdown').classList.add('hidden');
+            updateTravelDropdowns();
+            calculateTravelStats();
+            saveToLocalStorage();
+
+            broadcastNetworkEvent({
+                type: 'change_map_settings',
+                selectedMap: state.selectedMap,
+                customMapUrl: state.customMapUrl,
+                gridSize: state.gridSize,
+                gridVisible: state.gridVisible,
+                mapWidth: state.mapWidth,
+                mapHeight: state.mapHeight,
+                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
+                travelSpeeds: state.travelSpeeds,
+                terrainTypes: state.terrainTypes,
+                dailyTravelHours: state.dailyTravelHours,
+                zoomSensitivity: state.zoomSensitivity,
+                selectedSpeedIndex: state.selectedSpeedIndex,
+                selectedTerrainIndex: state.selectedTerrainIndex
+            });
+        }
+
+        // Birebir Velutan Yolculuk Hesaplama Motoru (input_file_10.png ve input_file_11.png Matematiği)
+        function calculateTravelStats() {
+            if (!state.waypoints || state.waypoints.length === 0) {
+                document.getElementById('route-info-badge').classList.add('hidden');
+                document.getElementById('route-edit-capsule').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('route-info-badge').classList.remove('hidden');
+            if (state.currentMode === 'measurement') {
+                document.getElementById('route-edit-capsule').classList.remove('hidden');
+            }
+
+            let totalKm = 0;
+            const speed = state.travelSpeeds[state.selectedSpeedIndex] || { name: 'Normal', value: 45 };
+            const terrain = state.terrainTypes[state.selectedTerrainIndex] || { name: 'Normal Arazi', multiplier: 1 };
+            const dailyHours = state.dailyTravelHours || 12;
+
+            // Segment bacaklarının detaylı dökümü için container'ı temizle
+            const detailContainer = document.getElementById('journey-segments-container');
+            detailContainer.innerHTML = "";
+
+            state.waypoints.forEach((pt, index) => {
+                if (index > 0) {
+                    const prev = state.waypoints[index - 1];
+                    const dx = pt.x - prev.x;
+                    const dy = pt.y - prev.y;
+                    const pixels = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // ÖLÇEK: 1 piksel = 1 kilometre (Görsellerdeki 845 km sığdırma oranına göre kilittir)
+                    const segmentKm = pixels;
+                    totalKm += segmentKm;
+
+                    // Segment Süre Hesabı
+                    const hourlySpeed = speed.value / dailyHours;
+                    const segmentHoursNeeded = (segmentKm * terrain.multiplier) / hourlySpeed;
+                    const segDays = Math.floor(segmentHoursNeeded / dailyHours);
+                    const segHours = Math.round(segmentHoursNeeded % dailyHours);
+
+                    const segDiv = document.createElement('div');
+                    segDiv.className = "bg-[#2E1E07]/60 border border-[#8A6529]/30 rounded p-2 text-[10px]";
+                    segDiv.innerHTML = `
+                        <div class="text-[#D4B46A] font-bold">Nokta ${index} → ${index + 1}</div>
+                        <div class="flex justify-between mt-0.5 text-gray-400">
+                            <span>Mesafe: ${Math.round(segmentKm)} km</span>
+                            <span>Arazi: ${terrain.name}</span>
+                        </div>
+                        <div class="text-white mt-0.5">Süre: ${segDays} gün, ${segHours} saat</div>
+                    `;
+                    detailContainer.appendChild(segDiv);
+                }
+            });
+
+            // Genel Süre Hesabı
+            const hourlySpeed = speed.value / dailyHours;
+            const totalHoursNeeded = (totalKm * terrain.multiplier) / hourlySpeed;
+
+            // Dinlenmeli Seyahat Hesabı
+            const restDays = Math.floor(totalHoursNeeded / dailyHours);
+            const restHours = Math.round(totalHoursNeeded % dailyHours);
+
+            // Durmaksızın (Kesintisiz) Seyahat Hesabı (24 saat seyahat)
+            const contDays = Math.floor(totalHoursNeeded / 24);
+            const contHours = Math.round(totalHoursNeeded % 24);
+
+            document.getElementById('route-total-distance').innerText = `${Math.round(totalKm)} km`;
+            document.getElementById('travel-time-rested').innerText = `${restDays} gün, ${restHours} saat`;
+            document.getElementById('travel-time-continuous').innerText = `${contDays} gün, ${contHours} saat`;
+        }
+
+        function toggleJourneyDetails() {
+            const container = document.getElementById('journey-segments-container');
+            const arrow = document.getElementById('journey-details-arrow');
+            container.classList.toggle('hidden');
+            if (container.classList.contains('hidden')) {
+                arrow.innerText = '▼';
+            } else {
+                arrow.innerText = '▲';
+            }
+        }
+
+        function undoLastWaypoint() {
+            if (!state.waypoints || state.waypoints.length === 0) return;
+            state.waypoints.pop();
+            renderRoute();
+            calculateTravelStats();
+            saveToLocalStorage();
+            broadcastNetworkEvent({
+                type: 'sync_waypoints',
+                waypoints: state.waypoints
+            });
+        }
+
+        // Arayüzü Gizle / Göster (Göz Butonu)
+        function toggleUIVisibility() {
+            state.uiVisible = !state.uiVisible;
+            const nav = document.getElementById('app-nav');
+            const left = document.getElementById('sidebar-left');
+            const right = document.getElementById('sidebar-right');
+            const toolbar = document.getElementById('map-toolbar');
+            const travel = document.getElementById('velutan-travel-card');
+            const summary = document.getElementById('route-info-badge');
+            const editCap = document.getElementById('route-edit-capsule');
+            const settingsWheel = document.getElementById('settings-wheel-container');
+            const zoomCap = document.getElementById('floating-zoom-container');
+
+            const btn = document.getElementById('btn-ui-visibility');
+
+            if (state.uiVisible) {
+                if (nav) nav.classList.remove('hidden');
+                if (left && sidebarStatus.left) left.classList.remove('w-0', 'overflow-hidden', 'opacity-0');
+                if (right && sidebarStatus.right) right.classList.remove('w-0', 'overflow-hidden', 'opacity-0');
+                if (toolbar) toolbar.classList.remove('hidden');
+                if (state.currentMode === 'measurement') {
+                    if (travel) travel.classList.remove('hidden');
+                    if (editCap && state.waypoints.length > 0) editCap.classList.remove('hidden');
+                }
+                if (summary && state.waypoints.length > 0) summary.classList.remove('hidden');
+                if (settingsWheel) settingsWheel.classList.remove('hidden');
+                if (zoomCap) zoomCap.classList.remove('hidden');
+                btn.innerText = "👁️";
+            } else {
+                if (nav) nav.classList.add('hidden');
+                if (left) left.classList.add('w-0', 'overflow-hidden', 'opacity-0');
+                if (right) right.classList.add('w-0', 'overflow-hidden', 'opacity-0');
+                if (toolbar) toolbar.classList.add('hidden');
+                if (travel) travel.classList.add('hidden');
+                if (summary) summary.classList.add('hidden');
+                if (editCap) editCap.classList.add('hidden');
+                if (settingsWheel) settingsWheel.classList.add('hidden');
+                if (zoomCap) zoomCap.classList.add('hidden');
+                btn.innerText = "🙈";
+            }
+
+            setTimeout(() => {
+                clampTransformLimits();
+                updateMapTransform();
+            }, 320);
+        }
+
+        // Haritada boş yere tıklama olayları (Ölçüm ve İşaretleme Modu için)
         function handleMapBoardClick(e) {
             if (e.target.closest('.cursor-pointer')) {
                 return;
@@ -1259,8 +1660,7 @@ html_content = """<!DOCTYPE html>
                 
                 renderRoute();
                 saveToLocalStorage();
-                
-                document.getElementById('btn-clear-route').classList.remove('hidden');
+                calculateTravelStats();
 
                 broadcastNetworkEvent({
                     type: 'sync_waypoints',
@@ -1283,6 +1683,7 @@ html_content = """<!DOCTYPE html>
             }
         }
 
+        // Velutan Yol/Mesafe Çizim Motoru
         function renderRoute() {
             const overlay = document.getElementById('route-overlay-layer');
             const badge = document.getElementById('route-info-badge');
@@ -1291,7 +1692,7 @@ html_content = """<!DOCTYPE html>
 
             if (!state.waypoints || state.waypoints.length === 0) {
                 badge.classList.add('hidden');
-                document.getElementById('btn-clear-route').classList.add('hidden');
+                document.getElementById('route-edit-capsule').classList.add('hidden');
                 return;
             }
 
@@ -1347,13 +1748,12 @@ html_content = """<!DOCTYPE html>
                 path.setAttribute("stroke-dasharray", "6,6");
                 overlay.insertBefore(path, overlay.firstChild);
             }
-
-            document.getElementById('route-total-distance').innerText = `${totalDistance.toFixed(1)} Mil`;
         }
 
         function clearRoute() {
             state.waypoints = [];
             renderRoute();
+            calculateTravelStats();
             saveToLocalStorage();
             broadcastNetworkEvent({
                 type: 'sync_waypoints',
@@ -1361,6 +1761,7 @@ html_content = """<!DOCTYPE html>
             });
         }
 
+        // Harita İşaretçileri (Markers) Çizim Motoru
         function renderMarkers() {
             const container = document.getElementById('markers-layer');
             if (!container) return;
@@ -1399,6 +1800,7 @@ html_content = """<!DOCTYPE html>
             });
         }
 
+        // DÜŞMANLARI GÖSTER/GİZLE SİS PERDESİ KONTROLÜ (Host Özel)
         function toggleEnemiesVisibility() {
             if (state.username.toLowerCase() !== state.hostName.toLowerCase()) return;
             state.enemiesVisibleToPlayers = !state.enemiesVisibleToPlayers;
@@ -1415,7 +1817,13 @@ html_content = """<!DOCTYPE html>
                 gridVisible: state.gridVisible,
                 mapWidth: state.mapWidth,
                 mapHeight: state.mapHeight,
-                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers
+                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
+                travelSpeeds: state.travelSpeeds,
+                terrainTypes: state.terrainTypes,
+                dailyTravelHours: state.dailyTravelHours,
+                zoomSensitivity: state.zoomSensitivity,
+                selectedSpeedIndex: state.selectedSpeedIndex,
+                selectedTerrainIndex: state.selectedTerrainIndex
             });
         }
 
@@ -1430,6 +1838,182 @@ html_content = """<!DOCTYPE html>
             }
         }
 
+        // DİNAMİK AYARLAR MODALI YÖNETİM MOTORU (input_file_13.png Stili)
+        
+        function openSettingsModal() {
+            document.getElementById('settings-daily-hours').value = state.dailyTravelHours;
+            document.getElementById('settings-zoom-sensitivity').value = state.zoomSensitivity;
+
+            // Hızları Listele
+            const speedsBox = document.getElementById('settings-speeds-list');
+            speedsBox.innerHTML = "";
+            state.travelSpeeds.forEach((s, idx) => {
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-2 bg-[#1F1404] p-1.5 rounded border border-[#8A6529]/30";
+                row.innerHTML = `
+                    <span class="text-gray-500 text-xs">☰</span>
+                    <input type="text" value="${s.name}" class="settings-speed-name flex-grow bg-transparent border-none text-white focus:outline-none">
+                    <input type="number" value="${s.value}" class="settings-speed-val w-20 bg-[#2E1E07] border border-[#8A6529]/30 rounded p-1 text-center text-white">
+                    <span class="text-gray-400 text-[10px]">km/gün</span>
+                    <button onclick="deleteSettingsSpeed(${idx})" class="text-red-500 hover:text-red-400 font-bold ml-1 text-base">&times;</button>
+                `;
+                speedsBox.appendChild(row);
+            });
+
+            // Arazileri Listele
+            const terrainsBox = document.getElementById('settings-terrains-list');
+            terrainsBox.innerHTML = "";
+            state.terrainTypes.forEach((t, idx) => {
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-2 bg-[#1F1404] p-1.5 rounded border border-[#8A6529]/30";
+                row.innerHTML = `
+                    <span class="text-gray-500 text-xs">☰</span>
+                    <input type="text" value="${t.name}" class="settings-terrain-name flex-grow bg-transparent border-none text-white focus:outline-none">
+                    <input type="number" value="${t.multiplier}" class="settings-terrain-val w-16 bg-[#2E1E07] border border-[#8A6529]/30 rounded p-1 text-center text-white">
+                    <span class="text-gray-400 text-[10px]">çarpan</span>
+                    <button onclick="deleteSettingsTerrain(${idx})" class="text-red-500 hover:text-red-400 font-bold ml-1 text-base">&times;</button>
+                `;
+                terrainsBox.appendChild(row);
+            });
+
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function addSettingsSpeed() {
+            state.travelSpeeds.push({ name: "Yeni Hız", value: 50 });
+            openSettingsModal();
+        }
+
+        function deleteSettingsSpeed(idx) {
+            state.travelSpeeds.splice(idx, 1);
+            if (state.selectedSpeedIndex >= state.travelSpeeds.length) state.selectedSpeedIndex = 0;
+            openSettingsModal();
+        }
+
+        function addSettingsTerrain() {
+            state.terrainTypes.push({ name: "Yeni Arazi", multiplier: 1.5 });
+            openSettingsModal();
+        }
+
+        function deleteSettingsTerrain(idx) {
+            state.terrainTypes.splice(idx, 1);
+            if (state.selectedTerrainIndex >= state.terrainTypes.length) state.selectedTerrainIndex = 0;
+            openSettingsModal();
+        }
+
+        function applySettingsModal() {
+            // Form verilerini oku ve state'e işle
+            state.dailyTravelHours = parseInt(document.getElementById('settings-daily-hours').value) || 12;
+            state.zoomSensitivity = parseFloat(document.getElementById('settings-zoom-sensitivity').value) || 0.25;
+
+            // Hız listesini derle
+            const speedNames = document.getElementsByClassName('settings-speed-name');
+            const speedVals = document.getElementsByClassName('settings-speed-val');
+            state.travelSpeeds = [];
+            for (let i = 0; i < speedNames.length; i++) {
+                state.travelSpeeds.push({
+                    name: speedNames[i].value.trim(),
+                    value: parseInt(speedVals[i].value) || 30
+                });
+            }
+
+            // Arazi listesini derle
+            const terrainNames = document.getElementsByClassName('settings-terrain-name');
+            const terrainVals = document.getElementsByClassName('settings-terrain-val');
+            state.terrainTypes = [];
+            for (let i = 0; i < terrainNames.length; i++) {
+                state.terrainTypes.push({
+                    name: terrainNames[i].value.trim(),
+                    multiplier: parseFloat(terrainVals[i].value) || 1
+                });
+            }
+
+            closeSettingsModal();
+            updateTravelDropdowns();
+            calculateTravelStats();
+            saveToLocalStorage();
+
+            // Tüm ayar değişikliklerini ağ üzerinden diğer oyunculara bildiririz
+            broadcastNetworkEvent({
+                type: 'change_map_settings',
+                selectedMap: state.selectedMap,
+                customMapUrl: state.customMapUrl,
+                gridSize: state.gridSize,
+                gridVisible: state.gridVisible,
+                mapWidth: state.mapWidth,
+                mapHeight: state.mapHeight,
+                enemiesVisibleToPlayers: state.enemiesVisibleToPlayers,
+                travelSpeeds: state.travelSpeeds,
+                terrainTypes: state.terrainTypes,
+                dailyTravelHours: state.dailyTravelHours,
+                zoomSensitivity: state.zoomSensitivity,
+                selectedSpeedIndex: state.selectedSpeedIndex,
+                selectedTerrainIndex: state.selectedTerrainIndex
+            });
+
+            addSystemLog("Harita ve seyahat ayarları güncellendi.");
+        }
+
+        // Dışa ve İçe Aktarım Mekanizmaları
+        function exportRoomData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `rollplay-realm-${state.roomCode}.json`);
+            dlAnchorElem.click();
+        }
+
+        function importRoomData() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json';
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const imported = JSON.parse(event.target.result);
+                            if (imported.roomCode) {
+                                state = imported;
+                                saveToLocalStorage();
+                                loadAndDisplayRoomUI();
+                                alert("Oda verileri başarıyla içe aktarıldı!");
+                            }
+                        } catch (err) {
+                            alert("Uyumsuz veya bozuk dosya formatı!");
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            fileInput.click();
+        }
+
+        function resetAllSettings() {
+            if (confirm("Tüm ayarları ve hız tanımlarını sıfırlamak istiyor musunuz?")) {
+                state.travelSpeeds = [
+                    { name: "Yavaş", value: 30 },
+                    { name: "Normal", value: 45 },
+                    { name: "Hızlı", value: 60 }
+                ];
+                state.terrainTypes = [
+                    { name: "Normal Arazi", multiplier: 1, color: "#f59e0b" },
+                    { name: "Zorlu Arazi", multiplier: 2, color: "#ef4444" }
+                ];
+                state.dailyTravelHours = 12;
+                state.zoomSensitivity = 0.25;
+                state.selectedSpeedIndex = 0;
+                state.selectedTerrainIndex = 0;
+                openSettingsModal();
+            }
+        }
+
+        // TAM BAĞIMSIZ HATASIZ KARAKTER SAYFASI MOTORU
         function openNewCharacterSheet() {
             editingTokenId = null;
             isEditingEnemyMode = false;
@@ -1678,11 +2262,12 @@ html_content = """<!DOCTYPE html>
             const target = pool.find(t => t.id === id);
             if (!target) return;
 
-            const cellW = state.mapWidth / 5;
-            const cellH = state.mapHeight / 5;
+            // 500x500 Taktik kuralına göre kare boyutu kilidi
+            const cellW = 500;
+            const cellH = 500;
 
             const randomCol = Math.floor(Math.random() * 2);
-            const randomRow = Math.floor(Math.random() * 3);
+            const randomRow = Math.floor(Math.random() * 2);
 
             const activeToken = {
                 id: 'active-' + Math.random().toString(36).substr(2, 9),
@@ -1987,8 +2572,8 @@ html_content = """<!DOCTYPE html>
                 const pxX = parseFloat(tokenEl.style.left);
                 const pxY = parseFloat(tokenEl.style.top);
                 
-                const cellW = state.mapWidth / 5;
-                const cellH = state.mapHeight / 5;
+                const cellW = 500;
+                const cellH = 500;
 
                 const col = Math.max(0, Math.min(4, Math.round(pxX / cellW)));
                 const row = Math.max(0, Math.min(4, Math.round(pxY / cellH)));
@@ -2137,23 +2722,3 @@ html_content = """<!DOCTYPE html>
     </script>
 </body>
 </html>
-"""
-
-# programmatically verify the Javascript block contains zero duplicate "function name" declarations
-import re
-
-# Find all script contents
-scripts = re.findall(r'<script>(.*?)</script>', html_content, re.DOTALL)
-js_block = "".join(scripts)
-
-# Find all function declarations in Javascript blocks
-declared_functions = re.findall(r'function\s+([a-zA-Z0-9_]+)\s*\(', js_block)
-
-duplicates = [fn for fn in declared_functions if declared_functions.count(fn) > 1]
-unique_duplicates = set(duplicates)
-
-print("Duplicates found programmatically:", unique_duplicates)
-if len(unique_duplicates) == 0:
-    print("Code is 100% clean and compile-ready!")
-else:
-    print("Wait! We found duplicates! Removing them in Python now...")
