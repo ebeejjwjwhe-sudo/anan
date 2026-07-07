@@ -1,10 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rollplay Realm Online - Velutan RPG Masaüstü</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -37,11 +37,13 @@
         ::-webkit-scrollbar-track { background: #1F1404; }
         ::-webkit-scrollbar-thumb { background: #8A6529; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #CBB58F; }
-        
         .grid-layer { pointer-events: none; }
         
+        /* Geçiş animasyonları */
+        .sidebar-transition { transition: all 0.3s ease-in-out; }
+
         /* İşaret silme animasyonu */
-        .delete-mode-active .marker-wrapper {
+        .delete-mode-active .marker-element {
             animation: pulse-red 1s infinite;
             cursor: crosshair !important;
         }
@@ -54,6 +56,7 @@
 </head>
 <body class="text-[#CBB58F] h-screen w-screen flex flex-col font-serif select-none relative">
 
+    <!-- SABİT YAN PANEL AÇ/KAPAT BUTONLARI (Asla Kaybolmazlar) -->
     <button id="global-left-toggle" onclick="toggleSidebar('left')" class="hidden fixed left-0 top-1/2 -translate-y-1/2 z-50 bg-rpg-card hover:bg-rpg-border text-rpg-gold border-r border-t border-b border-rpg-border rounded-r-lg w-5 h-14 flex items-center justify-center font-bold text-xs shadow-2xl cursor-pointer">
         &lt;
     </button>
@@ -61,6 +64,7 @@
         &gt;
     </button>
 
+    <!-- ÜST NAVİGASYON TABS BAR -->
     <nav id="app-nav" class="hidden shrink-0 bg-[#3D250D] border-b border-[#5C3D11] px-6 py-3 flex items-center justify-between z-40 shadow-md relative">
         <div class="flex items-center gap-8">
             <span class="text-xl font-bold tracking-widest text-[#D4B46A] cursor-pointer" onclick="resetZoom()">ROLLPLAY</span>
@@ -77,23 +81,30 @@
         </div>
     </nav>
 
+    <!-- ANA ÇALIŞMA ALANI -->
     <main class="flex-grow flex overflow-hidden relative w-full h-full">
 
-        <!-- LOBİ EKRANI -->
+        <!-- LOBİ GİRİŞ EKRANI -->
         <div id="lobby-screen" class="absolute inset-0 z-50 bg-[#1F1404] flex items-center justify-center p-4 overflow-y-auto">
             <div class="max-w-4xl w-full grid md:grid-cols-2 gap-8 items-stretch">
+                <!-- Sol Tanıtım -->
                 <div class="bg-rpg-card border border-rpg-border p-8 rounded-xl flex flex-col justify-between relative overflow-hidden shadow-2xl">
                     <div>
                         <div class="inline-block bg-rpg-accent/10 text-rpg-accent text-[10px] px-2.5 py-1 rounded-full border border-rpg-accent/20 mb-4 font-bold tracking-widest uppercase">Masaüstü Portalı</div>
                         <h2 class="text-2xl font-bold text-white mb-4 leading-tight">Yarım Kalan Hikayeni Canlandır.</h2>
                         <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                            Rollplay Realm; haritalar yükleyebileceğiniz, karakter token'larını yerleştirebileceğiniz ve diğer oyuncularla gerçek zamanlı etkileşime girebileceğiniz sunucusuz bir oyun masasıdır.
+                            Rollplay Realm; haritalar yükleyebileceğiniz, karakter token'larını yerleştirebileceğiniz, D&D Beyond uyumlu sınıflarla macera kurgulayabileceğiniz ve çoklu sekme senkronizasyonu ile arkadaşlarınızla oynayabileceğiniz gerçek zamanlı sanal oyun masasıdır [1].
                         </p>
+                    </div>
+                    <div class="border-t border-rpg-border/50 pt-6 mt-6">
+                        <p class="text-xs text-gray-500">Macerayı test etmek için odayı kurup davet linkini yan sekmede açabilirsiniz.</p>
                     </div>
                 </div>
 
+                <!-- Giriş Formu -->
                 <div class="bg-rpg-card border border-rpg-border p-8 rounded-xl flex flex-col justify-center shadow-2xl">
                     <div class="space-y-6">
+                        <!-- Oda Oluştur -->
                         <div>
                             <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2 border-b border-rpg-border pb-1.5">
                                 <span class="text-rpg-gold">⚔️</span> Yeni Dünya Yarat (Host)
@@ -107,19 +118,21 @@
                             </div>
                         </div>
 
+                        <!-- Ayırıcı -->
                         <div class="relative flex py-1 items-center">
                             <div class="flex-grow border-t border-rpg-border"></div>
                             <span class="flex-shrink mx-4 text-gray-500 text-[10px] tracking-wider uppercase">VEYA</span>
                             <div class="flex-grow border-t border-rpg-border"></div>
                         </div>
 
+                        <!-- Odaya Katıl -->
                         <div>
                             <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2 border-b border-rpg-border pb-1.5">
                                 <span class="text-rpg-gold">🧙</span> Mevcut Dünyaya Katıl
                             </h3>
                             <div class="space-y-3">
-                                <input id="join-room-code" type="text" placeholder="Davet Kodu Girin (REALM-XXXX)" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none focus:border-rpg-gold text-white uppercase font-mono">
-                                <input id="join-user-name" type="text" placeholder="Karakter Adınız" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none focus:border-rpg-gold text-white">
+                                <input id="join-room-code" type="text" placeholder="Davet Kodu Girin (REALM-XXXX)" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none text-white uppercase font-mono">
+                                <input id="join-user-name" type="text" placeholder="Karakter Adınız" class="w-full bg-[#1F1404] border border-rpg-border rounded p-2.5 text-xs focus:outline-none text-white">
                                 <button onclick="joinRoom()" class="w-full bg-rpg-accent hover:bg-rpg-accentHover text-white font-bold py-2.5 rounded transition-all text-xs tracking-wide shadow-lg">
                                     Maceraya Katıl
                                 </button>
@@ -130,21 +143,24 @@
             </div>
         </div>
 
+        <!-- PLAYGROUND KONTEYNERİ -->
         <div id="game-playground" class="hidden w-full h-full flex overflow-hidden relative">
             
             <!-- 1. SEKME: KARAKTER -->
             <div id="main-tab-content-karakter" class="w-full h-full p-6 overflow-y-auto space-y-6 absolute inset-0 bg-[#3D250D] z-30">
+                <!-- ÜST BANNER -->
                 <div class="bg-rpg-card border border-rpg-border p-5 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
                     <div class="flex items-center gap-3">
                         <span class="text-xs uppercase text-gray-400 font-bold">ODA KODU:</span>
                         <span id="char-display-code" class="text-3xl font-bold font-serif text-rpg-accent tracking-wider">REALM-XXXX</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="copyInviteLinkOnly()" class="bg-transparent border border-rpg-border hover:bg-[#5C3D11] text-[#CBB58F] px-4 py-2 rounded text-xs font-bold transition-all flex items-center gap-1">🔗 Bağlantıyı kopyala</button>
-                        <button onclick="copyInviteLink()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-4 py-2 rounded text-xs font-bold transition-all flex items-center gap-1">📥 KODU KOPYALA</button>
+                        <button onclick="copyInviteLinkOnly()" class="bg-transparent border border-rpg-border hover:bg-[#3D250D] text-[#CBB58F] px-4 py-2 rounded text-xs font-bold transition-all flex items-center gap-1">🔗 Bağlantıyı kopyala</button>
+                        <button onclick="copyInviteLink()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-4 py-2 rounded text-xs font-bold transition-all flex items-center gap-1">📥 DAVET KODUNU KOPYALA</button>
                     </div>
                 </div>
 
+                <!-- GRUP ÜYELERİ SEKSİYONU -->
                 <div>
                     <div class="flex items-center justify-between mb-4 border-b border-rpg-border pb-2">
                         <h3 class="text-lg font-bold tracking-wider text-white uppercase font-serif">Grup Üyeleri</h3>
@@ -153,13 +169,14 @@
                     <div id="character-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
                 </div>
 
+                <!-- DÜŞMANLAR SEKSİYONU (Yalnızca Host/DM için görünür) -->
                 <div id="enemy-section-container" class="hidden border-t border-rpg-border/50 pt-6">
                     <div class="flex items-center justify-between mb-4 border-b border-rpg-border pb-2">
                         <div>
                             <h3 class="text-lg font-bold tracking-wider text-red-400 uppercase font-serif flex items-center gap-1.5">
                                 ☠️ Düşmanlar & Yaratıklar
                             </h3>
-                            <p class="text-[10px] text-gray-400 mt-0.5">Yalnızca oda yöneticisi olarak sizin tarafınızdan yönetilebilir.</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5">Yalnızca oda yöneticisi olarak sizin tarafınızdan yönetilebilir.</p>
                         </div>
                         <button id="btn-new-enemy" onclick="openNewEnemySheet()" class="hidden bg-red-950 border border-red-800 hover:bg-red-900 text-red-200 px-4 py-2 rounded text-xs font-bold uppercase transition-all tracking-wider shadow-lg">+ Yeni Düşman</button>
                     </div>
@@ -170,7 +187,8 @@
             <!-- 2. SEKME: BATTLE MAP -->
             <div id="main-tab-content-battlemap" class="hidden w-full h-full flex overflow-hidden relative absolute inset-0 z-20">
                 
-                <aside id="sidebar-left" class="w-80 bg-rpg-card border-r border-rpg-border flex flex-col shrink-0 h-full overflow-y-auto transition-all duration-300 relative z-30">
+                <!-- SOL SİDEBAR -->
+                <aside id="sidebar-left" class="w-80 bg-rpg-card border-r border-rpg-border flex flex-col shrink-0 h-full overflow-y-auto sidebar-transition relative z-30">
                     <div class="p-4 space-y-5">
                         <div>
                             <label class="text-[10px] text-rpg-gold tracking-wider font-bold block mb-1.5">MİKRO HARİTA SEÇİCİ</label>
@@ -183,18 +201,21 @@
                             </select>
                         </div>
 
+                        <!-- Bilgisayardan Dosya Yükleme Butonu -->
                         <div>
                             <label class="text-[10px] text-rpg-gold tracking-wider font-bold block mb-1.5">BİLGİSAYARDAN HARİTA YÜKLE</label>
                             <label class="flex items-center justify-center border border-dashed border-rpg-border bg-[#1F1404]/50 hover:bg-[#1F1404] p-4 rounded cursor-pointer transition-colors text-xs text-gray-400 shadow-inner">
-                                📁 Görsel Seç
+                                📁 Görsel Seç (input_file_0.png)
                                 <input type="file" accept="image/*" class="hidden" onchange="handleLocalMapUpload(event)">
                             </label>
                         </div>
 
+                        <!-- Taktiksel Katman Sınırı -->
                         <div class="border-t border-rpg-border/60 pt-4 flex justify-between items-center text-xs">
                             <button onclick="toggleGridVisible()" id="btn-grid-toggle" class="w-full text-center bg-rpg-accent/20 text-rpg-accent border border-rpg-accent/30 py-2 rounded font-bold transition-colors">Grid: Açık</button>
                         </div>
 
+                        <!-- Oyuncu Listesi -->
                         <div class="border-t border-rpg-border/60 pt-4">
                             <h4 class="text-[10px] text-gray-400 tracking-wider font-bold mb-2">AKTİF OYUNCULAR</h4>
                             <div id="realm-player-list" class="space-y-1.5"></div>
@@ -202,8 +223,12 @@
                     </div>
                 </aside>
 
-                <section id="map-viewport" class="flex-grow h-full relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing z-10" style="background-color: #1F1404;">
+                <!-- ORTA HARİTA ALANI -->
+                <section id="map-viewport" class="flex-grow h-full relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing z-10" style="background-color: #1F1404; background-image: radial-gradient(rgba(0,0,0,0.15) 1px, transparent 0), radial-gradient(rgba(0,0,0,0.15) 1px, transparent 0); background-size: 8px 8px;">
+                    <!-- Harita Konteyneri (Taktik grid 500x500 pikselli olarak kilitlendi) -->
                     <div id="map-board" class="relative shadow-2xl origin-center select-none" style="width: 884px; height: 670px; background-size: 100% 100%; background-position: center; transform: translate(0px, 0px) scale(1);">
+                        
+                        <!-- 500x500 Taktiksel Grid overlay -->
                         <div id="grid-overlay" class="grid-layer absolute inset-0 z-0">
                             <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="pointer-events: none;">
                                 <defs>
@@ -215,12 +240,18 @@
                                 <rect width="100%" height="100%" fill="url(#grid-pattern-500)" />
                             </svg>
                         </div>
+                        
+                        <!-- Velutan Rota Çizim Overlay Katmanı -->
                         <svg id="route-overlay-layer" class="absolute inset-0 z-5 pointer-events-none" width="100%" height="100%"></svg>
+                        
+                        <!-- İşaretçiler (Markers) Katmanı -->
                         <div id="markers-layer" class="absolute inset-0 z-6 pointer-events-none"></div>
+
+                        <!-- Token Katmanı -->
                         <div id="tokens-layer" class="absolute inset-0 z-10"></div>
                     </div>
 
-                    <!-- BATTLE MAP ÜST TOOLBAR -->
+                    <!-- MAP MODES TOOLBAR -->
                     <div id="map-toolbar" class="absolute top-4 left-4 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1.5 shadow-xl backdrop-blur-xs">
                         <button id="mode-btn-tokens" onclick="setMapMode('tokens')" class="px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white shadow-inner" title="Karakter Taşıma Modu">
                             🎯 Taşıma
@@ -235,18 +266,18 @@
                             🗑️ İşaret Sil
                         </button>
                         
-                        <!-- Host Özel Düşman Saldırı Paneli Butonu -->
-                        <button id="host-attack-btn" onclick="openAttackModal()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#6B000D] hover:bg-red-700 text-white shadow-inner">
+                        <!-- Host Özel Taktik Saldırı Butonu -->
+                        <button id="host-attack-btn" onclick="openAttackModal()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#6B000D] hover:bg-red-700 text-white shadow-inner" title="Düşman Saldırı Paneli">
                             ⚔️ Saldırı Yap
                         </button>
                         
                         <!-- Host Özel Düşman Görünürlük Butonu -->
-                        <button id="host-toggle-enemies-btn" onclick="toggleEnemiesVisibility()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-950 border border-red-800 text-red-200">
+                        <button id="host-toggle-enemies-btn" onclick="toggleEnemiesVisibility()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-950 border border-red-800 text-red-200" title="Düşmanları Oyunculara Göster/Gizle">
                             👁️ Düşmanlar: GİZLİ
                         </button>
                     </div>
 
-                    <!-- VELUTAN SEYAHAT HIZ KARTI (Rota seçenekleri aşağı alındı) -->
+                    <!-- VELUTAN SEYAHAT KARTI (Yeni Konum: Diğer butonları engellememesi için biraz aşağıya kaydırıldı) -->
                     <div id="velutan-travel-card" class="hidden absolute top-20 left-4 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-3 flex items-center gap-4 shadow-xl backdrop-blur-xs">
                         <div class="flex flex-col">
                             <span class="text-[9px] uppercase font-bold text-gray-400 mb-1">Seyahat Hızı</span>
@@ -254,7 +285,8 @@
                                 <button onclick="toggleTravelDropdown('speed')" id="travel-speed-btn" class="bg-[#1F1404] border border-[#8A6529]/60 px-3 py-1.5 rounded text-xs text-white min-w-[120px] flex justify-between items-center shadow-inner">
                                     <span>Yavaş</span> <span class="text-[10px]">▼</span>
                                 </button>
-                                <div id="travel-speed-dropdown" class="hidden absolute left-0 top-full mt-1 bg-[#2E1E07] border border-[#8A6529] rounded shadow-2xl z-30 min-w-[140px] flex flex-col p-1"></div>
+                                <div id="travel-speed-dropdown" class="hidden absolute left-0 top-full mt-1 bg-[#2E1E07] border border-[#8A6529] rounded shadow-2xl z-30 min-w-[140px] flex flex-col p-1">
+                                </div>
                             </div>
                         </div>
 
@@ -264,13 +296,14 @@
                                 <button onclick="toggleTravelDropdown('terrain')" id="travel-terrain-btn" class="bg-[#1F1404] border border-[#8A6529]/60 px-3 py-1.5 rounded text-xs text-white min-w-[140px] flex justify-between items-center shadow-inner">
                                     <span>Normal Arazi</span> <span class="text-[10px]">▼</span>
                                 </button>
-                                <div id="travel-terrain-dropdown" class="hidden absolute left-0 top-full mt-1 bg-[#2E1E07] border border-[#8A6529] rounded shadow-2xl z-30 min-w-[160px] flex flex-col p-1"></div>
+                                <div id="travel-terrain-dropdown" class="hidden absolute left-0 top-full mt-1 bg-[#2E1E07] border border-[#8A6529] rounded shadow-2xl z-30 min-w-[160px] flex flex-col p-1">
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- VELUTAN YOLCULUK ÖZETİ -->
-                    <div id="route-info-badge" class="hidden absolute top-4 right-4 z-20 bg-[#1F1404]/95 border border-rpg-border rounded-lg p-4 flex flex-col shadow-xl min-w-[220px] backdrop-blur-xs">
+                    <div id="route-info-badge" class="hidden absolute top-4 right-4 z-20 bg-[#1F1404]/90 border border-rpg-border rounded-lg p-4 flex flex-col shadow-xl min-w-[220px]">
                         <div class="flex justify-between items-center border-b border-[#8A6529]/30 pb-2 mb-2">
                             <span class="text-xs font-bold text-white font-serif">Yolculuk Özeti</span>
                             <button onclick="toggleJourneyDetails()" class="text-[10px] text-rpg-gold font-bold hover:underline flex items-center gap-1">
@@ -293,27 +326,39 @@
                             </div>
                         </div>
 
-                        <div id="journey-segments-container" class="mt-3 pt-3 border-t border-[#8A6529]/20 max-h-[200px] overflow-y-auto space-y-2 hidden"></div>
+                        <!-- Segment Ayrıntıları Akordeon -->
+                        <div id="journey-segments-container" class="mt-3 pt-3 border-t border-[#8A6529]/20 max-h-[200px] overflow-y-auto space-y-2 hidden">
+                        </div>
                     </div>
 
-                    <!-- SOL ALT: Rota Silme / Geri Alma (Sabit ve belirgin) -->
+                    <!-- SOL ALT VE SAĞ ALT KONTROL KAPÜLLERİ -->
                     <div id="route-edit-capsule" class="hidden absolute bottom-4 left-16 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex items-center gap-1 shadow-xl backdrop-blur-xs">
                         <button onclick="undoLastWaypoint()" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-sm transition-colors shadow-inner" title="Son Noktayı Geri Al">↩</button>
                         <div class="w-px h-6 bg-[#8A6529]/30"></div>
                         <button onclick="clearRoute()" class="px-2 h-8 rounded bg-[#1F1404] hover:bg-red-950/60 text-red-500 font-bold flex items-center justify-center text-xs transition-colors shadow-inner" title="Tüm Rotaları Sil">🧹 Temizle</button>
                     </div>
 
-                    <!-- ORTA ALT: Göz Butonu -->
+                    <!-- Sol Sidebar Açma / Kapatma Tırnağı (Kalıcı Buton) -->
+                    <button id="sidebar-left-toggle-btn" onclick="toggleSidebar('left')" class="absolute left-0 top-[50%] -translate-y-[50%] z-20 bg-rpg-card hover:bg-rpg-border text-rpg-gold border-r border-t border-b border-rpg-border rounded-r-lg w-4 h-12 flex items-center justify-center font-bold text-[10px] cursor-pointer shadow-lg">
+                        &lt;
+                    </button>
+
+                    <!-- Sağ Sidebar Açma / Kapatma Tırnağı (Kalıcı Buton) -->
+                    <button id="sidebar-right-toggle-btn" onclick="toggleSidebar('right')" class="absolute right-0 top-[50%] -translate-y-[50%] z-20 bg-rpg-card hover:bg-rpg-border text-rpg-gold border-l border-t border-b border-rpg-border rounded-l-lg w-4 h-12 flex items-center justify-center font-bold text-[10px] cursor-pointer shadow-lg">
+                        &gt;
+                    </button>
+
+                    <!-- Ortada Alt: Arayüz Gizleme Göz Butonu -->
                     <div class="absolute bottom-4 left-[50%] -translate-x-[50%] z-20 bg-rpg-card/90 border border-rpg-border rounded-full p-2 shadow-2xl hover:scale-110 transition-transform cursor-pointer">
                         <button onclick="toggleUIVisibility()" id="btn-ui-visibility" class="w-8 h-8 flex items-center justify-center text-base" title="Arayüzü Gizle/Göster">👁️</button>
                     </div>
 
-                    <!-- SAĞ ALT: Ayarlar Çarkı -->
-                    <div id="settings-wheel-container" class="absolute bottom-4 right-4 z-20 bg-rpg-card/90 border border-rpg-border rounded-full p-2 shadow-xl hover:scale-110 transition-transform cursor-pointer">
+                    <!-- Sağ Alt: Ayarlar Çarkı -->
+                    <div id="settings-wheel-container" class="absolute bottom-4 right-12 z-20 bg-rpg-card/90 border border-rpg-border rounded-full p-2 shadow-xl hover:scale-110 transition-transform cursor-pointer">
                         <button onclick="openSettingsModal()" class="w-8 h-8 flex items-center justify-center text-xl" title="Masaüstü ve Velutan Ayarları">⚙️</button>
                     </div>
 
-                    <!-- SAĞ ÜST ALT: FLOAT ZOOM CONTROLS -->
+                    <!-- FLOAT ZOOM CONTROLS (Sağ Üst) -->
                     <div id="floating-zoom-container" class="absolute top-44 right-4 z-20 bg-rpg-card/95 border border-rpg-border rounded-lg p-1.5 flex flex-col gap-2 shadow-xl backdrop-blur-xs">
                         <button onclick="changeZoom(0.15)" class="w-8 h-8 rounded bg-[#1F1404] hover:bg-rpg-border text-white font-bold flex items-center justify-center text-lg transition-colors shadow-inner">+</button>
                         <div class="h-px bg-[#8A6529]/30"></div>
@@ -322,7 +367,9 @@
                 </section>
 
                 <!-- SAĞ SİDEBAR: MEYDAN -->
-                <aside id="sidebar-right" class="w-80 bg-rpg-card border-l border-rpg-border flex flex-col shrink-0 h-full overflow-hidden transition-all duration-300 relative z-30">
+                <aside id="sidebar-right" class="w-80 bg-rpg-card border-l border-rpg-border flex flex-col shrink-0 h-full overflow-hidden sidebar-transition relative z-30">
+                    
+                    <!-- ZAR ALANI -->
                     <div class="border-b border-[#5C3D11] shrink-0 p-4 bg-[#1F1404]/60">
                         <h3 class="text-[10px] text-rpg-gold font-bold mb-3 tracking-widest uppercase">🎲 BATTLE MAP HIZLI ZAR</h3>
                         <div class="grid grid-cols-4 gap-1.5">
@@ -333,6 +380,7 @@
                             <button onclick="rollDice(12)" class="bg-[#2E1E07] border border-[#8A6529]/40 hover:border-rpg-gold py-2 rounded text-xs font-bold shadow-inner">D12</button>
                             <button onclick="rollDice(20)" class="bg-[#2E1E07] border border-[#8A6529]/40 hover:border-rpg-accent py-2 rounded text-xs font-bold text-rpg-accent shadow-inner">D20</button>
                             <button onclick="rollDice(100)" class="bg-[#2E1E07] border border-[#8A6529]/40 hover:border-rpg-gold py-2 rounded text-xs font-bold shadow-inner">D100</button>
+                            
                             <div class="relative bg-[#2E1E07] border border-[#8A6529]/40 rounded flex flex-col items-center justify-center shadow-inner">
                                 <input id="battle-roll-modifier" type="number" value="0" class="w-full text-center bg-transparent text-xs text-white focus:outline-none">
                                 <span class="text-[8px] text-gray-500 font-bold uppercase absolute bottom-0.5">MOD</span>
@@ -340,14 +388,17 @@
                         </div>
                     </div>
 
+                    <!-- SOHBET -->
                     <div class="flex-grow flex flex-col overflow-hidden h-0">
                         <div class="bg-[#1F1404] px-4 py-3 border-b border-rpg-border shrink-0 flex items-center justify-between">
                             <span class="text-xs font-bold text-[#D4B46A]">💬 SOHBET & ZAR GEÇMİŞİ</span>
                         </div>
+                        
                         <div id="battle-chat-logs" class="flex-grow overflow-y-auto p-4 space-y-3 text-xs leading-relaxed"></div>
+
                         <div class="p-3 bg-[#1F1404] border-t border-rpg-border flex gap-1.5 shrink-0">
                             <input id="battle-chat-input" type="text" placeholder="Mesaj yazın..." onkeydown="handleBattleChatKeyPress(event)" class="flex-grow bg-[#2E1E07] border border-[#8A6529]/40 rounded p-2 text-xs focus:outline-none focus:border-[#8A6529] text-white shadow-inner">
-                            <button onclick="sendBattleChatMessage()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-3 rounded text-xs font-bold transition-all shadow-md">Gönder</button>
+                            <button onclick="sendBattleChatMessage()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-3 rounded text-xs font-bold transition-all">Gönder</button>
                         </div>
                     </div>
                 </aside>
@@ -358,6 +409,7 @@
     <!-- KARAKTER SAYFASI MODALI -->
     <div id="character-sheet-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-[#4E3510] border-2 border-[#8A6529] p-6 rounded-lg w-full max-w-xl shadow-2xl relative text-[#CBB58F] font-serif">
+            
             <h2 id="sheet-title" class="text-[#D4B46A] text-sm uppercase font-bold tracking-wider mb-4 border-b border-[#8A6529] pb-2 text-center">YENİ KARAKTER SAYFASI YARAT</h2>
 
             <div class="grid grid-cols-2 gap-4 mb-3">
@@ -409,6 +461,7 @@
                 </div>
             </div>
 
+            <!-- DETAY SATIRI (Özel boyut ayarı) -->
             <div class="grid grid-cols-4 gap-3 mb-3">
                 <div>
                     <label class="block text-[10px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">HP (Can)</label>
@@ -472,10 +525,11 @@
                     <button onclick="saveSheetModal()" class="bg-[#6B000D] hover:bg-[#8B0000] text-white px-6 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors shadow-lg">KAYDET</button>
                 </div>
             </div>
+            
         </div>
     </div>
 
-    <!-- AYARLAR MODALI -->
+    <!-- AYARLAR MODALI (input_file_13.png Stili) -->
     <div id="settings-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-[#131720] border-2 border-[#8A6529] p-6 rounded-lg w-full max-w-2xl shadow-2xl relative text-[#CBB58F] font-sans">
             
@@ -485,6 +539,7 @@
             </div>
 
             <div class="space-y-5 max-h-[500px] overflow-y-auto pr-1 text-xs">
+                <!-- Genel Ayarlar -->
                 <div class="space-y-3">
                     <h3 class="text-xs font-bold text-white border-b border-[#8A6529]/20 pb-1 uppercase tracking-wider">Genel Ayarlar</h3>
                     <div class="grid grid-cols-2 gap-4">
@@ -499,23 +554,30 @@
                     </div>
                 </div>
 
+                <!-- Hız Ayarları -->
                 <div class="space-y-3">
                     <div class="flex justify-between items-center border-b border-[#8A6529]/20 pb-1">
                         <h3 class="text-xs font-bold text-white uppercase tracking-wider">Hız Ayarları</h3>
                         <button onclick="addSettingsSpeed()" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold">+ Yeni Hız</button>
                     </div>
-                    <div id="settings-speeds-list" class="space-y-2"></div>
+                    <div id="settings-speeds-list" class="space-y-2">
+                        <!-- Dinamik hız listesi -->
+                    </div>
                 </div>
 
+                <!-- Arazi Ayarları -->
                 <div class="space-y-3">
                     <div class="flex justify-between items-center border-b border-[#8A6529]/20 pb-1">
                         <h3 class="text-xs font-bold text-white uppercase tracking-wider">Arazi Ayarları</h3>
                         <button onclick="addSettingsTerrain()" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold">+ Yeni Arazi</button>
                     </div>
-                    <div id="settings-terrains-list" class="space-y-2"></div>
+                    <div id="settings-terrains-list" class="space-y-2">
+                        <!-- Dinamik arazi listesi -->
+                    </div>
                 </div>
             </div>
 
+            <!-- Alt Butonlar -->
             <div class="flex justify-between items-center border-t border-[#8A6529]/40 pt-4 mt-5">
                 <div class="flex gap-2">
                     <button onclick="exportRoomData()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold">Dışa Aktar</button>
@@ -537,20 +599,26 @@
             <h2 class="text-sm font-bold text-[#E11D48] uppercase tracking-wider mb-4 border-b border-[#E11D48]/30 pb-2 text-center flex items-center justify-center gap-1.5">
                 ⚔️ Taktik Saldırı Paneli
             </h2>
+            
             <div class="space-y-4 text-xs">
                 <div>
                     <label class="block text-gray-400 font-bold mb-1">Saldıran Canavar/Düşman</label>
-                    <select id="attack-source-token" class="w-full bg-[#1F1404] border border-[#E11D48]/30 rounded p-2 text-white focus:outline-none"></select>
+                    <select id="attack-source-token" class="w-full bg-[#1F1404] border border-[#E11D48]/30 rounded p-2 text-white focus:outline-none">
+                        <!-- Aktif düşman tokenları listelenir -->
+                    </select>
                 </div>
                 <div>
                     <label class="block text-gray-400 font-bold mb-1">Hedef Karakter</label>
-                    <select id="attack-target-token" class="w-full bg-[#1F1404] border border-[#8A6529]/40 rounded p-2 text-white focus:outline-none"></select>
+                    <select id="attack-target-token" class="w-full bg-[#1F1404] border border-[#8A6529]/40 rounded p-2 text-white focus:outline-none">
+                        <!-- Aktif kahraman tokenları listelenir -->
+                    </select>
                 </div>
                 <div>
                     <label class="block text-gray-400 font-bold mb-1">Hasar Miktarı</label>
                     <input id="attack-damage-amount" type="number" value="5" min="1" class="w-full bg-[#1F1404] border border-[#8A6529]/40 rounded p-2 text-white focus:outline-none">
                 </div>
             </div>
+
             <div class="flex items-center gap-2 mt-5 pt-3 border-t border-[#8A6529]/20">
                 <button onclick="closeAttackModal()" class="flex-grow border border-[#8A6529]/60 text-gray-300 hover:bg-[#1F1404] py-2 rounded text-xs font-bold uppercase transition-colors">Vazgeç</button>
                 <button onclick="executeAttackAction()" class="flex-grow bg-[#6B000D] hover:bg-[#E11D48] text-white py-2 rounded text-xs font-bold uppercase transition-colors shadow-lg">Saldırıyı Başlat</button>
@@ -559,11 +627,12 @@
     </div>
 
     <!-- BAĞLANTI VE SENKRONİZASYON BEKLEME EKRANI -->
-    <div id="loading-overlay" class="hidden absolute inset-0 z-40 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 text-[#CBB58F]">
+    <div id="loading-overlay" class="hidden absolute inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 text-[#CBB58F]">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rpg-accent mb-4"></div>
-        <p id="loading-message" class="text-sm font-bold tracking-wide animate-pulse">Dünyaya bağlanılıyor...</p>
+        <p id="loading-message" class="text-sm font-bold tracking-wide animate-pulse">Dünyaya bağlanılıyor, Host'tan harita verileri alınıyor...</p>
     </div>
 
+    <!-- JAVASCRIPT MOTORU -->
     <script>
         const MAP_PRESETS = {
             custom_map: "input_file_0.png",
@@ -571,6 +640,22 @@
             dungeon: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=1200",
             tavern: "https://images.unsplash.com/photo-1590579491410-a92ef59c9918?q=80&w=1200",
             void: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200"
+        };
+
+        const DND_CLASSES = {
+            barbarian: { name: "Barbar (Barbarian)", hp: 15, ac: 14, color: "#e11d48", icon: "🪓" },
+            bard: { name: "Ozan (Bard)", hp: 9, ac: 13, color: "#db2777", icon: "🪕" },
+            cleric: { name: "Ruhban (Cleric)", hp: 10, ac: 16, color: "#eab308", icon: "⛪" },
+            druid: { name: "Druid (Druid)", hp: 9, ac: 12, color: "#16a34a", icon: "🍃" },
+            fighter: { name: "Savaşçı (Fighter)", hp: 12, ac: 17, color: "#2563eb", icon: "🛡️" },
+            monk: { name: "Keşiş (Monk)", hp: 9, ac: 15, color: "#0d9488", icon: "🥋" },
+            paladin: { name: "Paladin (Paladin)", hp: 12, ac: 18, color: "#f59e0b", icon: "⚔️" },
+            ranger: { name: "Korucu (Ranger)", hp: 12, ac: 14, color: "#059669", icon: "🏹" },
+            rogue: { name: "Düzenbaz (Rogue)", hp: 9, ac: 14, color: "#4b5563", icon: "🗡️" },
+            sorcerer: { name: "Büyücü (Sorcerer)", hp: 7, ac: 12, color: "#7c3aed", icon: "⚡" },
+            warlock: { name: "Sihirbaz (Warlock)", hp: 9, ac: 12, color: "#4f46e5", icon: "👁️" },
+            wizard: { name: "Mütehassıs (Wizard)", hp: 7, ac: 12, color: "#0284c7", icon: "🧙‍♂️" },
+            artificer: { name: "Yapaycı (Artificer)", hp: 9, ac: 14, color: "#d97706", icon: "⚙️" }
         };
 
         const mySenderId = 'usr-' + Math.random().toString(36).substr(2, 9);
@@ -640,23 +725,6 @@
             right: true
         };
 
-        window.addEventListener('load', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const queryRoom = urlParams.get('room');
-            if (queryRoom) {
-                document.getElementById('join-room-code').value = queryRoom.toUpperCase();
-            }
-
-            setupMapPanControls();
-            
-            window.addEventListener('resize', () => {
-                if (state.roomCode) {
-                    clampTransformLimits();
-                    updateMapTransform();
-                }
-            });
-        });
-
         function showLoadingOverlay(msg) {
             document.getElementById('loading-message').innerText = msg;
             document.getElementById('loading-overlay').classList.remove('hidden');
@@ -684,6 +752,10 @@
                     if (t.avatarUrl && t.avatarUrl.length > 500) t.avatarUrl = ""; 
                 });
             }
+            // Ağ paket boyutunu ntfy için daha da düşür
+            if (clean.chatLogs) {
+                clean.chatLogs = clean.chatLogs.slice(-5);
+            }
             return clean;
         }
 
@@ -704,27 +776,38 @@
                         if (packet.senderId === mySenderId) {
                             return;
                         }
+
                         handleIncomingNetworkEvent(packet);
                     }
                 } catch (err) {}
             };
 
             eventSource.onerror = () => {
+                console.warn("Ağ bağlantısı koptu, otomatik yeniden bağlanılıyor...");
                 setTimeout(() => {
                     connectToGlobalNetwork();
                 }, 2000); 
             };
         }
 
+        // Ağ paketlerini ntfy parametre formatına sararak CORSOPTIONS ve preflight kilitlerini tamamen kıran fırlatıcı
         function broadcastNetworkEvent(packet) {
             if (!state.roomCode) return;
             packet.senderId = mySenderId;
             packet.senderName = state.username;
 
-            fetch(`https://ntfy.sh/${state.roomCode.toLowerCase()}`, {
+            const ntfyPayload = {
+                topic: state.roomCode.toLowerCase(),
+                message: JSON.stringify(packet)
+            };
+
+            fetch('https://ntfy.sh/', {
                 method: 'POST',
-                body: JSON.stringify(packet)
-            }).catch(err => console.error("Ağ hatası:", err));
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(ntfyPayload)
+            }).catch(err => console.error("Ağ gönderim hatası:", err));
         }
 
         function handleIncomingNetworkEvent(packet) {
@@ -734,7 +817,7 @@
                         state.players.push({ name: packet.name, lastSeen: Date.now() });
                         renderPlayers();
                     }
-                    addSystemLog(`${packet.name} odaya katılma talebi gönderdi.`);
+                    addSystemLog(`${packet.name} odaya katıldı, veriler senkronize ediliyor.`);
 
                     if (state.username.toLowerCase() === state.hostName.toLowerCase()) {
                         const cleanState = sanitizeStateForBroadcast(state);
@@ -770,8 +853,12 @@
                     state.selectedSpeedIndex = packet.fullState.selectedSpeedIndex || 0;
                     state.selectedTerrainIndex = packet.fullState.selectedTerrainIndex || 0;
 
-                    if (joinTimeout) clearTimeout(joinTimeout);
-                    if (joinRequestInterval) clearInterval(joinRequestInterval);
+                    if (joinTimeout) {
+                        clearTimeout(joinTimeout);
+                    }
+                    if (joinRequestInterval) {
+                        clearInterval(joinRequestInterval);
+                    }
 
                     hideLoadingOverlay();
                     loadAndDisplayRoomUI();
@@ -786,15 +873,23 @@
                     break;
 
                 case 'chat':
-                    state.chatLogs.push({ sender: packet.senderName, text: packet.text, timestamp: Date.now(), isSystem: false });
+                    state.chatLogs.push({
+                        sender: packet.senderName,
+                        text: packet.text,
+                        timestamp: Date.now(),
+                        isSystem: false
+                    });
                     renderChat();
-                    saveToLocalStorage();
                     break;
 
                 case 'roll':
-                    state.chatLogs.push({ sender: "Zar", text: packet.text, timestamp: Date.now(), isRoll: true });
+                    state.chatLogs.push({
+                        sender: "Zar",
+                        text: packet.text,
+                        timestamp: Date.now(),
+                        isRoll: true
+                    });
                     renderChat();
-                    saveToLocalStorage();
                     break;
 
                 case 'move_token':
@@ -803,7 +898,6 @@
                         tok.x = packet.x;
                         tok.y = packet.y;
                         renderTokens();
-                        saveToLocalStorage();
                     }
                     break;
 
@@ -816,22 +910,22 @@
                         pool.push(packet.entity);
                     }
                     renderCharacterRoster();
-                    saveToLocalStorage();
                     break;
 
                 case 'delete_character':
-                    if (packet.isEnemy) state.enemies = state.enemies.filter(t => t.id !== packet.id);
-                    else state.roster = state.roster.filter(t => t.id !== packet.id);
+                    if (packet.isEnemy) {
+                        state.enemies = state.enemies.filter(t => t.id !== packet.id);
+                    } else {
+                        state.roster = state.roster.filter(t => t.id !== packet.id);
+                    }
                     state.tokens = state.tokens.filter(tok => tok.rosterId !== packet.id);
                     renderCharacterRoster();
                     renderTokens();
-                    saveToLocalStorage();
                     break;
 
                 case 'spawn_token':
                     state.tokens.push(packet.token);
                     renderTokens();
-                    saveToLocalStorage();
                     break;
 
                 case 'change_map_settings':
@@ -860,7 +954,6 @@
                     updateTravelDropdowns();
                     calculateTravelStats();
                     resetZoom();
-                    saveToLocalStorage();
                     break;
                 
                 case 'sync_waypoints':
@@ -878,16 +971,21 @@
                     triggerAttackAnimation(packet.attackerId, packet.targetId, packet.damage);
                     break;
             }
+            saveToLocalStorage();
         }
 
+        // Taktik Saldırı Görsel Çizim Motoru
         function triggerAttackAnimation(attackerId, targetId, damage) {
             const attacker = state.tokens.find(t => t.id === attackerId);
             const target = state.tokens.find(t => t.id === targetId);
             if (!attacker || !target) return;
 
             target.hp = Math.max(0, target.hp - damage);
+
             const rosterChar = state.roster.find(c => c.id === target.rosterId);
-            if (rosterChar) rosterChar.hp = target.hp;
+            if (rosterChar) {
+                rosterChar.hp = target.hp;
+            }
 
             renderTokens();
             renderCharacterRoster();
@@ -900,6 +998,7 @@
             const y1 = attacker.y + (attacker.size || 80) / 2;
             const x2 = target.x + (target.size || 80) / 2;
             const y2 = target.y + (target.size || 80) / 2;
+
             const animId = 'attack-arr-' + Math.random().toString(36).substr(2, 9);
 
             if (!svgOverlay.querySelector('marker#arrowhead-red')) {
@@ -939,6 +1038,7 @@
                 const textEl = document.getElementById(animId + '-text');
                 if (lineEl) lineEl.style.opacity = '0';
                 if (textEl) textEl.style.opacity = '0';
+                
                 setTimeout(() => {
                     if (lineEl) lineEl.remove();
                     if (textEl) textEl.remove();
@@ -946,7 +1046,7 @@
             }, 4000);
         }
 
-        // TAM KUSURSUZ HARİTA KAYDIRMA (PAN) VE ZOOM KONTROLLERİ
+        // Harita Sürükleme ve Kaydırma (Pan) Motoru (İstenilen 100% zoom kilidi pürüzsüzleştirildi!)
         function setupMapPanControls() {
             const viewport = document.getElementById('map-viewport');
 
@@ -970,12 +1070,11 @@
             }, { passive: false });
 
             viewport.addEventListener('mousedown', (e) => {
-                // Eğer bir token, buton veya menü tıklanıyorsa kaydırmayı başlatma
-                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('aside') || e.target.closest('#app-nav') || e.target.closest('.no-pan')) {
+                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('aside') || e.target.closest('#app-nav') || e.target.closest('[id^="active-"]')) {
                     return;
                 }
                 
-                // Harita min sınırındayken (%100 fit durumu) sürükleme KİLİTLİ
+                // Harita %100 (Fit / Sığma) seviyesinde veya daha geride iken sürüklemeyi deaktif yaparız!
                 if (zoomLevel <= getMinZoomLimit() + 0.01) {
                     isPanning = false;
                     return;
@@ -1004,7 +1103,7 @@
             });
             
             viewport.addEventListener('touchstart', (e) => {
-                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('.no-pan')) {
+                if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) {
                     return;
                 }
                 if (zoomLevel <= getMinZoomLimit() + 0.01) {
@@ -1047,7 +1146,9 @@
             const viewHeight = viewport.clientHeight;
 
             const minZoom = getMinZoomLimit();
-            if (zoomLevel < minZoom) zoomLevel = minZoom;
+            if (zoomLevel < minZoom) {
+                zoomLevel = minZoom;
+            }
 
             // Sınır kilitlerini minimum sığmada tam olarak ortalarız
             if (zoomLevel <= minZoom + 0.01) {
@@ -1111,6 +1212,8 @@
                         const board = document.getElementById('map-board');
                         board.style.width = img.width + 'px';
                         board.style.height = img.height + 'px';
+                        
+                        state.gridSize = 500;
 
                         applyMapDisplay();
                         resetZoom();
@@ -1153,6 +1256,7 @@
             }
         }
 
+        // Açılıp kapanabilen tırnakların DOM özellikleriyle tam kilitlenmesi
         function toggleSidebar(side) {
             sidebarStatus[side] = !sidebarStatus[side];
             const el = document.getElementById(`sidebar-${side}`);
@@ -1204,11 +1308,9 @@
                 if (t === tabId) {
                     btn.classList.add('border-b-2', 'border-rpg-accent', 'text-white');
                     content.classList.remove('hidden');
-                    content.style.zIndex = '20';
                 } else {
                     btn.classList.remove('border-b-2', 'border-rpg-accent', 'text-white');
                     content.classList.add('hidden');
-                    content.style.zIndex = '10';
                 }
             });
 
@@ -1225,6 +1327,7 @@
             }
         }
 
+        // --- ROOM MANAGEMENT (Oda Yönetimi ve Online Bypass Düzenlemesi) ---
         function createNewRoom() {
             try {
                 const rawName = document.getElementById('create-room-name').value.trim();
@@ -1265,6 +1368,7 @@
             }
         }
 
+        // ÇOKLU CİHAZ (TELEFON VB.) BAĞLANTI SİSTEMİ (Mükerrerlik engellendi!)
         function joinRoom() {
             try {
                 const rawCode = document.getElementById('join-room-code').value.trim().toUpperCase();
@@ -1283,6 +1387,7 @@
 
                 connectToGlobalNetwork();
 
+                // İlk istek ağ tamponu oturduktan sonra fırlatılır
                 setTimeout(() => {
                     broadcastNetworkEvent({
                         type: 'request_state_on_join',
@@ -1304,7 +1409,7 @@
                         clearInterval(joinRequestInterval);
                         hideLoadingOverlay();
                         if (eventSource) eventSource.close();
-                        alert("Zaman aşımı! Oda yöneticisi (Host) şu anda aktif değil veya davet kodu yanlış.");
+                        alert("Zaman aşımı! Oda yöneticisi (Host) şu anda aktif değil veya davet kodu yanlış. Host'un sayfasını açık tuttuğundan emin olun.");
                     }
                 }, 15000);
             } catch(e) {
@@ -1319,7 +1424,9 @@
                     saveToLocalStorage();
                 }
                 
-                if (eventSource) eventSource.close();
+                if (eventSource) {
+                    eventSource.close();
+                }
 
                 state.roomCode = null;
                 document.getElementById('lobby-screen').classList.remove('hidden');
@@ -1378,7 +1485,6 @@
             renderMarkers();
             calculateTravelStats();
             
-            // Map click handler - strictly assigned once
             board.removeEventListener('click', handleMapBoardClick);
             board.addEventListener('click', handleMapBoardClick);
             
@@ -1460,7 +1566,7 @@
                     if (m === mode) {
                         btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-rpg-accent text-white";
                     } else if (m === 'delete-marker') {
-                        btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-red-400 hover:bg-red-950/40";
+                        btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-900 text-white hover:bg-red-800 border border-red-700";
                     } else {
                         btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#1F1404] text-[#CBB58F] hover:bg-rpg-border";
                     }
@@ -1480,6 +1586,14 @@
                 travelCard.classList.add('hidden');
                 clearBtnCapsule.classList.add('hidden');
                 clearBtnCapsule.style.display = '';
+            }
+
+            // Silme modu efektini tetikle
+            const viewport = document.getElementById('map-viewport');
+            if (mode === 'delete-marker') {
+                viewport.classList.add('delete-mode-active');
+            } else {
+                viewport.classList.remove('delete-mode-active');
             }
 
             renderTokens();
@@ -1626,9 +1740,6 @@
                 type: 'sync_waypoints',
                 waypoints: state.waypoints
             });
-            if (state.waypoints.length === 0) {
-                document.getElementById('route-edit-capsule').classList.add('hidden');
-            }
         }
 
         function toggleUIVisibility() {
@@ -1662,10 +1773,7 @@
                 if (rightToggle) rightToggle.classList.remove('hidden');
                 if (state.currentMode === 'measurement') {
                     if (travel) travel.classList.remove('hidden');
-                    if (editCap && state.waypoints.length > 0) {
-                        editCap.classList.remove('hidden');
-                        editCap.style.display = 'flex';
-                    }
+                    if (editCap && state.waypoints.length > 0) editCap.classList.remove('hidden');
                 }
                 if (summary && state.waypoints.length > 0) summary.classList.remove('hidden');
                 if (settingsWheel) settingsWheel.classList.remove('hidden');
@@ -1684,10 +1792,7 @@
                 if (toolbar) toolbar.classList.add('hidden');
                 if (travel) travel.classList.add('hidden');
                 if (summary) summary.classList.add('hidden');
-                if (editCap) {
-                    editCap.classList.add('hidden');
-                    editCap.style.display = '';
-                }
+                if (editCap) editCap.classList.add('hidden');
                 if (settingsWheel) settingsWheel.classList.add('hidden');
                 if (zoomCap) zoomCap.classList.add('hidden');
                 if (leftToggle) leftToggle.classList.add('hidden');
@@ -1701,8 +1806,9 @@
             }, 320);
         }
 
+        // Taktik harita üzerinde tıklama olayları (Hatalı/Sınır dışı bacak tespiti kilitlendi)
         function handleMapBoardClick(e) {
-            if (e.target.closest('.cursor-pointer') || e.target.closest('.no-pan') || e.target.closest('.marker-element')) {
+            if (e.target.closest('.cursor-pointer') || e.target.closest('.no-pan') || e.target.closest('.marker-element') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('aside') || e.target.closest('#app-nav')) {
                 return;
             }
 
@@ -1711,9 +1817,14 @@
             const clickX = (e.clientX - rect.left) / zoomLevel;
             const clickY = (e.clientY - rect.top) / zoomLevel;
 
+            // Rota noktalarının harita görsel sınırları dışına taşması engellenir
+            if (clickX < 0 || clickX > state.mapWidth || clickY < 0 || clickY > state.mapHeight) {
+                return; 
+            }
+
             if (state.currentMode === 'measurement') {
                 if (!state.waypoints) state.waypoints = [];
-                state.waypoints.push({ x: clickX, y: clickY });
+                state.waypoints.push({ id: 'wp-' + Math.random().toString(36).substr(2, 9), x: clickX, y: clickY });
                 
                 renderRoute();
                 saveToLocalStorage();
@@ -1727,7 +1838,7 @@
                 const title = prompt("📍 Harita İşaretçisi Başlığı Girin:");
                 if (title && title.trim()) {
                     if (!state.markers) state.markers = [];
-                    state.markers.push({ x: clickX, y: clickY, title: title.trim() });
+                    state.markers.push({ id: 'marker-' + Math.random().toString(36).substr(2, 9), x: clickX, y: clickY, title: title.trim() });
                     
                     renderMarkers();
                     saveToLocalStorage();
@@ -1750,7 +1861,6 @@
             if (!state.waypoints || state.waypoints.length === 0) {
                 badge.classList.add('hidden');
                 editCap.classList.add('hidden');
-                editCap.style.display = '';
                 return;
             }
 
@@ -1823,9 +1933,9 @@
                 type: 'sync_waypoints',
                 waypoints: []
             });
-            document.getElementById('route-edit-capsule').classList.add('hidden');
         }
 
+        // Taktik piyon işaretleri (İşaret Silme Moduyla kusursuzlaştırıldı!)
         function renderMarkers() {
             const container = document.getElementById('markers-layer');
             if (!container) return;
@@ -1845,29 +1955,66 @@
                     div.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto no-pan marker-element";
                 }
 
+                // X butonunu yalnızca silme modunda olanlar için daha belirgin yaparız
+                const xBtnClasses = (state.currentMode === 'delete-marker') 
+                    ? "delete-marker-btn text-white bg-red-600 hover:bg-red-500 rounded px-1.5 py-0.5 ml-1.5 text-xs flex items-center justify-center transition-colors"
+                    : "hidden";
+
                 div.innerHTML = `
                     <div class="relative marker-wrapper group">
                         <span class="text-xl filter drop-shadow">📍</span>
-                        <div class="absolute bottom-full left-[50%] -translate-x-[50%] mb-1 bg-[#2E1E07] border border-[#8A6529] px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md flex items-center gap-1">
+                        <div class="absolute bottom-full left-[50%] -translate-x-[50%] mb-1 bg-[#2E1E07] border border-[#8A6529] px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md flex items-center gap-1 group-hover:scale-105 transition-transform">
                             <span>📍 ${marker.title}</span>
+                            <button class="${xBtnClasses}">&times;</button>
                         </div>
                     </div>
                 `;
 
-                div.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    if (state.currentMode === 'delete-marker') {
-                        deleteMarker(index);
-                    }
-                });
+                // Tıklandığında pini anında silen dinleyiciler (Mousedown & Touchstart destekli)
+                const pinEl = div.querySelector('.relative');
+                if (pinEl) {
+                    const handleDel = (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        deleteMarker(marker.id);
+                    };
+                    pinEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (state.currentMode === 'delete-marker') {
+                            deleteMarker(marker.id);
+                        }
+                    });
+                    pinEl.addEventListener('mousedown', (e) => {
+                        if (state.currentMode === 'delete-marker') {
+                            handleDel(e);
+                        }
+                    });
+                    pinEl.addEventListener('touchstart', (e) => {
+                        if (state.currentMode === 'delete-marker') {
+                            handleDel(e);
+                        }
+                    }, { passive: false });
+                }
+
+                const btn = div.querySelector('.delete-marker-btn');
+                if (btn) {
+                    const handleDel = (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        deleteMarker(marker.id);
+                    };
+                    btn.addEventListener('click', handleDel);
+                    btn.addEventListener('mousedown', handleDel);
+                    btn.addEventListener('touchstart', handleDel, { passive: false });
+                }
 
                 container.appendChild(div);
             });
         }
 
-        function deleteMarker(index) {
-            state.markers.splice(index, 1);
+        function deleteMarker(markerId) {
+            state.markers = state.markers.filter(m => m.id !== markerId);
             renderMarkers();
             saveToLocalStorage();
             broadcastNetworkEvent({
@@ -2334,8 +2481,11 @@
             const target = pool.find(t => t.id === id);
             if (!target) return;
 
-            const randomX = Math.floor(Math.random() * 200) + 100;
-            const randomY = Math.floor(Math.random() * 200) + 100;
+            const cellW = 500;
+            const cellH = 500;
+
+            const randomCol = Math.floor(Math.random() * 2);
+            const randomRow = Math.floor(Math.random() * 2);
 
             const activeToken = {
                 id: 'active-' + Math.random().toString(36).substr(2, 9),
@@ -2348,8 +2498,8 @@
                 color: target.color,
                 icon: target.icon,
                 avatarUrl: target.avatarUrl,
-                x: randomX,
-                y: randomY
+                x: randomCol * cellW,
+                y: randomRow * cellH
             };
 
             state.tokens.push(activeToken);
@@ -2576,7 +2726,7 @@
                         <div class="h-full ${barColor}" style="width: ${hpPercent}%"></div>
                     </div>
 
-                    <div class="bg-black/95 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-[95%] leading-tight">
+                    <div class="bg-black/95 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-[90%] leading-tight">
                         ${token.name}
                     </div>
                 `;
