@@ -143,7 +143,7 @@
         <!-- PLAYGROUND KONTEYNERİ -->
         <div id="game-playground" class="hidden w-full h-full flex overflow-hidden">
             
-            <!-- 1. SEKME: KARAKTER -->
+            <!-- 1. SEKME: KARAKTER (input_file_2.png Birebir Arayüzü) -->
             <div id="main-tab-content-karakter" class="w-full h-full p-6 overflow-y-auto space-y-6">
                 <!-- ÜST BANNER (Davet Detayları) -->
                 <div class="bg-rpg-card border border-rpg-border p-5 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
@@ -456,6 +456,9 @@
             artificer: { name: "Yapaycı (Artificer)", hp: 9, ac: 14, color: "#d97706", icon: "⚙️" }
         };
 
+        // Her tarayıcı sekmesi için benzersiz bir P2P ID üretilir (Döngüsel ekoları önler)
+        const mySenderId = 'usr-' + Math.random().toString(36).substr(2, 9);
+
         let state = {
             roomCode: null,
             roomName: "",
@@ -475,6 +478,7 @@
         };
 
         let currentUploadedImageBase64 = null;
+        let eventSource = null; // Canlı ağ bağlantısı taşıyıcısı
 
         let zoomLevel = 1.0;
         let panX = 0;
@@ -516,6 +520,203 @@
             });
         });
 
+        // GERÇEK ZAMANLI KÜRESEL AĞ SENKRONİZASYON MOTORU (P2P / Serverless)
+        function connectToGlobalNetwork() {
+            if (!state.roomCode) return;
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            // Güvenli, şifresiz ve ücretsiz ntfy.sh SSE (Server-Sent Events) protokolü kullanılır
+            eventSource = new EventSource(`https://ntfy.sh/${state.roomCode.toLowerCase()}/sse`);
+
+            eventSource.onmessage = (e) => {
+                try {
+                    const rawPayload = JSON.parse(e.data);
+                    if (rawPayload.event === 'message') {
+                        const packet = JSON.parse(rawPayload.message);
+
+                        // Kendi gönderdiğimiz aksiyonları yoksayarak döngü kilitlerini engelleriz
+                        if (packet.senderId === mySenderId) {
+                            return;
+                        }
+
+                        handleIncomingNetworkEvent(packet);
+                    }
+                } catch (err) {
+                    console.error("Ağ paket çözme hatası:", err);
+                }
+            };
+
+            eventSource.onerror = () => {
+                console.warn("Ağ bağlantısı koptu, otomatik yeniden bağlanılıyor...");
+            };
+
+            // Odaya katıldığımızı diğer oyunculara bildiririz
+            broadcastNetworkEvent({
+                type: 'player_join',
+                name: state.username
+            });
+        }
+
+        // Ağ üzerinden diğer cihazlara veri fırlatma fonksiyonu
+        function broadcastNetworkEvent(packet) {
+            if (!state.roomCode) return;
+            packet.senderId = mySenderId;
+            packet.senderName = state.username;
+
+            fetch(`https://ntfy.sh/${state.roomCode.toLowerCase()}`, {
+                method: 'POST',
+                headers: {
+                    'Title': 'RollplayVTT',
+                    'Tags': 'shield'
+                },
+                body: JSON.stringify(packet)
+            }).catch(err => console.error("Ağ gönderim hatası:", err));
+        }
+
+        // Karşı taraftan gelen aksiyonları işleyen motor
+        function handleIncomingNetworkEvent(packet) {
+            switch (packet.type) {
+                case 'player_join':
+                    if (!state.players.find(p => p.name.toLowerCase() === packet.name.toLowerCase())) {
+                        state.players.push({ name: packet.name, lastSeen: Date.now() });
+                        renderPlayers();
+                    }
+                    addSystemLog(`${packet.name} odaya katıldı.`);
+
+                    // Eğer odayı kuran kişi (Host) biz isek, yeni gelen oyuncuya tüm oyun tahtasını fırlatırız
+                    if (state.username.toLowerCase() === state.hostName.toLowerCase()) {
+                        broadcastNetworkEvent({
+                            type: 'sync_state',
+                            fullState: {
+                                roomName: state.roomName,
+                                hostName: state.hostName,
+                                gridSize: state.gridSize,
+                                gridVisible: state.gridVisible,
+                                selectedMap: state.selectedMap,
+                                customMapUrl: state.customMapUrl,
+                                mapWidth: state.mapWidth,
+                                mapHeight: state.mapHeight,
+                                tokens: state.tokens,
+                                roster: state.roster,
+                                enemies: state.enemies,
+                                players: state.players
+                            }
+                        });
+                    }
+                    break;
+
+                case 'sync_state':
+                    // Host'tan gelen tahta verilerini yerel hafızaya yazarız
+                    state.roomName = packet.fullState.roomName;
+                    state.hostName = packet.fullState.hostName;
+                    state.gridSize = packet.fullState.gridSize;
+                    state.gridVisible = packet.fullState.gridVisible;
+                    state.selectedMap = packet.fullState.selectedMap;
+                    state.customMapUrl = packet.fullState.customMapUrl;
+                    state.mapWidth = packet.fullState.mapWidth;
+                    state.mapHeight = packet.fullState.mapHeight;
+                    state.tokens = packet.fullState.tokens || [];
+                    state.roster = packet.fullState.roster || [];
+                    state.enemies = packet.fullState.enemies || [];
+                    state.players = packet.fullState.players;
+
+                    const board = document.getElementById('map-board');
+                    board.style.width = state.mapWidth + 'px';
+                    board.style.height = state.mapHeight + 'px';
+
+                    applyMapDisplay();
+                    updateGridSize(state.gridSize);
+                    renderCharacterRoster();
+                    renderTokens();
+                    renderPlayers();
+                    resetZoom();
+                    break;
+
+                case 'chat':
+                    state.chatLogs.push({
+                        sender: packet.senderName,
+                        text: packet.text,
+                        timestamp: Date.now(),
+                        isSystem: false
+                    });
+                    renderChat();
+                    saveToLocalStorage();
+                    break;
+
+                case 'roll':
+                    state.chatLogs.push({
+                        sender: "Zar",
+                        text: packet.text,
+                        timestamp: Date.now(),
+                        isRoll: true
+                    });
+                    renderChat();
+                    saveToLocalStorage();
+                    break;
+
+                case 'move_token':
+                    const tok = state.tokens.find(t => t.id === packet.id);
+                    if (tok) {
+                        tok.x = packet.x;
+                        tok.y = packet.y;
+                        renderTokens();
+                        saveToLocalStorage();
+                    }
+                    break;
+
+                case 'save_character':
+                    const pool = packet.isEnemy ? state.enemies : state.roster;
+                    const existingIdx = pool.findIndex(t => t.id === packet.entity.id);
+                    if (existingIdx !== -1) {
+                        pool[existingIdx] = packet.entity;
+                    } else {
+                        pool.push(packet.entity);
+                    }
+                    renderCharacterRoster();
+                    saveToLocalStorage();
+                    break;
+
+                case 'delete_character':
+                    if (packet.isEnemy) {
+                        state.enemies = state.enemies.filter(t => t.id !== packet.id);
+                    } else {
+                        state.roster = state.roster.filter(t => t.id !== packet.id);
+                    }
+                    state.tokens = state.tokens.filter(tok => tok.rosterId !== packet.id);
+                    renderCharacterRoster();
+                    renderTokens();
+                    saveToLocalStorage();
+                    break;
+
+                case 'spawn_token':
+                    state.tokens.push(packet.token);
+                    renderTokens();
+                    saveToLocalStorage();
+                    break;
+
+                case 'change_map_settings':
+                    state.selectedMap = packet.selectedMap;
+                    state.customMapUrl = packet.customMapUrl;
+                    state.gridSize = packet.gridSize;
+                    state.gridVisible = packet.gridVisible;
+                    state.mapWidth = packet.mapWidth;
+                    state.mapHeight = packet.mapHeight;
+
+                    const b = document.getElementById('map-board');
+                    b.style.width = state.mapWidth + 'px';
+                    b.style.height = state.mapHeight + 'px';
+
+                    applyMapDisplay();
+                    updateGridSize(state.gridSize);
+                    resetZoom();
+                    saveToLocalStorage();
+                    break;
+            }
+        }
+
+        // Harita Kaydırma & Zoom Sınırları Kurulumu
         function setupMapPanControls() {
             const viewport = document.getElementById('map-viewport');
 
@@ -526,7 +727,7 @@
                 if (e.deltaY < 0) {
                     targetZoom = Math.min(zoomLevel * zoomFactor, 3.5);
                 } else {
-                    targetZoom = Math.max(zoomLevel / zoomFactor, 0.2);
+                    targetZoom = Math.max(zoomLevel / zoomFactor, 0.15);
                 }
                 
                 const minZoom = getMinZoomLimit();
@@ -559,12 +760,15 @@
             });
         }
 
+        // Haritanın tamamının ekran sınırlarına sığmasını sağlayan formül (Math.min ve margin payı)
         function getMinZoomLimit() {
             const viewport = document.getElementById('map-viewport');
-            if (!viewport) return 0.3;
+            if (!viewport) return 0.25;
             const viewWidth = viewport.clientWidth;
             const viewHeight = viewport.clientHeight;
-            return Math.max(viewWidth / state.mapWidth, viewHeight / state.mapHeight);
+            
+            // Math.min ve %95 kenar payı haritanın ekran dışına kaçmasını engeller
+            return Math.min(viewWidth / state.mapWidth, viewHeight / state.mapHeight) * 0.95;
         }
 
         function clampTransformLimits() {
@@ -585,14 +789,14 @@
                 const maxPanX = (rw - viewWidth) / 2;
                 panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
             } else {
-                panX = 0;
+                panX = 0; 
             }
 
             if (rh >= viewHeight) {
                 const maxPanY = (rh - viewHeight) / 2;
                 panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
             } else {
-                panY = 0;
+                panY = 0; 
             }
         }
 
@@ -609,13 +813,14 @@
         }
 
         function resetZoom() {
-            zoomLevel = getMinZoomLimit();
+            zoomLevel = getMinZoomLimit(); 
             panX = 0;
             panY = 0;
             clampTransformLimits();
             updateMapTransform();
         }
 
+        // Bilgisayardan Harita Yükleme İşlemi (input_file_0.png)
         function handleLocalMapUpload(event) {
             const file = event.target.files[0];
             if (file) {
@@ -638,6 +843,17 @@
                         resetZoom();
                         saveToLocalStorage();
                         addSystemLog(`Harita yüklendi: ${img.width}x${img.height} piksel.`);
+
+                        // Harita değişikliklerini ağ üzerinden diğer oyuncularla eşleştiririz
+                        broadcastNetworkEvent({
+                            type: 'change_map_settings',
+                            selectedMap: state.selectedMap,
+                            customMapUrl: state.customMapUrl,
+                            gridSize: state.gridSize,
+                            gridVisible: state.gridVisible,
+                            mapWidth: state.mapWidth,
+                            mapHeight: state.mapHeight
+                        });
                     };
                     img.src = dataUrl;
                 };
@@ -645,6 +861,7 @@
             }
         }
 
+        // Karakter Fotoğraf Yükleme İşlemi
         function handleKarakterResimYukle(event) {
             const file = event.target.files[0];
             if (file) {
@@ -658,6 +875,7 @@
             }
         }
 
+        // Sidebar Açıp Kapatma Fonksiyonu
         function toggleSidebar(side) {
             sidebarStatus[side] = !sidebarStatus[side];
             const el = document.getElementById(`sidebar-${side}`);
@@ -691,6 +909,7 @@
             }, 320);
         }
 
+        // Sekme Değiştirme Sistemi (Karakter, Battle Map)
         function switchMainTab(tabId) {
             const tabs = ['karakter', 'battlemap'];
             tabs.forEach(t => {
@@ -712,6 +931,7 @@
             }
         }
 
+        // Yeni Oda Kurulumları (Host)
         function createNewRoom() {
             const rawName = document.getElementById('create-room-name').value.trim();
             const rawUser = document.getElementById('create-user-name').value.trim();
@@ -743,6 +963,7 @@
             loadAndDisplayRoom();
         }
 
+        // Mevcut Odaya Katılma
         function joinRoom() {
             const rawCode = document.getElementById('join-room-code').value.trim().toUpperCase();
             const rawUser = document.getElementById('join-user-name').value.trim();
@@ -784,6 +1005,10 @@
                     saveToLocalStorage();
                 }
                 
+                if (eventSource) {
+                    eventSource.close();
+                }
+
                 state.roomCode = null;
                 document.getElementById('lobby-screen').classList.remove('hidden');
                 document.getElementById('app-nav').classList.add('hidden');
@@ -824,6 +1049,9 @@
             window.history.replaceState({}, document.title, `?room=${state.roomCode}`);
             window.addEventListener('storage', handleCrossTabSync);
             
+            // Küresel Ağ Bağlantısını Başlatırız
+            connectToGlobalNetwork();
+
             switchMainTab('karakter');
         }
 
@@ -873,7 +1101,6 @@
             }
         }
 
-        // Davet Bağlantısını Kopyala
         function copyInviteLinkOnly() {
             const inviteURL = `${window.location.origin}${window.location.pathname}?room=${state.roomCode}`;
             navigator.clipboard.writeText(inviteURL).then(() => {
@@ -881,7 +1108,7 @@
             });
         }
 
-        // SADECE DAVET KODUNU KOPYALA (Kullanıcı Talebi)
+        // SADECE DAVET KODUNU KOPYALA
         function copyInviteLink() {
             navigator.clipboard.writeText(state.roomCode).then(() => {
                 alert(`Davet kodu kopyalandı! KOD: ${state.roomCode}`);
@@ -905,6 +1132,16 @@
             state.selectedMap = val;
             applyMapDisplay();
             saveToLocalStorage();
+
+            broadcastNetworkEvent({
+                type: 'change_map_settings',
+                selectedMap: state.selectedMap,
+                customMapUrl: state.customMapUrl,
+                gridSize: state.gridSize,
+                gridVisible: state.gridVisible,
+                mapWidth: state.mapWidth,
+                mapHeight: state.mapHeight
+            });
         }
 
         function updateGridSize(size) {
@@ -931,112 +1168,16 @@
                 btn.className = "text-[9px] bg-gray-800 text-gray-500 border border-gray-700 px-2 py-0.5 rounded font-bold";
             }
             updateGridSize(state.gridSize);
-        }
 
-        function openNewCharacterSheet() {
-            editingTokenId = null;
-            isEditingEnemyMode = false;
-            currentUploadedImageBase64 = null;
-            
-            document.getElementById('sheet-title').innerText = "YENİ KARAKTER SAYFASI YARAT";
-            document.getElementById('sheet-btn-delete').classList.add('hidden');
-
-            document.getElementById('sheet-name').value = "anan'ın kahramanı";
-            document.getElementById('sheet-class').value = "🛡️ Fighter";
-            document.getElementById('sheet-race').value = "İnsan";
-            document.getElementById('sheet-level').value = 1;
-            document.getElementById('sheet-hp').value = 10;
-            document.getElementById('sheet-max-hp').value = 10;
-            document.getElementById('sheet-ac').value = 10;
-            
-            document.getElementById('sheet-str').value = 10;
-            document.getElementById('sheet-dex').value = 10;
-            document.getElementById('sheet-con').value = 10;
-            document.getElementById('sheet-int').value = 10;
-            document.getElementById('sheet-wis').value = 10;
-            document.getElementById('sheet-cha').value = 10;
-
-            document.getElementById('sheet-inventory').value = "";
-            document.getElementById('sheet-notes').value = "";
-
-            document.getElementById('preview-avatar-container').innerHTML = `<span id="preview-avatar-text" class="text-xl">🛡️</span>`;
-
-            document.getElementById('character-sheet-modal').classList.remove('hidden');
-        }
-
-        function openNewEnemySheet() {
-            editingTokenId = null;
-            isEditingEnemyMode = true;
-            currentUploadedImageBase64 = null;
-            
-            document.getElementById('sheet-title').innerText = "YENİ DÜŞMAN / CANAVAR YARAT";
-            document.getElementById('sheet-btn-delete').classList.add('hidden');
-
-            document.getElementById('sheet-name').value = "Gece Goblini";
-            document.getElementById('sheet-class').value = "🪓 Barbarian";
-            document.getElementById('sheet-race').value = "Goblin";
-            document.getElementById('sheet-level').value = 1;
-            document.getElementById('sheet-hp').value = 8;
-            document.getElementById('sheet-max-hp').value = 8;
-            document.getElementById('sheet-ac').value = 12;
-            
-            document.getElementById('sheet-str').value = 8;
-            document.getElementById('sheet-dex').value = 14;
-            document.getElementById('sheet-con').value = 10;
-            document.getElementById('sheet-int').value = 6;
-            document.getElementById('sheet-wis').value = 8;
-            document.getElementById('sheet-cha').value = 5;
-
-            document.getElementById('sheet-inventory').value = "Paslı Pala, Sapan";
-            document.getElementById('sheet-notes').value = "Işıktan nefret eder.";
-
-            document.getElementById('preview-avatar-container').innerHTML = `<span id="preview-avatar-text" class="text-xl">💀</span>`;
-
-            document.getElementById('character-sheet-modal').classList.remove('hidden');
-        }
-
-        function openEditSheet(tokenId, isEnemy) {
-            const pool = isEnemy ? state.enemies : state.roster;
-            const target = pool.find(t => t.id === tokenId);
-            if (!target) return;
-
-            editingTokenId = tokenId;
-            isEditingEnemyMode = isEnemy;
-            currentUploadedImageBase64 = target.avatarUrl || null;
-
-            document.getElementById('sheet-title').innerText = `${target.name.toUpperCase()} - DÜZENLE`;
-            document.getElementById('sheet-btn-delete').classList.remove('hidden');
-
-            document.getElementById('sheet-name').value = target.name;
-            document.getElementById('sheet-class').value = target.class;
-            document.getElementById('sheet-race').value = target.race;
-            document.getElementById('sheet-level').value = target.level;
-            document.getElementById('sheet-hp').value = target.hp;
-            document.getElementById('sheet-max-hp').value = target.maxHp;
-            document.getElementById('sheet-ac').value = target.ac;
-
-            document.getElementById('sheet-str').value = target.str;
-            document.getElementById('sheet-dex').value = target.dex;
-            document.getElementById('sheet-con').value = target.con;
-            document.getElementById('sheet-int').value = target.int;
-            document.getElementById('sheet-wis').value = target.wis;
-            document.getElementById('sheet-cha').value = target.cha;
-
-            document.getElementById('sheet-inventory').value = target.inventory || "";
-            document.getElementById('sheet-notes').value = target.notes || "";
-
-            const previewContainer = document.getElementById('preview-avatar-container');
-            if (target.avatarUrl) {
-                previewContainer.innerHTML = `<img src="${target.avatarUrl}" class="w-full h-full object-cover">`;
-            } else {
-                previewContainer.innerHTML = `<span id="preview-avatar-text" class="text-xl">${target.icon || "🛡️"}</span>`;
-            }
-
-            document.getElementById('character-sheet-modal').classList.remove('hidden');
-        }
-
-        function closeSheetModal() {
-            document.getElementById('character-sheet-modal').classList.add('hidden');
+            broadcastNetworkEvent({
+                type: 'change_map_settings',
+                selectedMap: state.selectedMap,
+                customMapUrl: state.customMapUrl,
+                gridSize: state.gridSize,
+                gridVisible: state.gridVisible,
+                mapWidth: state.mapWidth,
+                mapHeight: state.mapHeight
+            });
         }
 
         function saveSheetModal() {
@@ -1060,9 +1201,11 @@
 
             const icon = className.split(' ')[0] || "🛡️";
 
+            let savedEntity = null;
+
             if (editingTokenId === null) {
                 const newId = (isEditingEnemyMode ? 'enemy-' : 'char-') + Math.random().toString(36).substr(2, 9);
-                const entity = {
+                savedEntity = {
                     id: newId,
                     name,
                     class: className,
@@ -1080,33 +1223,33 @@
                 };
 
                 if (isEditingEnemyMode) {
-                    state.enemies.push(entity);
+                    state.enemies.push(savedEntity);
                     addSystemLog(`Yeni düşman kurgulandı: "${name}"`);
                 } else {
-                    state.roster.push(entity);
+                    state.roster.push(savedEntity);
                     addSystemLog(`Yeni karakter oluşturuldu: "${name}"`);
                 }
             } else {
                 const pool = isEditingEnemyMode ? state.enemies : state.roster;
-                const target = pool.find(t => t.id === editingTokenId);
-                if (target) {
-                    target.name = name;
-                    target.class = className;
-                    target.race = race;
-                    target.level = level;
-                    target.hp = hp;
-                    target.maxHp = maxHp;
-                    target.ac = ac;
-                    target.str = str;
-                    target.dex = dex;
-                    target.con = con;
-                    target.int = int;
-                    target.wis = wis;
-                    target.cha = cha;
-                    target.inventory = inventory;
-                    target.notes = notes;
-                    target.icon = icon;
-                    target.avatarUrl = currentUploadedImageBase64;
+                savedEntity = pool.find(t => t.id === editingTokenId);
+                if (savedEntity) {
+                    savedEntity.name = name;
+                    savedEntity.class = className;
+                    savedEntity.race = race;
+                    savedEntity.level = level;
+                    savedEntity.hp = hp;
+                    savedEntity.maxHp = maxHp;
+                    savedEntity.ac = ac;
+                    savedEntity.str = str;
+                    savedEntity.dex = dex;
+                    savedEntity.con = con;
+                    savedEntity.int = int;
+                    savedEntity.wis = wis;
+                    savedEntity.cha = cha;
+                    savedEntity.inventory = inventory;
+                    savedEntity.notes = notes;
+                    savedEntity.icon = icon;
+                    savedEntity.avatarUrl = currentUploadedImageBase64;
 
                     state.tokens.forEach(tok => {
                         if (tok.rosterId === editingTokenId) {
@@ -1126,6 +1269,16 @@
             renderCharacterRoster();
             renderTokens();
             saveToLocalStorage();
+
+            // Kart güncellemesini ağdaki diğer oyuncularla senkronize ederiz
+            if (savedEntity) {
+                broadcastNetworkEvent({
+                    type: 'save_character',
+                    entity: savedEntity,
+                    isEnemy: isEditingEnemyMode
+                });
+            }
+
             closeSheetModal();
         }
 
@@ -1140,10 +1293,18 @@
 
                 state.tokens = state.tokens.filter(tok => tok.rosterId !== editingTokenId);
 
-                addSystemLog("Karakter kartı ve ilişkili harita token'ları tamamen silindi.");
+                addSystemLog("Karakter kartı silindi.");
                 renderCharacterRoster();
                 renderTokens();
                 saveToLocalStorage();
+
+                // Silme işlemini ağdaki diğer oyuncularla senkronize ederiz
+                broadcastNetworkEvent({
+                    type: 'delete_character',
+                    id: editingTokenId,
+                    isEnemy: isEditingEnemyMode
+                });
+
                 closeSheetModal();
             }
         }
@@ -1173,6 +1334,12 @@
             renderTokens();
             saveToLocalStorage();
             addSystemLog(`"${target.name}" savaş meydanına yerleştirildi.`);
+
+            // Token yerleşimini ağ üzerinden diğer oyuncularla eşleştiririz
+            broadcastNetworkEvent({
+                type: 'spawn_token',
+                token: activeToken
+            });
             
             switchMainTab('battlemap');
         }
@@ -1192,7 +1359,6 @@
             state.roster.forEach(char => {
                 const card = document.createElement('div');
                 card.className = "bg-[#2E1E07] border border-[#8A6529] rounded-lg p-4 text-[#CBB58F] shadow-lg flex flex-col justify-between";
-                
                 const hpPercent = Math.max(0, Math.min(100, (char.hp / char.maxHp) * 100));
 
                 card.innerHTML = `
@@ -1346,7 +1512,10 @@
                 div.style.left = token.x + 'px';
                 div.style.top = token.y + 'px';
 
-                const hpPercent = Math.max(0, Math.min(100, (token.hp / token.maxHp) * 100));
+                const hpVal = Number(token.hp) || 0;
+                const maxHpVal = Number(token.maxHp) || 10;
+                const hpPercent = Math.max(0, Math.min(100, (hpVal / maxHpVal) * 100));
+
                 let barColor = "bg-green-500";
                 if (hpPercent < 35) barColor = "bg-red-500";
                 else if (hpPercent < 65) barColor = "bg-yellow-500";
@@ -1363,10 +1532,12 @@
                         <span class="absolute -bottom-1 -right-1 bg-black border border-gray-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px] text-white font-bold">${token.ac}</span>
                     </div>
 
+                    <!-- Can Barı (İsmin hemen üstünde) -->
                     <div class="w-full bg-black/80 border border-black rounded-full overflow-hidden mt-1.5 mb-0.5" style="height: 6px;">
                         <div class="h-full ${barColor}" style="width: ${hpPercent}%"></div>
                     </div>
 
+                    <!-- Sınırsız İsim Bandı -->
                     <div class="bg-black/90 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-full leading-tight">
                         ${token.name}
                     </div>
@@ -1438,6 +1609,14 @@
 
                 tokenEl.style.left = gridX + 'px';
                 tokenEl.style.top = gridY + 'px';
+
+                // Yer değişimi bilgisini ağdaki diğer oyuncularla anlık olarak paylaşırız
+                broadcastNetworkEvent({
+                    type: 'move_token',
+                    id: token.id,
+                    x: gridX,
+                    y: gridY
+                });
             }
 
             dragInfo.isDragging = false;
@@ -1445,6 +1624,7 @@
             saveToLocalStorage();
         }
 
+        // ZAR VE MESAJ SİSTEMİ
         function rollDice(sides) {
             const modifierInput = document.getElementById('battle-roll-modifier');
             const modifier = parseInt(modifierInput.value) || 0;
@@ -1461,7 +1641,7 @@
                 if (baseResult === 20) {
                     displayMsg += ` <strong class="text-green-500 text-[10px] tracking-wide ml-1 border border-green-500/30 px-1 bg-green-500/10 rounded">★ Kritik Başarı!</strong>`;
                 } else if (baseResult === 1) {
-                    displayMsg += ` <strong class="text-red-500 text-[10px] tracking-wide ml-1 border border-red-500/30 px-1 bg-red-500/10 rounded">☠ Kritik Fumble!</strong>`;
+                    displayMsg += ` <strong class="text-red-500 text-[10px] tracking-wide ml-1 border border-red-500/30 px-1 bg-red-500/10 rounded">☠ Kritik Hata!</strong>`;
                 }
             }
 
@@ -1474,6 +1654,12 @@
 
             saveToLocalStorage();
             renderChat();
+
+            // Atılan zarı ağdaki diğer cihazlara yansıtırız
+            broadcastNetworkEvent({
+                type: 'roll',
+                text: displayMsg
+            });
         }
 
         function sendBattleChatMessage() {
@@ -1491,6 +1677,12 @@
             input.value = "";
             saveToLocalStorage();
             renderChat();
+
+            // Mesajı ağdaki diğer cihazlara fırlatırız
+            broadcastNetworkEvent({
+                type: 'chat',
+                text: txt
+            });
         }
 
         function handleBattleChatKeyPress(e) {
