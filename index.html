@@ -643,6 +643,23 @@
 
         const mySenderId = 'usr-' + Math.random().toString(36).substr(2, 9);
 
+        // Sunucu saati farkı: her cihazın kendi saati (Date.now()) birbirinden
+        // farklı olabiliyor. Olayları "bağlanmadan önce mi sonra mı" diye
+        // karşılaştırırken FARKLI cihazların yerel saatlerini kıyaslamak,
+        // bazı olayların (host'un koyduğu karakter, silinen işaret vb.) rastgele
+        // "eski" sayılıp sessizce atlanmasına yol açan asıl sebepti. Çözüm:
+        // tüm cihazlar Firebase'in TEK ortak sunucu saatine göre zaman damgası
+        // üretsin.
+        let fbServerTimeOffset = 0;
+        function serverNow() {
+            return Date.now() + fbServerTimeOffset;
+        }
+        if (fbReady) {
+            db.ref('.info/serverTimeOffset').on('value', (snap) => {
+                fbServerTimeOffset = snap.val() || 0;
+            });
+        }
+
         let state = {
             roomCode: null,
             roomName: "",
@@ -791,11 +808,14 @@
             if (fbConnectedRef) fbConnectedRef.off();
 
             updateConnectionStatusUI('connecting', 'Bağlanıyor...');
-            const connectTime = Date.now();
+            const connectTime = serverNow() - 3000; // 3 sn tolerans payı (saat senkronu ilk anda tam oturmamış olabilir)
 
+            // Firebase'in TEK ortak sunucu saatine göre karşılaştırma yapıldığı için
+            // artık farklı cihazların saat farkı yüzünden olay kaybı yaşanmıyor.
+            // Ekstra bir limit/orderByChild GEREKMİYOR (index sorunlarına yol açıyordu).
             fbEventsRef = db.ref('rooms/' + state.roomCode.toLowerCase() + '/events');
 
-            fbEventsRef.limitToLast(1).on('child_added', (snapshot) => {
+            fbEventsRef.on('child_added', (snapshot) => {
                 try {
                     const packet = snapshot.val();
                     if (!packet) return;
@@ -831,7 +851,7 @@
             }
             packet.senderId = mySenderId;
             packet.senderName = state.username;
-            packet.timestamp = Date.now();
+            packet.timestamp = serverNow();
 
             const ref = db.ref('rooms/' + state.roomCode.toLowerCase() + '/events').push();
             ref.set(packet).catch(err => {
@@ -996,6 +1016,7 @@
                         pool.push(packet.entity);
                     }
                     renderCharacterRoster();
+                    saveToLocalStorage();
                     break;
 
                 case 'delete_character':
@@ -2003,7 +2024,15 @@
             });
         }
 
-        // Taktik piyon işaretleri (Tıklandığında silme işlevi DÜZELTİLDİ!)
+        // ================================================================
+        // HARİTA İŞARETÇİLERİ (MARKERS) — SIFIRDAN, BASİT VE SAĞLAM YENİDEN YAZIM
+        // Eski sürümde her pin'e birden fazla event listener (click+mousedown+
+        // touchstart, hem üst kutuya hem butona) ekleniyordu; bu karmaşa bazı
+        // tıklamaların hiç işlenmemesine ya da birden fazla işlenmesine yol
+        // açıyordu. Yeni yapı: her pin'e TEK BİR onclick atanır (üzerine
+        // yazılır, asla üst üste yığılmaz), mod "delete-marker" ise tıklama
+        // direkt siler.
+        // ================================================================
         function renderMarkers() {
             const container = document.getElementById('markers-layer');
             if (!container) return;
@@ -2011,65 +2040,50 @@
 
             if (!state.markers) state.markers = [];
 
+            const isDeleteMode = state.currentMode === 'delete-marker';
+
             state.markers.forEach((marker) => {
-                const div = document.createElement('div');
-                div.style.left = marker.x + 'px';
-                div.style.top = marker.y + 'px';
-                div.style.transform = 'translate(-50%, -100%)'; 
+                const pin = document.createElement('div');
+                pin.style.left = marker.x + 'px';
+                pin.style.top = marker.y + 'px';
+                pin.style.transform = 'translate(-50%, -100%)';
+                pin.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto no-pan marker-element" +
+                    (isDeleteMode ? " cursor-crosshair delete-mode-active" : "");
 
-                if (state.currentMode === 'delete-marker') {
-                    div.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto no-pan marker-element cursor-crosshair delete-mode-active";
-                } else {
-                    div.className = "absolute flex flex-col items-center justify-center z-15 pointer-events-auto no-pan marker-element";
-                }
-
-                const xBtnClasses = (state.currentMode === 'delete-marker') 
-                    ? "delete-marker-btn text-white bg-red-600 hover:bg-red-500 rounded px-1.5 py-0.5 ml-1.5 text-xs flex items-center justify-center transition-colors pointer-events-auto cursor-pointer"
-                    : "hidden";
-
-                div.innerHTML = `
-                    <div class="relative group">
+                pin.innerHTML = `
+                    <div class="relative">
                         <span class="text-xl filter drop-shadow">📍</span>
-                        <div class="absolute bottom-full left-[50%] -translate-x-[50%] mb-1 bg-[#2E1E07] border border-[#8A6529] px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md flex items-center gap-1 group-hover:scale-105 transition-transform pointer-events-auto cursor-pointer">
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 ${isDeleteMode ? 'bg-red-950 border-red-500' : 'bg-[#2E1E07] border-[#8A6529]'} border px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap shadow-md flex items-center gap-1">
                             <span>📍 ${marker.title}</span>
-                            <button class="${xBtnClasses}">&times;</button>
+                            ${isDeleteMode ? '<span class="text-red-300">✕ Sil</span>' : ''}
                         </div>
                     </div>
                 `;
 
-                // Tıklandığında pini anında silen dinleyiciler (Mousedown & Touchstart destekli)
-                const popupBox = div.querySelector('.relative > div');
-                if (popupBox) {
-                    const handleDel = (e) => {
+                // TEK dinleyici: mod delete-marker ise, pin'in HERHANGİ bir
+                // yerine (ikon ya da etiket) tıklamak siler. addEventListener
+                // yerine .onclick kullanıyoruz ki her renderMarkers() çağrısında
+                // eski/yeni listener çakışması asla olmasın.
+                if (isDeleteMode) {
+                    pin.onclick = (e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        if (state.currentMode === 'delete-marker') {
-                            deleteMarker(marker.id);
-                        }
+                        removeMarker(marker.id);
                     };
-                    popupBox.addEventListener('click', handleDel);
-                    popupBox.addEventListener('mousedown', handleDel);
-                    popupBox.addEventListener('touchstart', handleDel, { passive: false });
+                } else {
+                    pin.onclick = null;
                 }
 
-                const btn = div.querySelector('.delete-marker-btn');
-                if (btn) {
-                    const handleBtnDel = (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        deleteMarker(marker.id);
-                    };
-                    btn.addEventListener('click', handleBtnDel);
-                    btn.addEventListener('mousedown', handleBtnDel);
-                    btn.addEventListener('touchstart', handleBtnDel, { passive: false });
-                }
-
-                container.appendChild(div);
+                container.appendChild(pin);
             });
         }
 
-        function deleteMarker(markerId) {
+        function removeMarker(markerId) {
+            if (!state.markers) return;
+            const before = state.markers.length;
             state.markers = state.markers.filter(m => m.id !== markerId);
+            if (state.markers.length === before) return; // zaten silinmişti, tekrar yayınlama
+
             renderMarkers();
             saveToLocalStorage();
             broadcastNetworkEvent({
