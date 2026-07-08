@@ -422,7 +422,21 @@
             <div class="grid grid-cols-2 gap-4 mb-3">
                 <div>
                     <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">IRK (Race)</label>
-                    <input id="sheet-race" type="text" placeholder="Elf, Dwarf..." class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                    <select id="sheet-race" class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                        <option value="İnsan">İnsan</option>
+                        <option value="Elf">Elf</option>
+                        <option value="Yarı Elf">Yarı Elf</option>
+                        <option value="Cüce">Cüce (Dwarf)</option>
+                        <option value="Halfling">Halfling</option>
+                        <option value="Dragonborn">Dragonborn</option>
+                        <option value="Tiefling">Tiefling</option>
+                        <option value="Gnome">Gnome</option>
+                        <option value="Orc">Orc / Yarım Orc</option>
+                        <option value="Aasimar">Aasimar</option>
+                        <option value="Tabaxi">Tabaxi</option>
+                        <option value="Firbolg">Firbolg</option>
+                        <option value="Diğer">Diğer (özel)</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">LEVEL</label>
@@ -459,6 +473,22 @@
                 <div>
                     <label class="block text-[10px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">Token Boyu (px)</label>
                     <input id="sheet-size" type="number" value="80" class="w-full bg-[#1F1404] border border-[#8A6529] rounded p-1.5 text-xs text-white focus:outline-none" title="Token Çapı (Varsayılan: 80px)">
+                </div>
+            </div>
+
+            <!-- MANA (WISDOM BAZLI) -->
+            <div class="grid grid-cols-3 gap-3 mb-3 border-t border-[#8A6529]/30 pt-3">
+                <div>
+                    <label class="block text-[10px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">MANA (Şu anki)</label>
+                    <input id="sheet-mana" type="number" value="5" class="w-full bg-[#1F1404] border border-[#8A6529] rounded p-1.5 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">MAX MANA</label>
+                    <input id="sheet-max-mana" type="number" value="5" class="w-full bg-[#1F1404] border border-[#8A6529] rounded p-1.5 text-xs text-white focus:outline-none">
+                    <p class="text-[8px] text-gray-500 mt-0.5">WIS'e göre önerilir</p>
+                </div>
+                <div class="flex items-end">
+                    <button id="calculateManaFromWIS" onclick="calculateManaFromWIS()" class="w-full bg-[#2E1E07] hover:bg-rpg-border border border-[#8A6529]/60 text-xs py-1.5 rounded font-bold text-[#CBB58F]">WIS'ten Hesapla</button>
                 </div>
             </div>
 
@@ -588,6 +618,31 @@
             <div class="flex items-center gap-2 mt-5 pt-3 border-t border-[#8A6529]/20">
                 <button onclick="closeAttackModal()" class="flex-grow border border-[#8A6529]/60 text-gray-300 hover:bg-[#1F1404] py-2 rounded text-xs font-bold uppercase transition-colors">Vazgeç</button>
                 <button onclick="executeAttackAction()" class="flex-grow bg-[#6B000D] hover:bg-[#E11D48] text-white py-2 rounded text-xs font-bold uppercase transition-colors shadow-lg">Saldırıyı Başlat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENVANTER & TAKAS MODALI -->
+    <div id="inventory-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-[#2E1E07] border-2 border-[#8A6529] p-5 rounded-lg w-full max-w-md shadow-2xl text-[#CBB58F]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="inventory-modal-title" class="text-base font-bold text-white">🎒 Envanter</h3>
+                <button onclick="closeInventoryModal()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+            </div>
+
+            <div id="inventory-list" class="space-y-2 max-h-[280px] overflow-y-auto mb-4 pr-1 text-sm"></div>
+
+            <div id="inventory-add-section" class="border-t border-[#8A6529]/40 pt-4 hidden">
+                <div class="text-xs text-gray-400 mb-2">Yeni Eşya Ekle (Sadece Host)</div>
+                <div class="flex gap-2">
+                    <input id="new-item-name" type="text" placeholder="Eşya adı" class="flex-grow bg-[#1F1404] border border-[#8A6529]/60 rounded px-3 py-1.5 text-xs text-white">
+                    <input id="new-item-qty" type="number" value="1" class="w-16 bg-[#1F1404] border border-[#8A6529]/60 rounded px-2 py-1.5 text-xs text-white">
+                    <button onclick="addItemToInventory()" class="bg-rpg-accent hover:bg-rpg-accentHover text-white px-4 rounded text-xs font-bold">Ekle</button>
+                </div>
+            </div>
+
+            <div class="mt-4 text-[10px] text-gray-500">
+                💡 İpucu: Eşyayı kullanmak için "Kullan" butonuna bas. Takas için "Takas" butonunu kullan.
             </div>
         </div>
     </div>
@@ -993,6 +1048,22 @@
                     renderChat();
                     break;
 
+                case 'private_message':
+                    // Sadece mesajı alan veya gönderen görsün
+                    if (packet.to.toLowerCase() === state.username.toLowerCase() || 
+                        packet.from.toLowerCase() === state.username.toLowerCase()) {
+                        state.chatLogs.push({
+                            sender: packet.from,
+                            text: `→ ${packet.to}: ${packet.text}`,
+                            timestamp: Date.now(),
+                            isSystem: false,
+                            isPrivate: true,
+                            privateTarget: packet.to
+                        });
+                        renderChat();
+                    }
+                    break;
+
                 case 'roll':
                     state.chatLogs.push({
                         sender: "Zar",
@@ -1020,7 +1091,22 @@
                     } else {
                         pool.push(packet.entity);
                     }
+
+                    // Token HP'sini ve ismini de güncelle (karakter düzenlendiğinde haritadaki isim de değişsin)
+                    state.tokens.forEach(tok => {
+                        if (tok.rosterId === packet.entity.id) {
+                            tok.hp = packet.entity.hp;
+                            tok.maxHp = packet.entity.maxHp;
+                            tok.name = packet.entity.name;           // İsim değişikliği yansısın
+                            tok.ac = packet.entity.ac;
+                            tok.size = packet.entity.size;
+                            tok.avatarUrl = packet.entity.avatarUrl;
+                            tok.icon = packet.entity.icon;
+                        }
+                    });
+
                     renderCharacterRoster();
+                    renderTokens();
                     saveToLocalStorage();
                     break;
 
@@ -2323,7 +2409,8 @@
         const HOST_ONLY_SHEET_FIELDS = [
             'sheet-level', 'sheet-hp', 'sheet-max-hp', 'sheet-ac', 'sheet-size',
             'sheet-str', 'sheet-dex', 'sheet-con', 'sheet-int', 'sheet-wis', 'sheet-cha',
-            'sheet-inventory', 'sheet-notes'
+            'sheet-inventory', 'sheet-notes',
+            'sheet-mana', 'sheet-max-mana'
         ];
 
         function setSheetFieldsLockedForPlayer(locked) {
@@ -2334,6 +2421,14 @@
                 el.classList.toggle('opacity-40', locked);
                 el.classList.toggle('cursor-not-allowed', locked);
             });
+
+            // WIS'ten Hesapla butonunu da host-only yap
+            const manaBtn = document.getElementById('calculateManaFromWIS');
+            if (manaBtn) {
+                manaBtn.disabled = locked;
+                manaBtn.classList.toggle('opacity-40', locked);
+                manaBtn.classList.toggle('cursor-not-allowed', locked);
+            }
 
             const note = document.getElementById('sheet-player-restriction-note');
             if (note) note.classList.toggle('hidden', !locked);
@@ -2639,6 +2734,73 @@
             }
         }
 
+        // Host özel: Ölü karakteri dirilt
+        function reviveCharacter(id, isEnemy) {
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            if (!isHostNow) {
+                alert("Sadece Host diriltebilir!");
+                return;
+            }
+            const pool = isEnemy ? state.enemies : state.roster;
+            const target = pool.find(t => t.id === id);
+            if (!target) return;
+
+            target.hp = target.maxHp || 10;
+
+            // Haritadaki token'ları da güncelle
+            state.tokens.forEach(tok => {
+                if (tok.rosterId === id) {
+                    tok.hp = target.hp;
+                }
+            });
+
+            addSystemLog(`<strong>${target.name}</strong> diriltildi!`);
+            renderCharacterRoster();
+            renderTokens();
+            saveToLocalStorage();
+
+            broadcastNetworkEvent({
+                type: 'save_character',
+                entity: target,
+                isEnemy: isEnemy
+            });
+        }
+
+        // Host özel: Karakteri kalıcı sil
+        function deleteCharacterPermanently(id, isEnemy) {
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            if (!isHostNow) {
+                alert("Sadece Host silebilir!");
+                return;
+            }
+            if (!confirm("Bu karakteri/düşmanı tamamen silmek istediğine emin misin? (Geri alınamaz)")) return;
+
+            const pool = isEnemy ? state.enemies : state.roster;
+            const target = pool.find(t => t.id === id);
+
+            if (isEnemy) {
+                state.enemies = state.enemies.filter(t => t.id !== id);
+            } else {
+                state.roster = state.roster.filter(t => t.id !== id);
+            }
+
+            state.tokens = state.tokens.filter(tok => tok.rosterId !== id);
+
+            if (target) {
+                addSystemLog(`<strong>${target.name}</strong> kalıcı olarak silindi.`);
+            }
+
+            renderCharacterRoster();
+            renderTokens();
+            saveToLocalStorage();
+
+            broadcastNetworkEvent({
+                type: 'delete_character',
+                id: id,
+                isEnemy: isEnemy
+            });
+        }
+
         function spawnToMap(id, isEnemy) {
             const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
             const pool = isEnemy ? state.enemies : state.roster;
@@ -2652,6 +2814,11 @@
 
             if (!isEnemy && !isHostNow && target.owner && target.owner.toLowerCase() !== state.username.toLowerCase()) {
                 alert("Sadece kendi oluşturduğunuz kahramanı haritaya koyabilirsiniz.");
+                return;
+            }
+
+            if (target.hp <= 0 && !isHostNow) {
+                alert("Bu karakter öldü! Sadece Host diriltebilir.");
                 return;
             }
 
@@ -2732,6 +2899,18 @@
                             </div>
                         </div>
 
+                        <!-- MANA BAR -->
+                        ${char.maxMana && char.maxMana > 0 ? `
+                        <div class="mb-3">
+                            <div class="flex justify-between text-xs mb-1 font-bold">
+                                <span>MANA</span>
+                                <span>${char.mana || 0} / ${char.maxMana}</span>
+                            </div>
+                            <div class="w-full h-2 bg-black/60 border border-[#3B82F6]/40 rounded overflow-hidden">
+                                <div class="h-full bg-blue-500 transition-all" style="width: ${Math.max(0, Math.min(100, ((char.mana || 0) / char.maxMana) * 100))}%"></div>
+                            </div>
+                        </div>` : ''}
+
                         <div class="grid grid-cols-6 gap-1 mb-4 text-center">
                             <div class="bg-[#1F1404] border border-[#8A6529]/40 rounded p-1">
                                 <div class="text-[8px] text-gray-500 font-bold">STR</div>
@@ -2760,9 +2939,15 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2 border-t border-[#8A6529]/20 pt-3 mt-1">
+                    <div class="grid grid-cols-3 gap-2 border-t border-[#8A6529]/20 pt-3 mt-1">
                         ${canManageCard ? `<button onclick="openEditSheet('${char.id}', false)" class="w-full bg-[#1F1404] hover:bg-[#3D250D] border border-[#8A6529] py-1.5 rounded text-xs font-bold transition-all text-center">Düzenle</button>` : `<span class="text-[10px] text-gray-500 flex items-center justify-center">Sadece Sahibi</span>`}
-                        ${canManageCard ? `<button onclick="spawnToMap('${char.id}', false)" class="w-full bg-[#6B000D] hover:bg-[#8B0000] text-white py-1.5 rounded text-xs font-bold transition-all text-center">Haritaya Koy</button>` : `<span class="text-[10px] text-gray-500 flex items-center justify-center">Sadece Sahibi Koyabilir</span>`}
+                        ${(isOwnerOfCard || isHostForCard) ? `<button onclick="openInventoryModal('${char.id}', false)" class="w-full bg-[#2E1E07] hover:bg-[#3D250D] border border-[#8A6529]/60 py-1.5 rounded text-xs font-bold transition-all text-center">🎒 Envanter</button>` : `<span class="text-[10px] text-gray-500 flex items-center justify-center">Sadece Sahibi</span>`}
+                        ${char.hp <= 0 
+                            ? (isHostForCard ? `
+                                <button onclick="reviveCharacter('${char.id}', false)" class="w-full bg-green-700 hover:bg-green-600 text-white py-1.5 rounded text-xs font-bold transition-all text-center">💚 Dirilt</button>
+                              ` : `<span class="text-[10px] text-red-400 flex items-center justify-center col-span-2">💀 ÖLÜ - Host diriltebilir</span>`)
+                            : (canManageCard ? `<button onclick="spawnToMap('${char.id}', false)" class="w-full bg-[#6B000D] hover:bg-[#8B0000] text-white py-1.5 rounded text-xs font-bold transition-all text-center">Haritaya Koy</button>` : `<span class="text-[10px] text-gray-500 flex items-center justify-center">Sadece Sahibi Koyabilir</span>`)
+                        }
                     </div>
                 `;
                 charGrid.appendChild(card);
@@ -2862,11 +3047,17 @@
                 const div = document.createElement('div');
                 div.id = token.id;
                 
-                if (state.currentMode === 'tokens') {
-                    div.className = "absolute cursor-pointer flex flex-col items-center select-none z-10 hover:scale-105 transition-transform duration-75 pointer-events-auto";
+                const isDead = (token.hp || 0) <= 0;
+                
+                let baseClass = "absolute flex flex-col items-center select-none z-10";
+                if (state.currentMode === 'tokens' && !isDead) {
+                    baseClass += " cursor-pointer pointer-events-auto";
+                } else if (isDead) {
+                    baseClass += " grayscale opacity-60 pointer-events-none";
                 } else {
-                    div.className = "absolute flex flex-col items-center select-none z-10 pointer-events-none";
+                    baseClass += " pointer-events-none";
                 }
+                div.className = baseClass;
 
                 const size = token.size || 80; 
                 div.style.width = size + 'px';
@@ -2903,8 +3094,9 @@
                         <div class="h-full ${barColor}" style="width: ${hpPercent}%"></div>
                     </div>
 
-                    <div class="bg-black/95 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-[95%] leading-tight">
+                    <div class="bg-black/95 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-[95%] leading-tight flex items-center justify-center gap-1">
                         ${token.name}
+                        ${isDead ? `<span class="text-red-500 text-[9px] font-bold">💀 ÖLÜ</span>` : ''}
                     </div>
                 `;
 
@@ -3029,6 +3221,47 @@
             const txt = input.value.trim();
             if (!txt) return;
 
+            // === PRIVATE MESAJ (WHISPER) ===
+            if (txt.toLowerCase().startsWith('/w ')) {
+                const parts = txt.split(' ');
+                if (parts.length < 3) {
+                    alert("Kullanım: /w OyuncuAdı mesajınız");
+                    return;
+                }
+                const targetName = parts[1];
+                const privateMsg = parts.slice(2).join(' ');
+
+                const targetExists = state.players.some(p => p.name.toLowerCase() === targetName.toLowerCase());
+                if (!targetExists) {
+                    alert(`"${targetName}" adlı oyuncu bu odada değil.`);
+                    return;
+                }
+
+                // Kendi sohbetime ekle
+                state.chatLogs.push({
+                    sender: state.username,
+                    text: `→ ${targetName}: ${privateMsg}`,
+                    timestamp: Date.now(),
+                    isSystem: false,
+                    isPrivate: true,
+                    privateTarget: targetName
+                });
+
+                input.value = "";
+                saveToLocalStorage();
+                renderChat();
+
+                // Ağ üzerinden private mesaj gönder
+                broadcastNetworkEvent({
+                    type: 'private_message',
+                    from: state.username,
+                    to: targetName,
+                    text: privateMsg
+                });
+                return;
+            }
+
+            // Normal sohbet mesajı
             state.chatLogs.push({
                 sender: state.username,
                 text: txt,
@@ -3076,6 +3309,10 @@
                 } else if (log.isRoll) {
                     div.className = "bg-rpg-gold/10 border border-rpg-gold/20 p-2.5 rounded text-gray-300";
                     div.innerHTML = `🎲 ${log.text}`;
+                } else if (log.isPrivate) {
+                    // Private mesajlar mavi/mor tonlarda
+                    div.className = "bg-[#1E3A5F] border border-blue-700/60 p-2.5 rounded text-blue-200";
+                    div.innerHTML = `<span class="text-blue-400 font-bold">🔒 ${log.sender}</span> ${log.text}`;
                 } else {
                     div.className = "bg-[#1F1404] border border-rpg-border/60 p-2.5 rounded text-gray-300";
                     div.innerHTML = `<span class="text-rpg-accent font-bold">${log.sender}:</span> ${log.text}`;
@@ -3147,6 +3384,25 @@
             document.getElementById('attack-modal').classList.add('hidden');
         }
 
+        // Mana hesaplama yardımcı fonksiyonu (WIS bazlı basit formül)
+        function calculateManaFromWIS() {
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            if (!isHostNow) {
+                alert("Sadece Host WIS'ten mana hesaplayabilir.");
+                return;
+            }
+            const wis = parseInt(document.getElementById('sheet-wis').value) || 10;
+            const level = parseInt(document.getElementById('sheet-level').value) || 1;
+            const mod = Math.floor((wis - 10) / 2);
+            const suggestedMax = Math.max(3, 5 + level * mod);
+            
+            document.getElementById('sheet-max-mana').value = suggestedMax;
+            if (parseInt(document.getElementById('sheet-mana').value) > suggestedMax) {
+                document.getElementById('sheet-mana').value = suggestedMax;
+            }
+            alert(`WIS ${wis} ve Level ${level} için önerilen Max Mana: ${suggestedMax}`);
+        }
+
         function executeAttackAction() {
             const attackerId = document.getElementById('attack-source-token').value;
             const targetId = document.getElementById('attack-target-token').value;
@@ -3167,6 +3423,311 @@
             });
 
             closeAttackModal();
+        }
+
+        // ==========================================================
+        // ENVANTER & TAKAS SİSTEMİ
+        // ==========================================================
+        let currentInventoryCharId = null;
+        let currentInventoryIsEnemy = false;
+
+        function openInventoryModal(charId, isEnemy) {
+            const pool = isEnemy ? state.enemies : state.roster;
+            const char = pool.find(c => c.id === charId);
+            if (!char) return;
+
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            const isOwner = char.owner && char.owner.toLowerCase() === state.username.toLowerCase();
+
+            // Sadece Host veya karakterin sahibi envanterini açabilsin
+            if (!isHostNow && !isOwner) {
+                alert("Sadece kendi karakterinizin envanterini açabilirsiniz.");
+                return;
+            }
+
+            currentInventoryCharId = charId;
+            currentInventoryIsEnemy = isEnemy;
+
+            document.getElementById('inventory-modal-title').innerText = `🎒 ${char.name} - Envanter`;
+
+            renderInventoryList(char);
+
+            // Sadece Host "Yeni eşya ekle" bölümünü görsün
+            const addSection = document.getElementById('inventory-add-section');
+            if (addSection) {
+                addSection.classList.toggle('hidden', !isHostNow);
+            }
+
+            document.getElementById('inventory-modal').classList.remove('hidden');
+        }
+
+        function closeInventoryModal() {
+            document.getElementById('inventory-modal').classList.add('hidden');
+            currentInventoryCharId = null;
+        }
+
+        function renderInventoryList(char) {
+            const container = document.getElementById('inventory-list');
+            container.innerHTML = "";
+
+            let items = [];
+            if (char.inventory) {
+                if (Array.isArray(char.inventory)) {
+                    items = char.inventory;
+                } else if (typeof char.inventory === 'string' && char.inventory.trim() !== '') {
+                    // Eski string formatını parse et
+                    items = char.inventory.split(',').map(i => ({
+                        name: i.trim(),
+                        qty: 1,
+                        type: 'item'
+                    })).filter(i => i.name);
+                }
+            }
+
+            if (items.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 text-xs py-4 border border-[#8A6529]/30 rounded">Envanter boş.</div>`;
+                return;
+            }
+
+            items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = "bg-[#1F1404] border border-[#8A6529]/40 rounded px-3 py-2 flex items-center justify-between text-xs";
+
+                const isUsable = item.type === 'potion' || item.name.toLowerCase().includes('potion') || item.name.toLowerCase().includes('iksir');
+
+                // Item görseli (emoji)
+                const icon = getItemIcon(item.name);
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">${icon}</span>
+                        <span class="font-bold text-white">${item.name}</span>
+                        <span class="text-gray-400">x${item.qty || 1}</span>
+                    </div>
+                    <div class="flex gap-1">
+                        ${isUsable ? `<button onclick="useItemFromInventory(${index})" class="bg-green-700 hover:bg-green-600 text-white px-2.5 py-0.5 rounded text-[10px] font-bold">Kullan</button>` : ''}
+                        <button onclick="transferItemToPlayer(${index})" class="bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-0.5 rounded text-[10px] font-bold">Takas</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addItemToInventory() {
+            if (!currentInventoryCharId) return;
+
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            if (!isHostNow) {
+                alert("Sadece Host yeni eşya ekleyebilir. Oyuncular sadece takas yoluyla item alabilir.");
+                return;
+            }
+
+            const name = document.getElementById('new-item-name').value.trim();
+            const qty = parseInt(document.getElementById('new-item-qty').value) || 1;
+
+            if (!name) {
+                alert("Eşya adı girin.");
+                return;
+            }
+
+            const pool = currentInventoryIsEnemy ? state.enemies : state.roster;
+            const char = pool.find(c => c.id === currentInventoryCharId);
+            if (!char) return;
+
+            if (!char.inventory || typeof char.inventory === 'string') {
+                char.inventory = [];
+            }
+            if (!Array.isArray(char.inventory)) {
+                char.inventory = [];
+            }
+
+            // Aynı isimde varsa qty'yi artır
+            const existing = char.inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
+            if (existing) {
+                existing.qty = (existing.qty || 1) + qty;
+            } else {
+                char.inventory.push({
+                    name: name,
+                    qty: qty,
+                    type: name.toLowerCase().includes('potion') || name.toLowerCase().includes('iksir') ? 'potion' : 'item'
+                });
+            }
+
+            saveToLocalStorage();
+            renderInventoryList(char);
+            renderCharacterRoster();
+
+            document.getElementById('new-item-name').value = "";
+            document.getElementById('new-item-qty').value = 1;
+
+            broadcastNetworkEvent({
+                type: 'save_character',
+                entity: char,
+                isEnemy: currentInventoryIsEnemy
+            });
+        }
+
+        function useItemFromInventory(itemIndex) {
+            if (!currentInventoryCharId) return;
+
+            const pool = currentInventoryIsEnemy ? state.enemies : state.roster;
+            const char = pool.find(c => c.id === currentInventoryCharId);
+            if (!char || !Array.isArray(char.inventory)) return;
+
+            const item = char.inventory[itemIndex];
+            if (!item) return;
+
+            let used = false;
+
+            // Basit efektler
+            if (item.name.toLowerCase().includes('potion') || item.name.toLowerCase().includes('iksir') || item.type === 'potion') {
+                const heal = 5; // Sabit 5 can
+                char.hp = Math.min(char.maxHp || 20, (char.hp || 0) + heal);
+                used = true;
+                
+                const msg = `<strong>${char.name}</strong>, <strong>${item.name}</strong> kullandı ve <span class="text-green-400">+${heal} HP</span> kazandı.`;
+                addSystemLog(msg);
+                
+                // Herkese chat üzerinden bildir
+                broadcastNetworkEvent({
+                    type: 'chat',
+                    text: msg
+                });
+            } else if (item.name.toLowerCase().includes('mana')) {
+                const manaGain = 5; // Sabit 5 mana
+                char.mana = (char.mana || 0) + manaGain;
+                if (char.maxMana) char.mana = Math.min(char.maxMana, char.mana);
+                used = true;
+                addSystemLog(`<strong>${char.name}</strong>, <strong>${item.name}</strong> kullandı ve <span class="text-blue-400">+${manaGain} Mana</span> kazandı.`);
+            } else {
+                addSystemLog(`<strong>${char.name}</strong>, <strong>${item.name}</strong> kullandı (efekt tanımlı değil).`);
+                used = true;
+            }
+
+            if (used) {
+                item.qty = (item.qty || 1) - 1;
+                if (item.qty <= 0) {
+                    char.inventory.splice(itemIndex, 1);
+                }
+
+                // Haritadaki token'ı da güncelle
+                state.tokens.forEach(tok => {
+                    if (tok.rosterId === char.id) {
+                        tok.hp = char.hp;
+                    }
+                });
+
+                saveToLocalStorage();
+                renderInventoryList(char);
+                renderCharacterRoster();
+                renderTokens();
+
+                broadcastNetworkEvent({
+                    type: 'save_character',
+                    entity: char,
+                    isEnemy: currentInventoryIsEnemy
+                });
+            }
+        }
+
+        function removeItemFromInventory(itemIndex) {
+            if (!currentInventoryCharId) return;
+            if (!confirm("Bu eşyayı envanterden silmek istediğine emin misin?")) return;
+
+            const pool = currentInventoryIsEnemy ? state.enemies : state.roster;
+            const char = pool.find(c => c.id === currentInventoryCharId);
+            if (!char || !Array.isArray(char.inventory)) return;
+
+            char.inventory.splice(itemIndex, 1);
+
+            saveToLocalStorage();
+            renderInventoryList(char);
+            renderCharacterRoster();
+
+            broadcastNetworkEvent({
+                type: 'save_character',
+                entity: char,
+                isEnemy: currentInventoryIsEnemy
+            });
+        }
+
+        // Basit item ikonları
+        function getItemIcon(itemName) {
+            const lower = itemName.toLowerCase();
+            if (lower.includes('potion') || lower.includes('iksir') || lower.includes('şifa')) return '🧪';
+            if (lower.includes('mana')) return '🔮';
+            if (lower.includes('kılıç') || lower.includes('sword')) return '⚔️';
+            if (lower.includes('kalkan') || lower.includes('shield')) return '🛡️';
+            if (lower.includes('ok') || lower.includes('arrow')) return '🏹';
+            if (lower.includes('büyü') || lower.includes('scroll')) return '📜';
+            if (lower.includes('yiyecek') || lower.includes('food')) return '🍖';
+            if (lower.includes('altın') || lower.includes('gold')) return '🪙';
+            if (lower.includes('mücevher') || lower.includes('gem')) return '💎';
+            return '📦'; // varsayılan
+        }
+
+        function transferItemToPlayer(itemIndex) {
+            if (!currentInventoryCharId) return;
+
+            const pool = currentInventoryIsEnemy ? state.enemies : state.roster;
+            const fromChar = pool.find(c => c.id === currentInventoryCharId);
+            if (!fromChar || !Array.isArray(fromChar.inventory)) return;
+
+            const item = fromChar.inventory[itemIndex];
+            if (!item) return;
+
+            // Oyuncuları listele
+            const otherPlayers = state.roster.filter(c => c.id !== currentInventoryCharId);
+            if (otherPlayers.length === 0) {
+                alert("Takas yapılacak başka karakter yok.");
+                return;
+            }
+
+            let list = "Takas yapılacak karakteri seçin:\n";
+            otherPlayers.forEach((p, i) => {
+                list += `${i + 1}. ${p.name}\n`;
+            });
+
+            const choice = prompt(list + "\nNumara girin:");
+            const idx = parseInt(choice) - 1;
+            if (isNaN(idx) || idx < 0 || idx >= otherPlayers.length) return;
+
+            const toChar = otherPlayers[idx];
+
+            // Transfer
+            if (!toChar.inventory || !Array.isArray(toChar.inventory)) {
+                toChar.inventory = [];
+            }
+
+            const existing = toChar.inventory.find(i => i.name.toLowerCase() === item.name.toLowerCase());
+            if (existing) {
+                existing.qty = (existing.qty || 1) + (item.qty || 1);
+            } else {
+                toChar.inventory.push({...item});
+            }
+
+            // Gönderenden düşür
+            item.qty = (item.qty || 1) - 1;
+            if (item.qty <= 0) {
+                fromChar.inventory.splice(itemIndex, 1);
+            }
+
+            addSystemLog(`<strong>${fromChar.name}</strong>, <strong>${item.name}</strong> eşyasını <strong>${toChar.name}</strong>'e takas etti.`);
+
+            saveToLocalStorage();
+            renderInventoryList(fromChar);
+            renderCharacterRoster();
+
+            broadcastNetworkEvent({
+                type: 'save_character',
+                entity: fromChar,
+                isEnemy: currentInventoryIsEnemy
+            });
+            broadcastNetworkEvent({
+                type: 'save_character',
+                entity: toChar,
+                isEnemy: false
+            });
         }
     </script>
 </body>
