@@ -113,8 +113,9 @@
             transition: transform .2s cubic-bezier(.4,0,.2,1), box-shadow .2s cubic-bezier(.4,0,.2,1), filter .3s ease;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / .4), 0 4px 6px -4px rgb(0 0 0 / .4), 0 0 0 1px rgb(245 158 11 / .1);
         }
-        .battlemap-token-ui:hover { transform: scale(1.08); box-shadow: 0 20px 25px -5px rgb(0 0 0 / .3), 0 8px 10px -6px rgb(0 0 0 / .3), 0 0 0 3px rgb(245 158 11 / .3); z-index: 40; }
-        .battlemap-token-ui:active { transform: scale(.98); cursor: grabbing; }
+        /* Bilgi paneli tokenın dışına taştığı için ana tokenı büyütmüyoruz; hover artık paneli zıplatmaz. */
+        .battlemap-token-ui:hover { z-index: 40; }
+        .battlemap-token-ui:active { cursor: grabbing; }
         .battlemap-token-ui.is-dead { filter: grayscale(.85) brightness(.65); }
         #profileModal .profile-modal-pop { max-width: 560px; background: #18181b; border-color: #3f3f46; }
         #profileModal .profile-section-header { color: #94a3b8; }
@@ -126,7 +127,7 @@
         #profileModal .text-rpg-gold { color: #fbbf24 !important; }
 
         /* Haritadaki token: boyut hostun ayarından gelir, bilgiler sağdaki açılır paneldedir. */
-        .token-compact-core { position:relative; width:var(--token-size); height:var(--token-size); overflow:hidden; border:3px solid var(--token-color,#d4b46a); border-radius:8px; background:#111; box-shadow:0 0 0 2px #19140d,0 8px 15px rgba(0,0,0,.6); }
+        .token-compact-core { position:relative; width:var(--token-size); height:var(--token-size); overflow:hidden; border:3px solid var(--token-color,#d4b46a); border-radius:8px; background:#111; box-shadow:0 0 0 2px #19140d,0 8px 15px rgba(0,0,0,.6);transition:box-shadow .16s ease; }.battlemap-token-ui:hover .token-compact-core{box-shadow:0 0 0 2px #19140d,0 8px 15px rgba(0,0,0,.6),0 0 0 3px rgba(245,158,11,.5);}
         .token-compact-core::after { content:'';position:absolute;inset:3px;border:1px solid rgba(239,207,142,.4);pointer-events:none; }
         .token-portrait-image { width:100%;height:100%;object-fit:cover;display:block; }.token-portrait-empty { position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 40% 28%,#526069,#1d262b 48%,#090b0e);color:#c8a66e;font-size:10px;letter-spacing:1px;text-align:center; }
         .token-details-toggle { position:absolute;right:4px;top:4px;z-index:4;width:20px;height:20px;border:1px solid #d9b66f;border-radius:50%;background:#17110ccc;color:#f0d7a4;font-size:12px;line-height:1;cursor:pointer; }.token-details-toggle:hover{background:#4a3619;}
@@ -900,6 +901,13 @@
         let joinTimeout = null; 
         let joinRequestInterval = null; 
 
+        // Kullanıcı adı girişlerinde boşluk/büyük-küçük harf farkı host yetkisini bozmasın.
+        function isCurrentUserHost() {
+            const user = String(state.username || '').trim().toLocaleLowerCase('tr-TR');
+            const host = String(state.hostName || '').trim().toLocaleLowerCase('tr-TR');
+            return Boolean(user && host && user === host);
+        }
+
         let zoomLevel = 1.0;
         let panX = 0;
         let panY = 0;
@@ -1342,6 +1350,7 @@
                     renderCharacterRoster();
                     renderBattleMapRoster();
                     renderTokens();
+                    updatePlayerAttackButton();
                     saveToLocalStorage();
                     break;
 
@@ -1937,7 +1946,7 @@
             const hostEnemiesBtn = document.getElementById('host-toggle-enemies-btn');
             const hostAttackBtn = document.getElementById('host-attack-btn');
             
-            const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+            const isHost = isCurrentUserHost();
             
             if (isHost) {
                 btnNewEnemy.classList.remove('hidden');
@@ -2483,7 +2492,7 @@
 
         function updateHostEnemiesToggleButton() {
             const btn = document.getElementById('host-toggle-enemies-btn');
-            const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+            const isHost = isCurrentUserHost();
             if (!isHost) {
                 btn.classList.add('hidden');
                 return;
@@ -2708,7 +2717,7 @@
             isEditingEnemyMode = false;
             currentUploadedImageBase64 = null;
 
-            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            const isHostNow = isCurrentUserHost();
             
             document.getElementById('sheet-title').innerText = "YENİ KARAKTER SAYFASI YARAT";
             document.getElementById('sheet-btn-delete').classList.add('hidden');
@@ -2742,7 +2751,7 @@
         }
 
         function openNewEnemySheet() {
-            if (state.username.toLowerCase() !== state.hostName.toLowerCase()) {
+            if (!isCurrentUserHost()) {
                 alert("Yalnızca oda yöneticisi (Host) canavar veya düşman kurgulayabilir!");
                 return;
             }
@@ -3091,7 +3100,7 @@
         }
 
         function spawnToMap(id, isEnemy) {
-            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            const isHostNow = isCurrentUserHost();
             const pool = isEnemy ? state.enemies : state.roster;
             const target = pool.find(t => t.id === id);
             if (!target) return;
@@ -3462,6 +3471,7 @@
             renderTokens();
             renderCharacterRoster();
             renderBattleMapRoster();
+            updatePlayerAttackButton();
             saveToLocalStorage();
             broadcastNetworkEvent({ type: 'save_character', entity, isEnemy });
         }
@@ -3649,7 +3659,7 @@
                 card.className = "bg-[#2E1E07] border border-red-900/60 rounded-lg p-4 text-[#CBB58F] shadow-lg flex flex-col justify-between";
                 
                 const hpPercent = Math.max(0, Math.min(100, (enemy.hp / enemy.maxHp) * 100));
-                const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+                const isHost = isCurrentUserHost();
 
                 card.innerHTML = `
                     <div>
@@ -3715,7 +3725,7 @@
             const layer = document.getElementById('tokens-layer');
             layer.innerHTML = "";
 
-            const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+            const isHost = isCurrentUserHost();
 
             state.tokens.forEach(token => {
                 const isEnemyToken = token.rosterId && token.rosterId.startsWith('enemy-');
@@ -4103,7 +4113,7 @@
         }
 
         function openAttackGrantModal() {
-            const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+            const isHost = isCurrentUserHost();
             if (!isHost) return;
             const select = document.getElementById('grant-attack-character');
             select.innerHTML = '';
