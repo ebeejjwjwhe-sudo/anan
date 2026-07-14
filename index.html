@@ -124,6 +124,16 @@
         #profileModal .bg-\\[\\#2E1E07\\] { background-color: #18181b !important; }
         #profileModal .border-rpg-border { border-color: #3f3f46 !important; }
         #profileModal .text-rpg-gold { color: #fbbf24 !important; }
+
+        /* Haritadaki token: boyut hostun ayarından gelir, bilgiler sağdaki açılır paneldedir. */
+        .token-compact-core { position:relative; width:var(--token-size); height:var(--token-size); overflow:hidden; border:3px solid var(--token-color,#d4b46a); border-radius:8px; background:#111; box-shadow:0 0 0 2px #19140d,0 8px 15px rgba(0,0,0,.6); }
+        .token-compact-core::after { content:'';position:absolute;inset:3px;border:1px solid rgba(239,207,142,.4);pointer-events:none; }
+        .token-portrait-image { width:100%;height:100%;object-fit:cover;display:block; }.token-portrait-empty { position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 40% 28%,#526069,#1d262b 48%,#090b0e);color:#c8a66e;font-size:10px;letter-spacing:1px;text-align:center; }
+        .token-details-toggle { position:absolute;right:4px;top:4px;z-index:4;width:20px;height:20px;border:1px solid #d9b66f;border-radius:50%;background:#17110ccc;color:#f0d7a4;font-size:12px;line-height:1;cursor:pointer; }.token-details-toggle:hover{background:#4a3619;}
+        .token-bars { width:var(--token-size);margin-top:5px;display:grid;gap:3px; }.token-bar { height:10px;position:relative;overflow:hidden;border:1px solid rgba(221,191,132,.55);background:#100e0c; }.token-bar-fill { position:absolute;left:0;top:0;bottom:0; }.token-bar.hp .token-bar-fill{background:linear-gradient(90deg,#7c1419,#df4a4f)}.token-bar.mana .token-bar-fill{background:linear-gradient(90deg,#0e386d,#3294ea)}.token-bar span{position:relative;z-index:1;display:block;text-align:center;color:#fff3d6;font-size:8px;line-height:8px;text-shadow:0 1px 2px #000;font-weight:bold;}
+        .token-compact-name { width:var(--token-size);margin-top:3px;padding:3px 5px;background:linear-gradient(#302213,#140f0a);border:1px solid #8a6529;color:#f2ddaf;text-align:center;font-size:9px;line-height:1.1;word-break:break-word; }
+        .token-info-panel { position:absolute;left:calc(var(--token-size) + 10px);top:0;width:170px;min-height:var(--token-size);padding:10px;background:linear-gradient(145deg,#302516,#130f0b);border:1px solid #a47b3d;box-shadow:0 11px 20px rgba(0,0,0,.55),inset 0 0 0 3px #1a140d;opacity:0;transform:translateX(-9px);pointer-events:none;transition:opacity .18s ease,transform .18s ease;z-index:35; }.token-info-panel.open{opacity:1;transform:translateX(0);pointer-events:auto;}.token-info-panel:before{content:'';position:absolute;inset:5px;border:1px solid rgba(212,180,106,.25);pointer-events:none;}
+        .token-panel-emblem { width:56px;height:56px;margin:0 auto 7px;position:relative;z-index:1; }.class-emblem-sprite { background-image:url('assets/class-emblems.png');background-repeat:no-repeat;background-size:400% 600%;background-position:var(--emblem-pos,0 -28%);filter:drop-shadow(0 2px 2px #000); }.token-panel-name{position:relative;z-index:1;color:#f1d8a5;font:16px Georgia,serif;text-align:center;line-height:1.15;word-break:break-word;}.token-panel-race{position:relative;z-index:1;margin:7px 0 10px;padding-bottom:8px;border-bottom:1px solid #715a36;color:#c5a672;font:11px Georgia,serif;text-align:center;word-break:break-word;}.token-panel-level{position:relative;z-index:1;margin:auto;width:35px;height:35px;border-radius:50%;border:1px solid #d1a45b;background:#151009;color:#f4d899;display:grid;place-items:center;font:18px Georgia,serif;}
     </style>
 </head>
 <body class="text-[#CBB58F] h-screen w-screen flex flex-col font-serif select-none relative">
@@ -1316,6 +1326,10 @@
                         if (tok.rosterId === packet.entity.id) {
                             tok.hp = packet.entity.hp;
                             tok.maxHp = packet.entity.maxHp;
+                            tok.mana = packet.entity.mana || 0;
+                            tok.maxMana = packet.entity.maxMana || 0;
+                            tok.className = packet.entity.class;
+                            tok.race = packet.entity.race;
                             tok.name = packet.entity.name;           // İsim değişikliği yansısın
                             tok.level = packet.entity.level;
                             tok.ac = packet.entity.ac;
@@ -2949,9 +2963,13 @@
                     state.tokens.forEach(tok => {
                         if (tok.rosterId === editingTokenId) {
                             tok.name = name;
+                            tok.className = className;
+                            tok.race = race;
                             tok.level = level;
                             tok.hp = hp;
                             tok.maxHp = maxHp;
+                            tok.mana = mana;
+                            tok.maxMana = maxMana;
                             tok.ac = ac;
                             tok.size = tokenSize;
                             tok.avatarUrl = currentUploadedImageBase64;
@@ -3100,9 +3118,13 @@
                 id: 'active-' + Math.random().toString(36).substr(2, 9),
                 rosterId: target.id,
                 name: target.name,
+                className: target.class,
+                race: target.race,
                 level: target.level,
                 hp: target.hp,
                 maxHp: target.maxHp,
+                mana: target.mana || 0,
+                maxMana: target.maxMana || 0,
                 ac: target.ac,
                 size: target.size || 80, 
                 color: target.color,
@@ -3124,6 +3146,24 @@
             
             switchMainTab('battlemap');
             renderBattleMapRoster();
+        }
+
+        const CLASS_EMBLEM_POSITIONS = {
+            Barbarian:'0% -4%', Bard:'33.333% -4%', Cleric:'66.666% -4%', Druid:'100% -4%',
+            Fighter:'0% -28%', Monk:'33.333% -28%', Paladin:'66.666% -28%', Ranger:'100% -28%',
+            Rogue:'0% -52%', Sorcerer:'33.333% -52%', Warlock:'66.666% -52%', Wizard:'100% -52%', Artificer:'66.666% -77%'
+        };
+        function getClassEmblemHTML(className, classes = '') {
+            const key = getClassKeyFromName(className);
+            const pos = CLASS_EMBLEM_POSITIONS[key] || CLASS_EMBLEM_POSITIONS.Fighter;
+            return `<div class="class-emblem-sprite ${classes}" style="--emblem-pos:${pos}" title="${key}"></div>`;
+        }
+        function toggleTokenDetails(tokenId, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const token = state.tokens.find(t => t.id === tokenId);
+            if (!token) return;
+            token.detailsOpen = !token.detailsOpen;
+            renderTokens();
         }
 
         function getClassKeyFromName(className) {
@@ -3402,6 +3442,10 @@
                     tok.level = entity.level;
                     tok.hp = entity.hp;
                     tok.maxHp = entity.maxHp;
+                    tok.mana = entity.mana || 0;
+                    tok.maxMana = entity.maxMana || 0;
+                    tok.className = entity.class;
+                    tok.race = entity.race;
                     tok.ac = entity.ac;
                     tok.avatarUrl = entity.avatarUrl;
                     tok.icon = entity.icon;
@@ -3700,6 +3744,9 @@
                 const hpVal = Number(token.hp) || 0;
                 const maxHpVal = Number(token.maxHp) || 10;
                 const hpPercent = Math.max(0, Math.min(100, (hpVal / maxHpVal) * 100));
+                const manaVal = Number(token.mana) || 0;
+                const maxManaVal = Number(token.maxMana) || 0;
+                const manaPercent = maxManaVal > 0 ? Math.max(0, Math.min(100, (manaVal / maxManaVal) * 100)) : 0;
 
                 let barColor = "bg-green-500";
                 if (hpPercent < 35) barColor = "bg-red-500";
@@ -3750,6 +3797,33 @@
 
                     <div class="rpg-token-nameplate w-[95%] mt-1.5 mb-0.5 text-white text-[8px] px-1.5 py-0.5 rounded-lg text-center whitespace-normal break-words leading-tight">
                         ${token.name}
+                    </div>
+                `;
+
+                // Token boyutu değişmez: hostun karakter sayfasındaki Token Boyu ayarı kullanılır.
+                const entity = findEntityById(token.rosterId) || {};
+                const tokenClass = token.className || entity.class || 'Fighter';
+                const tokenRace = token.race || entity.race || 'Belirtilmemiş';
+                const portrait = token.avatarUrl
+                    ? `<img class="token-portrait-image" src="${token.avatarUrl}" alt="${token.name}">`
+                    : `<div class="token-portrait-empty">KARAKTER<br>FOTOĞRAFI</div>`;
+                div.innerHTML = `
+                    <div class="relative" style="--token-size:${size}px;--token-color:${borderColor};">
+                        <div class="token-compact-core">
+                            ${portrait}
+                            <button class="token-details-toggle" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="toggleTokenDetails('${token.id}', event)" title="Karakter bilgilerini aç">i</button>
+                        </div>
+                        <div class="token-bars">
+                            <div class="token-bar hp"><div class="token-bar-fill" style="width:${hpPercent}%"></div><span>HP ${hpVal} / ${maxHpVal}</span></div>
+                            <div class="token-bar mana"><div class="token-bar-fill" style="width:${manaPercent}%"></div><span>MANA ${manaVal} / ${maxManaVal}</span></div>
+                        </div>
+                        <div class="token-compact-name">${token.name}</div>
+                        <aside class="token-info-panel ${token.detailsOpen ? 'open' : ''}" onclick="event.stopPropagation()">
+                            ${getClassEmblemHTML(tokenClass, 'token-panel-emblem')}
+                            <div class="token-panel-name">${token.name}</div>
+                            <div class="token-panel-race">${tokenRace}</div>
+                            <div class="token-panel-level">${token.level || 1}</div>
+                        </aside>
                     </div>
                 `;
 
