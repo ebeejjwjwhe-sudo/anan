@@ -4174,6 +4174,12 @@
             const char = attacker && state.roster.find(c => c.id === attacker.rosterId);
             if (!attacker || !target || !char || !char.canAttack) return;
             closePlayerAttackModal();
+
+            // Hostun verdiği saldırı izni tek kullanımlıktır: saldırı denenir denenmez tüketilir.
+            char.canAttack = false;
+            saveEntityAndBroadcast(char, false);
+            updatePlayerAttackButton();
+
             if ((target.rosterId || '').startsWith('enemy-')) {
                 const profile = getAttackProfile(char);
                 const roll = Math.floor(Math.random() * 20) + 1;
