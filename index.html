@@ -2873,157 +2873,162 @@
         }
 
         function saveSheetModal() {
-            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
-            // Oyuncular (host olmayanlar), kendi karakterlerinde bile sadece isim/sınıf/ırk/fotoğraf değiştirebilir.
-            // Düşmanlar zaten sadece host tarafından oluşturulup düzenlenebildiği için burada her zaman false olur.
-            const isRestrictedPlayerEdit = !isEditingEnemyMode && !isHostNow;
+            try {
+                const isHostNow = isCurrentUserHost();
+                // Oyuncular (host olmayanlar), kendi karakterlerinde bile sadece isim/sınıf/ırk/fotoğraf değiştirebilir.
+                // Düşmanlar zaten sadece host tarafından oluşturulup düzenlenebildiği için burada her zaman false olur.
+                const isRestrictedPlayerEdit = !isEditingEnemyMode && !isHostNow;
 
-            const name = document.getElementById('sheet-name').value.trim() || "İsimsiz";
-            const className = document.getElementById('sheet-class').value;
-            const race = document.getElementById('sheet-race').value.trim() || "Belirtilmemiş";
+                const name = document.getElementById('sheet-name').value.trim() || "İsimsiz";
+                const className = document.getElementById('sheet-class').value;
+                const race = document.getElementById('sheet-race').value.trim() || "Belirtilmemiş";
 
-            // Var olan kaydı (varsa) referans alarak kısıtlı alanları koruyoruz.
-            const existingEntity = editingTokenId !== null
-                ? (isEditingEnemyMode ? state.enemies : state.roster).find(t => t.id === editingTokenId)
-                : null;
+                // Var olan kaydı (varsa) referans alarak kısıtlı alanları koruyoruz.
+                const existingEntity = editingTokenId !== null
+                    ? (isEditingEnemyMode ? state.enemies : state.roster).find(t => t.id === editingTokenId)
+                    : null;
 
-            let level, hp, maxHp, ac, tokenSize, mana, maxMana, str, dex, con, int, wis, cha, inventory, notes;
+                let level, hp, maxHp, ac, tokenSize, mana, maxMana, str, dex, con, int, wis, cha, inventory, notes;
 
-            if (isRestrictedPlayerEdit) {
-                level = existingEntity ? existingEntity.level : 1;
-                hp = existingEntity ? existingEntity.hp : 10;
-                maxHp = existingEntity ? existingEntity.maxHp : 10;
-                ac = existingEntity ? existingEntity.ac : 10;
-                tokenSize = existingEntity ? (existingEntity.size || 80) : 80;
-                maxMana = existingEntity ? Math.max(0, Number(existingEntity.maxMana) || 0) : 0;
-                mana = existingEntity ? Math.min(maxMana, Math.max(0, Number(existingEntity.mana) || 0)) : 0;
-                str = existingEntity ? existingEntity.str : 10;
-                dex = existingEntity ? existingEntity.dex : 10;
-                con = existingEntity ? existingEntity.con : 10;
-                int = existingEntity ? existingEntity.int : 10;
-                wis = existingEntity ? existingEntity.wis : 10;
-                cha = existingEntity ? existingEntity.cha : 10;
-                inventory = existingEntity ? (existingEntity.inventory || "") : "";
-                notes = document.getElementById('sheet-notes').value;
-            } else {
-                level = parseInt(document.getElementById('sheet-level').value) || 1;
-                hp = parseInt(document.getElementById('sheet-hp').value) || 10;
-                maxHp = parseInt(document.getElementById('sheet-max-hp').value) || 10;
-                ac = parseInt(document.getElementById('sheet-ac').value) || 10;
-                tokenSize = parseInt(document.getElementById('sheet-size').value) || 80;
-                maxMana = Math.max(0, parseInt(document.getElementById('sheet-max-mana').value) || 0);
-                mana = Math.min(maxMana, Math.max(0, parseInt(document.getElementById('sheet-mana').value) || 0));
-
-                str = parseInt(document.getElementById('sheet-str').value) || 10;
-                dex = parseInt(document.getElementById('sheet-dex').value) || 10;
-                con = parseInt(document.getElementById('sheet-con').value) || 10;
-                int = parseInt(document.getElementById('sheet-int').value) || 10;
-                wis = parseInt(document.getElementById('sheet-wis').value) || 10;
-                cha = parseInt(document.getElementById('sheet-cha').value) || 10;
-
-                inventory = document.getElementById('sheet-inventory').value;
-                notes = document.getElementById('sheet-notes').value;
-            }
-
-            const icon = className.split(' ')[0] || "🛡️";
-
-            let savedEntity = null;
-
-            if (editingTokenId === null) {
-                const newId = (isEditingEnemyMode ? 'enemy-' : 'char-') + Math.random().toString(36).substr(2, 9);
-                savedEntity = {
-                    id: newId,
-                    name,
-                    class: className,
-                    race,
-                    level,
-                    hp,
-                    maxHp,
-                    mana,
-                    maxMana,
-                    ac,
-                    size: tokenSize,
-                    str, dex, con, int, wis, cha,
-                    inventory,
-                    notes,
-                    icon,
-                    avatarUrl: currentUploadedImageBase64, 
-                    color: isEditingEnemyMode ? '#ef4444' : '#f59e0b',
-                    owner: isEditingEnemyMode ? null : state.username
-                };
-
-                if (isEditingEnemyMode) {
-                    state.enemies.push(savedEntity);
-                    addSystemLog("Yeni düşman kurgulandı.");
+                if (isRestrictedPlayerEdit) {
+                    level = existingEntity ? existingEntity.level : 1;
+                    hp = existingEntity ? existingEntity.hp : 10;
+                    maxHp = existingEntity ? existingEntity.maxHp : 10;
+                    ac = existingEntity ? existingEntity.ac : 10;
+                    tokenSize = existingEntity ? (existingEntity.size || 80) : 80;
+                    maxMana = existingEntity ? Math.max(0, Number(existingEntity.maxMana) || 0) : 0;
+                    mana = existingEntity ? Math.min(maxMana, Math.max(0, Number(existingEntity.mana) || 0)) : 0;
+                    str = existingEntity ? existingEntity.str : 10;
+                    dex = existingEntity ? existingEntity.dex : 10;
+                    con = existingEntity ? existingEntity.con : 10;
+                    int = existingEntity ? existingEntity.int : 10;
+                    wis = existingEntity ? existingEntity.wis : 10;
+                    cha = existingEntity ? existingEntity.cha : 10;
+                    inventory = existingEntity ? (existingEntity.inventory || "") : "";
+                    notes = document.getElementById('sheet-notes').value;
                 } else {
-                    state.roster.push(savedEntity);
-                    addSystemLog("Yeni karakter oluşturuldu.");
-                }
-            } else {
-                const pool = isEditingEnemyMode ? state.enemies : state.roster;
-                savedEntity = pool.find(t => t.id === editingTokenId);
-                if (savedEntity) {
-                    savedEntity.name = name;
-                    savedEntity.class = className;
-                    savedEntity.race = race;
-                    savedEntity.level = level;
-                    savedEntity.hp = hp;
-                    savedEntity.maxHp = maxHp;
-                    savedEntity.mana = mana;
-                    savedEntity.maxMana = maxMana;
-                    savedEntity.ac = ac;
-                    savedEntity.size = tokenSize;
-                    savedEntity.str = str;
-                    savedEntity.dex = dex;
-                    savedEntity.con = con;
-                    savedEntity.int = int;
-                    savedEntity.wis = wis;
-                    savedEntity.cha = cha;
-                    savedEntity.inventory = inventory;
-                    savedEntity.notes = notes;
-                    savedEntity.icon = icon;
-                    savedEntity.avatarUrl = currentUploadedImageBase64;
+                    level = parseInt(document.getElementById('sheet-level').value) || 1;
+                    hp = parseInt(document.getElementById('sheet-hp').value) || 10;
+                    maxHp = parseInt(document.getElementById('sheet-max-hp').value) || 10;
+                    ac = parseInt(document.getElementById('sheet-ac').value) || 10;
+                    tokenSize = parseInt(document.getElementById('sheet-size').value) || 80;
+                    maxMana = Math.max(0, parseInt(document.getElementById('sheet-max-mana').value) || 0);
+                    mana = Math.min(maxMana, Math.max(0, parseInt(document.getElementById('sheet-mana').value) || 0));
 
-                    // Eski karakterlerde sahiplik bilgisi yoksa, düzenleyen kişiye geriye dönük olarak atanır.
-                    if (!isEditingEnemyMode && !savedEntity.owner) {
-                        savedEntity.owner = state.username;
+                    str = parseInt(document.getElementById('sheet-str').value) || 10;
+                    dex = parseInt(document.getElementById('sheet-dex').value) || 10;
+                    con = parseInt(document.getElementById('sheet-con').value) || 10;
+                    int = parseInt(document.getElementById('sheet-int').value) || 10;
+                    wis = parseInt(document.getElementById('sheet-wis').value) || 10;
+                    cha = parseInt(document.getElementById('sheet-cha').value) || 10;
+
+                    inventory = document.getElementById('sheet-inventory').value;
+                    notes = document.getElementById('sheet-notes').value;
+                }
+
+                const icon = className.split(' ')[0] || "🛡️";
+
+                let savedEntity = null;
+
+                if (editingTokenId === null) {
+                    const newId = (isEditingEnemyMode ? 'enemy-' : 'char-') + Math.random().toString(36).substr(2, 9);
+                    savedEntity = {
+                        id: newId,
+                        name,
+                        class: className,
+                        race,
+                        level,
+                        hp,
+                        maxHp,
+                        mana,
+                        maxMana,
+                        ac,
+                        size: tokenSize,
+                        str, dex, con, int, wis, cha,
+                        inventory,
+                        notes,
+                        icon,
+                        avatarUrl: currentUploadedImageBase64, 
+                        color: isEditingEnemyMode ? '#ef4444' : '#f59e0b',
+                        owner: isEditingEnemyMode ? null : state.username
+                    };
+
+                    if (isEditingEnemyMode) {
+                        state.enemies.push(savedEntity);
+                        addSystemLog("Yeni düşman kurgulandı.");
+                    } else {
+                        state.roster.push(savedEntity);
+                        addSystemLog("Yeni karakter oluşturuldu.");
                     }
+                } else {
+                    const pool = isEditingEnemyMode ? state.enemies : state.roster;
+                    savedEntity = pool.find(t => t.id === editingTokenId);
+                    if (savedEntity) {
+                        savedEntity.name = name;
+                        savedEntity.class = className;
+                        savedEntity.race = race;
+                        savedEntity.level = level;
+                        savedEntity.hp = hp;
+                        savedEntity.maxHp = maxHp;
+                        savedEntity.mana = mana;
+                        savedEntity.maxMana = maxMana;
+                        savedEntity.ac = ac;
+                        savedEntity.size = tokenSize;
+                        savedEntity.str = str;
+                        savedEntity.dex = dex;
+                        savedEntity.con = con;
+                        savedEntity.int = int;
+                        savedEntity.wis = wis;
+                        savedEntity.cha = cha;
+                        savedEntity.inventory = inventory;
+                        savedEntity.notes = notes;
+                        savedEntity.icon = icon;
+                        savedEntity.avatarUrl = currentUploadedImageBase64;
 
-                    state.tokens.forEach(tok => {
-                        if (tok.rosterId === editingTokenId) {
-                            tok.name = name;
-                            tok.className = className;
-                            tok.race = race;
-                            tok.level = level;
-                            tok.hp = hp;
-                            tok.maxHp = maxHp;
-                            tok.mana = mana;
-                            tok.maxMana = maxMana;
-                            tok.ac = ac;
-                            tok.size = tokenSize;
-                            tok.avatarUrl = currentUploadedImageBase64;
-                            tok.icon = icon;
+                        // Eski karakterlerde sahiplik bilgisi yoksa, düzenleyen kişiye geriye dönük olarak atanır.
+                        if (!isEditingEnemyMode && !savedEntity.owner) {
+                            savedEntity.owner = state.username;
                         }
-                    });
 
-                    addSystemLog("Kart bilgileri güncellendi.");
+                        state.tokens.forEach(tok => {
+                            if (tok.rosterId === editingTokenId) {
+                                tok.name = name;
+                                tok.className = className;
+                                tok.race = race;
+                                tok.level = level;
+                                tok.hp = hp;
+                                tok.maxHp = maxHp;
+                                tok.mana = mana;
+                                tok.maxMana = maxMana;
+                                tok.ac = ac;
+                                tok.size = tokenSize;
+                                tok.avatarUrl = currentUploadedImageBase64;
+                                tok.icon = icon;
+                            }
+                        });
+
+                        addSystemLog("Kart bilgileri güncellendi.");
+                    }
                 }
+
+                renderCharacterRoster();
+                renderBattleMapRoster();
+                renderTokens();
+                saveToLocalStorage();
+
+                if (savedEntity) {
+                    broadcastNetworkEvent({
+                        type: 'save_character',
+                        entity: savedEntity,
+                        isEnemy: isEditingEnemyMode
+                    });
+                }
+            } catch (err) {
+                console.error("saveSheetModal hatası:", err);
+                // Hata olsa bile modalı kapat ki kullanıcı takılı kalmasın
+            } finally {
+                closeSheetModal();
             }
-
-            renderCharacterRoster();
-            renderBattleMapRoster();
-            renderTokens();
-            saveToLocalStorage();
-
-            if (savedEntity) {
-                broadcastNetworkEvent({
-                    type: 'save_character',
-                    entity: savedEntity,
-                    isEnemy: isEditingEnemyMode
-                });
-            }
-
-            closeSheetModal();
         }
 
         function deleteSheetToken() {
