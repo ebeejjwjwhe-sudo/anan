@@ -6,6 +6,7 @@
     <title>Rollplay Realm Online - Velutan RPG Masaüstü</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Firebase (gerçek zamanlı senkronizasyon için, ntfy.sh yerine) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -48,6 +49,81 @@
         .sidebar-transition { transition: all 0.3s ease-in-out; }
 
         .no-pan { pointer-events: auto; }
+
+        /* ==== Gelişmiş Battle Map Token Görünümü ==== */
+        .rpg-token {
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 12px -3px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.35);
+        }
+        .rpg-token:hover {
+            transform: scale(1.08);
+            box-shadow: 0 12px 20px -4px rgba(0,0,0,0.7), 0 0 0 2px rgba(212,180,106,0.55);
+        }
+        .rpg-token:active { transform: scale(0.97); }
+
+        .rpg-hp-bar {
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s ease;
+        }
+
+        .rpg-class-emblem {
+            box-shadow: 0 0 0 2px #1F1404, 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .rpg-token-nameplate {
+            background: linear-gradient(to bottom, #2E1E07, #1F1404);
+            border: 1px solid #8A6529;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .skill-pill {
+            transition: all 0.2s ease;
+        }
+        .skill-pill:hover {
+            transform: translateY(-1px) scale(1.1);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5);
+        }
+
+        .profile-modal-pop {
+            animation: profileModalPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes profileModalPop {
+            from { opacity: 0; transform: scale(0.85) translateY(30px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .profile-stat-box {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .profile-stat-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+        }
+
+        .profile-section-header {
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #A68858;
+        }
+
+        /* Referans token/profil arayüzünün koyu Discord görünümü. */
+        .battlemap-token-ui {
+            transition: transform .2s cubic-bezier(.4,0,.2,1), box-shadow .2s cubic-bezier(.4,0,.2,1), filter .3s ease;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / .4), 0 4px 6px -4px rgb(0 0 0 / .4), 0 0 0 1px rgb(245 158 11 / .1);
+        }
+        .battlemap-token-ui:hover { transform: scale(1.08); box-shadow: 0 20px 25px -5px rgb(0 0 0 / .3), 0 8px 10px -6px rgb(0 0 0 / .3), 0 0 0 3px rgb(245 158 11 / .3); z-index: 40; }
+        .battlemap-token-ui:active { transform: scale(.98); cursor: grabbing; }
+        .battlemap-token-ui.is-dead { filter: grayscale(.85) brightness(.65); }
+        #profileModal .profile-modal-pop { max-width: 560px; background: #18181b; border-color: #3f3f46; }
+        #profileModal .profile-section-header { color: #94a3b8; }
+        #profileModal .profile-stat-box,
+        #profileModal .profile-stat-box:hover { background: #27272a; border-color: #3f3f46; }
+        #profileModal .bg-\\[\\#1F1404\\] { background-color: #27272a !important; }
+        #profileModal .bg-\\[\\#2E1E07\\] { background-color: #18181b !important; }
+        #profileModal .border-rpg-border { border-color: #3f3f46 !important; }
+        #profileModal .text-rpg-gold { color: #fbbf24 !important; }
     </style>
 </head>
 <body class="text-[#CBB58F] h-screen w-screen flex flex-col font-serif select-none relative">
@@ -218,6 +294,22 @@
                             <h4 class="text-[10px] text-gray-400 tracking-wider font-bold mb-2">AKTİF OYUNCULAR</h4>
                             <div id="realm-player-list" class="space-y-1.5"></div>
                         </div>
+
+                        <div class="border-t border-rpg-border/60 pt-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <h4 class="text-sm font-bold text-white flex items-center gap-1.5">
+                                        <i class="fa-solid fa-users text-rpg-gold text-xs"></i>
+                                        Karakterler
+                                    </h4>
+                                    <p class="text-[9px] text-gray-500">Haritaya eklemek için butona basın</p>
+                                </div>
+                                <div class="text-[10px] px-2 py-0.5 bg-[#1F1404] rounded-full font-mono text-rpg-gold border border-rpg-border">
+                                    <span id="battlemap-token-count">0</span>/12
+                                </div>
+                            </div>
+                            <div id="battlemap-roster-list" class="space-y-2 max-h-[280px] overflow-y-auto pr-1"></div>
+                        </div>
                     </div>
                 </aside>
 
@@ -254,9 +346,12 @@
                             📍 İşaret Koy
                         </button>
                         
-                        <!-- Host Özel Düşman Saldırı Paneli Butonu -->
-                        <button id="host-attack-btn" onclick="openAttackModal()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#6B000D] hover:bg-red-700 text-white shadow-inner">
-                            ⚔️ Saldırı Yap
+                        <!-- Host: saldırı hakkı dağıtımı -->
+                        <button id="host-attack-btn" onclick="openAttackGrantModal()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-[#6B000D] hover:bg-red-700 text-white shadow-inner">
+                            ⚔️ Saldırı İzni
+                        </button>
+                        <button id="player-attack-btn" onclick="openPlayerAttackModal()" class="hidden px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-emerald-800 hover:bg-emerald-700 text-white shadow-inner">
+                            🎲 Saldır
                         </button>
                         
                         <!-- Host Özel Düşman Görünürlük Butonu -->
@@ -384,6 +479,15 @@
             </div>
         </div>
     </main>
+
+    <!-- TOKEN / KARAKTER PROFİL MODALI -->
+    <div id="profileModal" onclick="if (event.target.id === 'profileModal') closeProfileModal()"
+         class="hidden fixed inset-0 bg-black/90 backdrop-blur-xl z-[120] items-center justify-center p-4">
+        <div onclick="event.stopImmediatePropagation()"
+             class="profile-modal-pop w-full max-w-[540px] bg-[#2E1E07] border border-rpg-border rounded-3xl overflow-hidden shadow-2xl">
+            <div id="modalContent"></div>
+        </div>
+    </div>
 
     <!-- KARAKTER SAYFASI MODALI -->
     <div id="character-sheet-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -525,8 +629,8 @@
             </div>
 
             <div class="mb-4">
-                <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">NOTLAR</label>
-                <textarea id="sheet-notes" rows="3" placeholder="Yetenekler..." class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none resize-none"></textarea>
+                <label class="block text-[11px] uppercase font-bold mb-1 tracking-wider text-[#CBB58F]">KARAKTER AÇIKLAMASI</label>
+                <textarea id="sheet-notes" rows="3" placeholder="Karakterinin geçmişini, kişiliğini veya notlarını yaz..." class="w-full bg-[#1F1404] border border-[#8A6529] rounded px-3 py-1.5 text-xs text-white focus:outline-none resize-none"></textarea>
             </div>
 
             <div class="flex items-center justify-between border-t border-[#8A6529]/60 pt-4">
@@ -620,6 +724,33 @@
                 <button onclick="executeAttackAction()" class="flex-grow bg-[#6B000D] hover:bg-[#E11D48] text-white py-2 rounded text-xs font-bold uppercase transition-colors shadow-lg">Saldırıyı Başlat</button>
             </div>
         </div>
+    </div>
+
+    <!-- HOST: OYUNCUYA SALDIRI HAKKI VER -->
+    <div id="attack-grant-modal" class="hidden absolute inset-0 z-[70] bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-[#1C1307] border-2 border-[#E11D48]/70 p-6 rounded-lg w-full max-w-md shadow-2xl text-[#CBB58F]">
+            <h2 class="text-sm font-bold text-[#E11D48] uppercase tracking-wider mb-4 border-b border-[#E11D48]/30 pb-2 text-center">⚔️ Saldırı Hakkı Ver</h2>
+            <div class="space-y-4 text-xs">
+                <div><label class="block text-gray-400 font-bold mb-1">Oyuncu karakteri</label><select id="grant-attack-character" onchange="showAttackRecommendation()" class="w-full bg-[#1F1404] border border-[#8A6529]/40 rounded p-2 text-white"></select></div>
+                <div class="bg-[#1F1404] border border-[#8A6529]/40 rounded p-3"><div class="text-gray-400 mb-1">Sistem önerisi</div><div id="attack-mod-recommendation" class="text-rpg-gold font-bold">Karakter seçin.</div></div>
+                <div><label class="block text-gray-400 font-bold mb-1">Saldırı modu (host son kararı verir)</label><input id="grant-attack-mod" type="number" min="-10" max="10" value="0" class="w-full bg-[#1F1404] border border-[#8A6529]/40 rounded p-2 text-white"><p class="text-[10px] text-gray-500 mt-1">Öneriyi kullanabilir veya -1, 0, +1 gibi kendi modunu yazabilirsin.</p></div>
+            </div>
+            <div class="flex gap-2 mt-5 pt-3 border-t border-[#8A6529]/20"><button onclick="closeAttackGrantModal()" class="flex-1 border border-[#8A6529]/60 py-2 rounded text-xs font-bold">Vazgeç</button><button onclick="grantPlayerAttackPermission()" class="flex-1 bg-[#6B000D] hover:bg-[#E11D48] text-white py-2 rounded text-xs font-bold">İzni Ver</button></div>
+        </div>
+    </div>
+
+    <!-- OYUNCU: HEDEF SEÇİMLİ SALDIRI -->
+    <div id="player-attack-modal" class="hidden absolute inset-0 z-[70] bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-[#1C1307] border-2 border-emerald-700/70 p-6 rounded-lg w-full max-w-md shadow-2xl text-[#CBB58F]">
+            <h2 class="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-4 border-b border-emerald-800/50 pb-2 text-center">🎲 Saldırı</h2>
+            <div class="space-y-4 text-xs"><div><label class="block text-gray-400 font-bold mb-1">Saldıran karakterin</label><select id="player-attack-source" class="w-full bg-[#1F1404] border border-[#8A6529]/40 rounded p-2 text-white"></select></div><div><label class="block text-gray-400 font-bold mb-1">Hedef</label><select id="player-attack-target" class="w-full bg-[#1F1404] border border-[#8A6529]/40 rounded p-2 text-white"></select></div><p class="text-[10px] text-gray-500">Düşmana saldırı D20 + mod + sınıf statı ile hesaplanır. Oyuncu hedefinde herkese D20 düellosu açılır ve son hasarı host onaylar.</p></div>
+            <div class="flex gap-2 mt-5 pt-3 border-t border-[#8A6529]/20"><button onclick="closePlayerAttackModal()" class="flex-1 border border-[#8A6529]/60 py-2 rounded text-xs font-bold">Vazgeç</button><button onclick="performPlayerAttack()" class="flex-1 bg-emerald-700 hover:bg-emerald-600 text-white py-2 rounded text-xs font-bold">Zarı At</button></div>
+        </div>
+    </div>
+
+    <!-- HERKESİN GÖRDÜĞÜ OYUNCU-vs-OYUNCU D20 DÜELLOSU -->
+    <div id="pvp-roll-modal" class="hidden fixed inset-0 z-[130] bg-black/90 backdrop-blur-xl items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-zinc-900 border-2 border-amber-500 rounded-3xl p-6 text-center shadow-2xl"><div class="text-4xl mb-3">🎲</div><h2 class="text-xl font-black text-white">D20 Düellosu</h2><p id="pvp-roll-description" class="text-sm text-zinc-400 mt-2"></p><button id="pvp-roll-button" onclick="submitPvpRoll()" class="mt-5 w-full bg-amber-500 hover:bg-amber-400 text-amber-950 font-black py-3 rounded-2xl">D20 AT</button><p id="pvp-roll-result" class="text-sm font-bold text-amber-300 mt-3"></p></div>
     </div>
 
     <!-- ENVANTER & TAKAS MODALI -->
@@ -762,6 +893,9 @@
         let zoomLevel = 1.0;
         let panX = 0;
         let panY = 0;
+        let activePvpChallenge = null;
+        let activePvpRolls = [];
+        let pvpResolveTimer = null;
         let isPanning = false;
         let startPanX = 0;
         let startPanY = 0;
@@ -772,7 +906,92 @@
             startX: 0,
             startY: 0,
             tokenLeft: 0,
-            tokenTop: 0
+            tokenTop: 0,
+            hasMoved: false
+        };
+
+        const CLASS_STYLES = {
+            "Fighter": { bg: "bg-red-700", emblem: "⚔️", accent: "#b91c1c" },
+            "Barbarian": { bg: "bg-orange-700", emblem: "🪓", accent: "#c2410c" },
+            "Wizard": { bg: "bg-violet-700", emblem: "✨", accent: "#6d28d9" },
+            "Sorcerer": { bg: "bg-purple-700", emblem: "⚡", accent: "#7c3aed" },
+            "Rogue": { bg: "bg-emerald-700", emblem: "🗡️", accent: "#15803d" },
+            "Ranger": { bg: "bg-teal-700", emblem: "🏹", accent: "#0f766e" },
+            "Paladin": { bg: "bg-amber-700", emblem: "⚔️", accent: "#b45309" },
+            "Cleric": { bg: "bg-yellow-700", emblem: "⛪", accent: "#a16207" },
+            "Bard": { bg: "bg-pink-700", emblem: "🪕", accent: "#be185d" },
+            "Druid": { bg: "bg-green-700", emblem: "🍃", accent: "#15803d" },
+            "Monk": { bg: "bg-stone-600", emblem: "🥋", accent: "#57534e" },
+            "Warlock": { bg: "bg-indigo-700", emblem: "👁️", accent: "#4338ca" },
+            "Artificer": { bg: "bg-slate-600", emblem: "⚙️", accent: "#475569" }
+        };
+
+        const DEFAULT_CLASS_SKILLS = {
+            "Fighter": [
+                { icon: "⚔️", name: "Güçlü Darbe", desc: "Ağır bir kılıç saldırısı. Hedefe 2d6+4 hasar verir." },
+                { icon: "🛡️", name: "Kalkan Savunması", desc: "Bir sonraki hasarı %50 azaltır." },
+                { icon: "📢", name: "Savaş Çığlığı", desc: "Yakındaki müttefiklere +2 saldırı bonusu verir." }
+            ],
+            "Barbarian": [
+                { icon: "🪓", name: "Öfke Darbesi", desc: "2d8+5 fiziksel hasar verir." },
+                { icon: "💢", name: "Vahşi Öfke", desc: "1 tur boyunca hasar direnci kazanır." },
+                { icon: "🐻", name: "Dayanıklılık", desc: "Kritik hasara karşı avantaj sağlar." }
+            ],
+            "Wizard": [
+                { icon: "❄️", name: "Buz Mızrağı", desc: "Düşmana 3d8 soğuk hasarı verir." },
+                { icon: "⚡", name: "Yıldırım Çağrısı", desc: "Bir hedefe 4d6 elektrik hasarı verir." },
+                { icon: "🌟", name: "Koruyucu Rün", desc: "Bir müttefike +3 AC bonusu sağlar." }
+            ],
+            "Sorcerer": [
+                { icon: "🔥", name: "Alev Topu", desc: "Alan hasarı: 3d6 ateş." },
+                { icon: "💫", name: "Metamagic", desc: "Bir büyüyü güçlendirir veya çoğaltır." },
+                { icon: "✨", name: "Işık Patlaması", desc: "Düşmanları kör eder (1 tur)." }
+            ],
+            "Rogue": [
+                { icon: "🗡️", name: "Sırtından Bıçaklama", desc: "Fark edilmemiş düşmana kritik vuruş." },
+                { icon: "💨", name: "Gölge Adımı", desc: "Kısa mesafede anında yer değiştirir." },
+                { icon: "☠️", name: "Zehirli Darbe", desc: "Hedefi zehirler, her tur 1d4 hasar alır." }
+            ],
+            "Ranger": [
+                { icon: "🏹", name: "Hassas Ok", desc: "Uzun mesafeden yüksek isabetli ok atışı." },
+                { icon: "🐾", name: "Hayvan Dostu", desc: "Yakındaki hayvanları çağırır." },
+                { icon: "🌿", name: "Doğa İyileştirmesi", desc: "Kendini veya müttefiki 2d6+3 iyileştirir." }
+            ],
+            "Paladin": [
+                { icon: "⚔️", name: "Kutsal Darbe", desc: "2d8+4 kutsal hasar verir." },
+                { icon: "🛡️", name: "Koruma Aurası", desc: "Yakındaki müttefiklere +1 AC." },
+                { icon: "💚", name: "İyileştirme Dokunuşu", desc: "1d8+3 can yeniler." }
+            ],
+            "Cleric": [
+                { icon: "⛪", name: "İyileştirme", desc: "1d8+3 can yeniler." },
+                { icon: "✨", name: "Kutsama", desc: "Müttefike +1d4 saldırı bonusu." },
+                { icon: "🔆", name: "Kutsal Alev", desc: "Düşmana 2d8 radyant hasar." }
+            ],
+            "Bard": [
+                { icon: "🪕", name: "İlham Ver", desc: "Müttefike Bardic Inspiration verir." },
+                { icon: "🎵", name: "Uyutma Şarkısı", desc: "Düşmanı uykuya daldırma şansı." },
+                { icon: "💬", name: "Vicious Mockery", desc: "1d4 psikik hasar + dezavantaj." }
+            ],
+            "Druid": [
+                { icon: "🍃", name: "Doğa Büyüsü", desc: "2d6 doğa hasarı verir." },
+                { icon: "🐺", name: "Hayvan Formu", desc: "Kısa süreli dönüşüm sağlar." },
+                { icon: "🌿", name: "İyileştirme", desc: "1d8+2 can yeniler." }
+            ],
+            "Monk": [
+                { icon: "🥋", name: "Hızlı Darbe", desc: "Bonus aksiyon saldırısı." },
+                { icon: "💨", name: "Adım At", desc: "Hareket mesafesini artırır." },
+                { icon: "🌀", name: "Sersemletici Darbe", desc: "Hedefi sersemletebilir." }
+            ],
+            "Warlock": [
+                { icon: "👁️", name: "Eldritch Blast", desc: "1d10 kuvvet hasarı." },
+                { icon: "🔮", name: "Hex", desc: "Hedefe ekstra 1d6 hasar." },
+                { icon: "🌑", name: "Karanlık Görüş", desc: "Karanlıkta görüş sağlar." }
+            ],
+            "Artificer": [
+                { icon: "⚙️", name: "Mekanik Tuzak", desc: "Alan hasarı veren tuzak kurar." },
+                { icon: "🔧", name: "Onarım", desc: "Eşya veya yapı onarır." },
+                { icon: "💣", name: "Patlayıcı Ok", desc: "2d6 ateş hasarı verir." }
+            ]
         };
 
         let editingTokenId = null;
@@ -1098,6 +1317,7 @@
                             tok.hp = packet.entity.hp;
                             tok.maxHp = packet.entity.maxHp;
                             tok.name = packet.entity.name;           // İsim değişikliği yansısın
+                            tok.level = packet.entity.level;
                             tok.ac = packet.entity.ac;
                             tok.size = packet.entity.size;
                             tok.avatarUrl = packet.entity.avatarUrl;
@@ -1106,6 +1326,7 @@
                     });
 
                     renderCharacterRoster();
+                    renderBattleMapRoster();
                     renderTokens();
                     saveToLocalStorage();
                     break;
@@ -1118,12 +1339,14 @@
                     }
                     state.tokens = state.tokens.filter(tok => tok.rosterId !== packet.id);
                     renderCharacterRoster();
+                    renderBattleMapRoster();
                     renderTokens();
                     break;
 
                 case 'spawn_token':
                     state.tokens.push(packet.token);
                     renderTokens();
+                    renderBattleMapRoster();
                     break;
 
                 case 'change_map_settings':
@@ -1168,6 +1391,14 @@
                 case 'execute_attack':
                     triggerAttackAnimation(packet.attackerId, packet.targetId, packet.damage);
                     break;
+
+                case 'pvp_challenge':
+                    receivePvpChallenge(packet.challenge);
+                    break;
+
+                case 'pvp_roll':
+                    receivePvpRoll(packet.challengeId, packet.roll);
+                    break;
             }
             saveToLocalStorage();
         }
@@ -1183,9 +1414,14 @@
             if (rosterChar) {
                 rosterChar.hp = target.hp;
             }
+            const enemyChar = state.enemies.find(c => c.id === target.rosterId);
+            if (enemyChar) {
+                enemyChar.hp = target.hp;
+            }
 
             renderTokens();
             renderCharacterRoster();
+            renderBattleMapRoster();
             saveToLocalStorage();
 
             const svgOverlay = document.getElementById('route-overlay-layer');
@@ -1544,6 +1780,7 @@
             if (tabId === 'battlemap') {
                 leftBtn.classList.remove('hidden');
                 rightBtn.classList.remove('hidden');
+                renderBattleMapRoster();
                 setTimeout(() => { resetZoom(); }, 100);
             } else {
                 leftBtn.classList.add('hidden');
@@ -1703,11 +1940,13 @@
             applyMapDisplay();
             updateGridSize(state.gridSize);
             updateHostEnemiesToggleButton();
+            updatePlayerAttackButton();
             updateTravelDropdowns();
             renderTokens();
             renderPlayers();
             renderChat();
             renderCharacterRoster();
+            renderBattleMapRoster();
             renderRoute();
             renderMarkers();
             calculateTravelStats();
@@ -2230,6 +2469,11 @@
 
         function updateHostEnemiesToggleButton() {
             const btn = document.getElementById('host-toggle-enemies-btn');
+            const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+            if (!isHost) {
+                btn.classList.add('hidden');
+                return;
+            }
             if (state.enemiesVisibleToPlayers) {
                 btn.innerText = "👁️ Düşmanlar: GÖRÜNÜR";
                 btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-green-950 border border-green-800 text-green-200";
@@ -2237,6 +2481,17 @@
                 btn.innerText = "👁️‍🗨️ Düşmanlar: GİZLİ";
                 btn.className = "px-2.5 py-1.5 rounded text-xs font-bold transition-all bg-red-950 border border-red-800 text-red-200";
             }
+        }
+
+        function updatePlayerAttackButton() {
+            const btn = document.getElementById('player-attack-btn');
+            if (!btn) return;
+            const username = (state.username || '').toLowerCase();
+            const hasEligibleToken = state.tokens.some(tok => {
+                const char = state.roster.find(c => c.id === tok.rosterId);
+                return char && char.canAttack && char.owner && char.owner.toLowerCase() === username && (char.hp || 0) > 0;
+            });
+            btn.classList.toggle('hidden', !hasEligibleToken);
         }
 
         function openSettingsModal() {
@@ -2409,7 +2664,7 @@
         const HOST_ONLY_SHEET_FIELDS = [
             'sheet-level', 'sheet-hp', 'sheet-max-hp', 'sheet-ac', 'sheet-size',
             'sheet-str', 'sheet-dex', 'sheet-con', 'sheet-int', 'sheet-wis', 'sheet-cha',
-            'sheet-inventory', 'sheet-notes',
+            'sheet-inventory',
             'sheet-mana', 'sheet-max-mana'
         ];
 
@@ -2452,6 +2707,8 @@
             document.getElementById('sheet-max-hp').value = 10;
             document.getElementById('sheet-ac').value = 10;
             document.getElementById('sheet-size').value = 80; 
+            document.getElementById('sheet-mana').value = 0;
+            document.getElementById('sheet-max-mana').value = 0;
             
             document.getElementById('sheet-str').value = 10;
             document.getElementById('sheet-dex').value = 10;
@@ -2491,6 +2748,8 @@
             document.getElementById('sheet-max-hp').value = 8;
             document.getElementById('sheet-ac').value = 12;
             document.getElementById('sheet-size').value = 80;
+            document.getElementById('sheet-mana').value = 0;
+            document.getElementById('sheet-max-mana').value = 0;
             
             document.getElementById('sheet-str').value = 8;
             document.getElementById('sheet-dex').value = 14;
@@ -2541,6 +2800,8 @@
             document.getElementById('sheet-max-hp').value = target.maxHp;
             document.getElementById('sheet-ac').value = target.ac;
             document.getElementById('sheet-size').value = target.size || 80; 
+            document.getElementById('sheet-mana').value = target.mana || 0;
+            document.getElementById('sheet-max-mana').value = target.maxMana || 0;
 
             document.getElementById('sheet-str').value = target.str;
             document.getElementById('sheet-dex').value = target.dex;
@@ -2583,7 +2844,7 @@
                 ? (isEditingEnemyMode ? state.enemies : state.roster).find(t => t.id === editingTokenId)
                 : null;
 
-            let level, hp, maxHp, ac, tokenSize, str, dex, con, int, wis, cha, inventory, notes;
+            let level, hp, maxHp, ac, tokenSize, mana, maxMana, str, dex, con, int, wis, cha, inventory, notes;
 
             if (isRestrictedPlayerEdit) {
                 level = existingEntity ? existingEntity.level : 1;
@@ -2591,6 +2852,8 @@
                 maxHp = existingEntity ? existingEntity.maxHp : 10;
                 ac = existingEntity ? existingEntity.ac : 10;
                 tokenSize = existingEntity ? (existingEntity.size || 80) : 80;
+                maxMana = existingEntity ? Math.max(0, Number(existingEntity.maxMana) || 0) : 0;
+                mana = existingEntity ? Math.min(maxMana, Math.max(0, Number(existingEntity.mana) || 0)) : 0;
                 str = existingEntity ? existingEntity.str : 10;
                 dex = existingEntity ? existingEntity.dex : 10;
                 con = existingEntity ? existingEntity.con : 10;
@@ -2598,13 +2861,15 @@
                 wis = existingEntity ? existingEntity.wis : 10;
                 cha = existingEntity ? existingEntity.cha : 10;
                 inventory = existingEntity ? (existingEntity.inventory || "") : "";
-                notes = existingEntity ? (existingEntity.notes || "") : "";
+                notes = document.getElementById('sheet-notes').value;
             } else {
                 level = parseInt(document.getElementById('sheet-level').value) || 1;
                 hp = parseInt(document.getElementById('sheet-hp').value) || 10;
                 maxHp = parseInt(document.getElementById('sheet-max-hp').value) || 10;
                 ac = parseInt(document.getElementById('sheet-ac').value) || 10;
                 tokenSize = parseInt(document.getElementById('sheet-size').value) || 80;
+                maxMana = Math.max(0, parseInt(document.getElementById('sheet-max-mana').value) || 0);
+                mana = Math.min(maxMana, Math.max(0, parseInt(document.getElementById('sheet-mana').value) || 0));
 
                 str = parseInt(document.getElementById('sheet-str').value) || 10;
                 dex = parseInt(document.getElementById('sheet-dex').value) || 10;
@@ -2631,6 +2896,8 @@
                     level,
                     hp,
                     maxHp,
+                    mana,
+                    maxMana,
                     ac,
                     size: tokenSize,
                     str, dex, con, int, wis, cha,
@@ -2659,6 +2926,8 @@
                     savedEntity.level = level;
                     savedEntity.hp = hp;
                     savedEntity.maxHp = maxHp;
+                    savedEntity.mana = mana;
+                    savedEntity.maxMana = maxMana;
                     savedEntity.ac = ac;
                     savedEntity.size = tokenSize;
                     savedEntity.str = str;
@@ -2680,6 +2949,7 @@
                     state.tokens.forEach(tok => {
                         if (tok.rosterId === editingTokenId) {
                             tok.name = name;
+                            tok.level = level;
                             tok.hp = hp;
                             tok.maxHp = maxHp;
                             tok.ac = ac;
@@ -2694,6 +2964,7 @@
             }
 
             renderCharacterRoster();
+            renderBattleMapRoster();
             renderTokens();
             saveToLocalStorage();
 
@@ -2829,6 +3100,7 @@
                 id: 'active-' + Math.random().toString(36).substr(2, 9),
                 rosterId: target.id,
                 name: target.name,
+                level: target.level,
                 hp: target.hp,
                 maxHp: target.maxHp,
                 ac: target.ac,
@@ -2851,6 +3123,366 @@
             });
             
             switchMainTab('battlemap');
+            renderBattleMapRoster();
+        }
+
+        function getClassKeyFromName(className) {
+            if (!className) return "Fighter";
+            const match = className.match(/\(([^)]+)\)/);
+            return match ? match[1].trim() : className.replace(/^[^\w]*/, '').trim();
+        }
+
+        function getClassStyle(className) {
+            const key = getClassKeyFromName(className);
+            return CLASS_STYLES[key] || { bg: "bg-zinc-700", emblem: "🛡️", accent: "#8A6529" };
+        }
+
+        function getCharacterSkills(char) {
+            if (char.skills && char.skills.length > 0) return char.skills.slice(0, 3);
+            const key = getClassKeyFromName(char.class);
+            return (DEFAULT_CLASS_SKILLS[key] || DEFAULT_CLASS_SKILLS["Fighter"]).slice(0, 3);
+        }
+
+        function getAbilityModifier(score) {
+            return Math.floor((Number(score) - 10) / 2);
+        }
+
+        function formatAbilityModifier(mod) {
+            return mod >= 0 ? `+${mod}` : `${mod}`;
+        }
+
+        function findEntityById(rosterId) {
+            if (!rosterId) return null;
+            if (rosterId.startsWith('enemy-')) {
+                return state.enemies.find(e => e.id === rosterId) || null;
+            }
+            return state.roster.find(c => c.id === rosterId) || null;
+        }
+
+        function isCharOnMap(rosterId) {
+            return state.tokens.some(t => t.rosterId === rosterId);
+        }
+
+        function removeFromMapByRosterId(rosterId) {
+            const removed = state.tokens.filter(t => t.rosterId === rosterId);
+            state.tokens = state.tokens.filter(t => t.rosterId !== rosterId);
+            if (removed.length > 0) {
+                renderTokens();
+                renderBattleMapRoster();
+                saveToLocalStorage();
+                removed.forEach(tok => {
+                    broadcastNetworkEvent({ type: 'delete_token', id: tok.id });
+                });
+            }
+        }
+
+        function renderBattleMapRoster() {
+            const container = document.getElementById('battlemap-roster-list');
+            const countEl = document.getElementById('battlemap-token-count');
+            if (!container) return;
+
+            container.innerHTML = "";
+            if (countEl) countEl.textContent = state.tokens.length;
+            updatePlayerAttackButton();
+
+            if (state.roster.length === 0) {
+                container.innerHTML = `<p class="text-[10px] text-gray-500 text-center py-3">Henüz karakter yok. Karakter sekmesinden oluşturun.</p>`;
+                return;
+            }
+
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+
+            state.roster.forEach(char => {
+                const onMap = isCharOnMap(char.id);
+                const style = getClassStyle(char.class);
+                const emblem = char.icon || style.emblem;
+                const canSpawn = isHostNow || (char.owner && char.owner.toLowerCase() === state.username.toLowerCase());
+                const isDead = (char.hp || 0) <= 0;
+
+                const div = document.createElement('div');
+                div.className = `group flex items-center gap-2 p-2 rounded-xl border transition-all cursor-pointer ${onMap ? 'border-emerald-800/60 bg-emerald-950/20' : 'border-rpg-border bg-[#1F1404] hover:bg-[#2E1E07]'}`;
+
+                div.innerHTML = `
+                    <div class="relative flex-shrink-0">
+                        ${char.avatarUrl
+                            ? `<img src="${char.avatarUrl}" class="w-10 h-10 rounded-lg object-cover border border-rpg-border shadow" alt="${char.name}">`
+                            : `<div class="w-10 h-10 rounded-lg border border-rpg-border bg-[#2E1E07] flex items-center justify-center text-lg">${emblem}</div>`
+                        }
+                        <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 ${style.bg} rounded-full flex items-center justify-center text-[8px] border border-[#1F1404] shadow">${emblem}</div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-xs text-white leading-none truncate">${char.name}</div>
+                        <div class="text-[9px] text-gray-500 mt-0.5 truncate">${char.race} • ${getClassKeyFromName(char.class)} ${char.level || 1}</div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="text-[11px] font-mono">
+                            <span class="text-red-400">${char.hp || 0}</span><span class="text-gray-500">/</span><span class="text-gray-400">${char.maxHp || 0}</span>
+                        </div>
+                        ${(char.maxMana && char.maxMana > 0) ? `
+                        <div class="text-[10px] font-mono">
+                            <span class="text-blue-400">${char.mana || 0}</span><span class="text-gray-500">/</span><span class="text-gray-400">${char.maxMana}</span>
+                        </div>` : ''}
+                    </div>
+                    <div class="shrink-0">
+                        ${onMap
+                            ? `<button onclick="event.stopImmediatePropagation(); removeFromMapByRosterId('${char.id}');" class="w-7 h-7 rounded-lg bg-red-950/70 hover:bg-red-900 text-red-300 transition-colors flex items-center justify-center" title="Haritadan kaldır"><i class="fa-solid fa-times text-[10px]"></i></button>`
+                            : (canSpawn && !isDead
+                                ? `<button onclick="event.stopImmediatePropagation(); spawnToMap('${char.id}', false);" class="px-2 py-1 text-[10px] font-bold rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white transition-colors">Ekle</button>`
+                                : `<span class="text-[9px] text-gray-500 px-1">${isDead ? '💀' : '—'}</span>`)
+                        }
+                    </div>
+                `;
+
+                div.onclick = () => openProfileModal(char.id);
+                container.appendChild(div);
+            });
+        }
+
+        function openProfileModal(rosterId) {
+            const char = findEntityById(rosterId);
+            if (!char) return;
+
+            const isEnemy = rosterId.startsWith('enemy-');
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            const modal = document.getElementById('profileModal');
+            const content = document.getElementById('modalContent');
+            const style = getClassStyle(char.class);
+            const emblem = char.icon || style.emblem;
+            const hpPercent = Math.max(0, Math.round(((char.hp || 0) / (char.maxHp || 1)) * 100));
+            const manaPercent = char.maxMana ? Math.max(0, Math.round(((char.mana || 0) / char.maxMana) * 100)) : 0;
+            const isDead = (char.hp || 0) <= 0;
+            const skills = getCharacterSkills(char);
+            const description = char.description || char.notes || "Karakter açıklaması henüz eklenmemiş.";
+            const bannerStyle = char.avatarUrl
+                ? `background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.65)), url('${char.avatarUrl}');`
+                : `background-image: linear-gradient(135deg, #4E3510, #1F1404);`;
+
+            const statNames = [
+                { key: 'str', label: 'STR' }, { key: 'dex', label: 'DEX' }, { key: 'con', label: 'CON' },
+                { key: 'int', label: 'INT' }, { key: 'wis', label: 'WIS' }, { key: 'cha', label: 'CHA' }
+            ];
+
+            let statsHTML = '';
+            statNames.forEach(s => {
+                const score = char[s.key] || 10;
+                const mod = getAbilityModifier(score);
+                const modClass = mod >= 0 ? 'text-emerald-400' : 'text-red-400';
+                statsHTML += `
+                    <div class="profile-stat-box bg-[#1F1404] border border-rpg-border rounded-2xl p-2.5 text-center flex-1 min-w-0">
+                        <div class="text-[10px] text-gray-500 font-semibold tracking-wider">${s.label}</div>
+                        <div class="text-2xl font-black text-white tabular-nums mt-0.5">${score}</div>
+                        <div class="text-sm font-bold ${modClass}">${formatAbilityModifier(mod)}</div>
+                    </div>`;
+            });
+
+            let skillsHTML = '';
+            skills.forEach(skill => {
+                skillsHTML += `
+                    <div class="bg-[#1F1404] border border-rpg-border rounded-2xl p-3 flex gap-3 items-start">
+                        <div class="w-9 h-9 flex-shrink-0 ${style.bg} rounded-2xl flex items-center justify-center text-xl shadow-inner">${skill.icon}</div>
+                        <div class="flex-1 pt-0.5">
+                            <div class="font-bold text-white text-sm">${skill.name}</div>
+                            <div class="text-xs text-gray-400 leading-snug mt-0.5">${skill.desc}</div>
+                        </div>
+                    </div>`;
+            });
+
+            content.innerHTML = `
+                <div class="h-36 relative" style="${bannerStyle} background-size: cover; background-position: center 30%;">
+                    <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#2E1E07] to-transparent"></div>
+                    <button onclick="closeProfileModal()" class="absolute top-4 right-4 w-9 h-9 bg-black/60 hover:bg-black/80 transition-colors rounded-2xl flex items-center justify-center text-white">
+                        <i class="fa-solid fa-times text-lg"></i>
+                    </button>
+                </div>
+                <div class="px-6 -mt-9 relative z-10">
+                    <div class="flex items-end gap-4">
+                        <div class="relative">
+                            ${char.avatarUrl
+                                ? `<img src="${char.avatarUrl}" class="w-24 h-24 rounded-3xl object-cover border-[5px] border-[#2E1E07] shadow-xl" alt="${char.name}">`
+                                : `<div class="w-24 h-24 rounded-3xl border-[5px] border-[#2E1E07] shadow-xl bg-[#1F1404] flex items-center justify-center text-4xl">${emblem}</div>`
+                            }
+                            <div class="absolute -bottom-1 -right-1 w-8 h-8 ${style.bg} rounded-2xl flex items-center justify-center text-xl border-[3px] border-[#2E1E07] shadow">${emblem}</div>
+                            ${isDead ? `<div class="absolute inset-0 bg-black/70 rounded-3xl flex items-center justify-center"><span class="text-red-500 text-xs font-black tracking-widest">ÖLÜ</span></div>` : ''}
+                        </div>
+                        <div class="flex-1 pb-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h1 class="text-2xl font-extrabold tracking-tighter text-white">${char.name}</h1>
+                                <div class="px-2.5 py-px text-xs font-bold bg-rpg-gold text-[#2E1E07] rounded-xl">Lv ${char.level || 1}</div>
+                            </div>
+                            <div class="flex items-center gap-2 text-sm">
+                                <span class="font-semibold text-rpg-gold">${char.race}</span>
+                                <span class="text-gray-500">•</span>
+                                <span class="font-semibold text-white">${getClassKeyFromName(char.class)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 pt-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="profile-section-header">Durum</div>
+                        <div class="flex-1 h-px bg-rpg-border/40"></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div id="statusDisplay" class="flex-1 px-4 py-2.5 bg-[#1F1404] border border-rpg-border rounded-2xl text-sm flex items-center gap-2 cursor-pointer hover:border-rpg-gold transition-colors" onclick="editStatusInline('${rosterId}')">
+                            <span class="text-xl">${char.status ? char.status.split(' ')[0] : '💬'}</span>
+                            <span class="font-medium text-white flex-1">${char.status || 'Durum yok'}</span>
+                        </div>
+                        ${isHostNow ? `<button onclick="editStatusInline('${rosterId}')" class="px-3 py-2.5 bg-[#1F1404] hover:bg-[#3D250D] transition-colors text-xs font-medium rounded-2xl flex items-center gap-2 border border-rpg-border"><i class="fa-solid fa-edit"></i><span>Düzenle</span></button>` : ''}
+                    </div>
+                </div>
+                <div class="px-6 pt-5 grid grid-cols-2 gap-3">
+                    <div>
+                        <div class="flex justify-between items-baseline mb-1 px-1">
+                            <div class="profile-section-header flex items-center gap-1.5"><i class="fa-solid fa-heart text-red-500"></i> <span>Can</span></div>
+                            <div class="font-mono text-sm font-bold"><span class="text-red-400">${char.hp || 0}</span> / ${char.maxHp || 0}</div>
+                        </div>
+                        <div class="h-3 bg-[#1F1404] rounded-full overflow-hidden border border-rpg-border">
+                            <div class="h-full transition-all bg-gradient-to-r from-red-500 to-red-600" style="width: ${hpPercent}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-baseline mb-1 px-1">
+                            <div class="profile-section-header flex items-center gap-1.5"><i class="fa-solid fa-droplet text-blue-400"></i> <span>Mana</span></div>
+                            <div class="font-mono text-sm font-bold"><span class="text-blue-400">${char.mana || 0}</span> / ${char.maxMana || 0}</div>
+                        </div>
+                        <div class="h-3 bg-[#1F1404] rounded-full overflow-hidden border border-rpg-border">
+                            <div class="h-full transition-all bg-gradient-to-r from-blue-400 to-violet-500" style="width: ${manaPercent}%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 pt-5">
+                    <div class="flex items-center gap-2 mb-2.5">
+                        <div class="profile-section-header">İstatistikler (5e)</div>
+                        <div class="flex-1 h-px bg-rpg-border/40"></div>
+                    </div>
+                    <div class="flex gap-2">${statsHTML}</div>
+                </div>
+                <div class="px-6 pt-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="profile-section-header">Karakter Açıklaması</div>
+                        <div class="flex-1 h-px bg-rpg-border/40"></div>
+                    </div>
+                    <div class="text-sm leading-relaxed text-gray-300 bg-[#1F1404] border border-rpg-border p-4 rounded-2xl max-h-[92px] overflow-y-auto">${description}</div>
+                </div>
+                <div class="px-6 pt-5 pb-2">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="profile-section-header">3 Beceri Yuvası</div>
+                        <div class="flex-1 h-px bg-rpg-border/40"></div>
+                    </div>
+                    <div class="space-y-2">${skillsHTML}</div>
+                </div>
+                ${isHostNow && !isEnemy ? `
+                <div class="px-6 py-5 border-t border-rpg-border bg-[#1F1404]/70 flex flex-wrap gap-2 items-center">
+                    <div class="text-xs uppercase tracking-widest text-gray-400 font-semibold pr-2">Host Kontrolleri</div>
+                    <button onclick="applyProfileDamage('${rosterId}', 8)" class="flex-1 px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-500 transition-colors rounded-2xl flex items-center justify-center gap-2"><i class="fa-solid fa-sword"></i><span>8 Hasar Ver</span></button>
+                    <button onclick="healProfileCharacter('${rosterId}', 10)" class="flex-1 px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 transition-colors rounded-2xl flex items-center justify-center gap-2"><i class="fa-solid fa-heart-pulse"></i><span>10 İyileştir</span></button>
+                    <button onclick="toggleAttackPermission('${rosterId}')" class="px-4 py-2 text-sm font-semibold transition-colors rounded-2xl flex items-center justify-center gap-2 border ${char.canAttack ? 'border-emerald-600 text-emerald-400 bg-emerald-950/50' : 'border-rpg-border hover:bg-[#3D250D]'}"><i class="fa-solid fa-${char.canAttack ? 'check' : 'ban'}"></i><span>${char.canAttack ? 'Saldırı İzni Var' : 'İzin Ver'}</span></button>
+                    ${isCharOnMap(rosterId) ? `<button onclick="removeFromMapByRosterId('${rosterId}'); closeProfileModal();" class="px-4 py-2 text-sm font-semibold bg-[#1F1404] hover:bg-red-950 transition-colors text-red-300 rounded-2xl flex items-center gap-2 border border-red-900/40"><i class="fa-solid fa-times"></i><span>Haritadan Kaldır</span></button>` : ''}
+                </div>` : `
+                <div class="px-6 py-4 border-t border-rpg-border bg-[#1F1404]/60 text-center text-xs text-gray-400">
+                    ${isHostNow ? '' : 'Sadece izleme modundasın. Host değişiklik yapabilir.'}
+                </div>`}
+            `;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.dataset.currentRosterId = rosterId;
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profileModal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function syncEntityToTokens(entity) {
+            state.tokens.forEach(tok => {
+                if (tok.rosterId === entity.id) {
+                    tok.name = entity.name;
+                    tok.level = entity.level;
+                    tok.hp = entity.hp;
+                    tok.maxHp = entity.maxHp;
+                    tok.ac = entity.ac;
+                    tok.avatarUrl = entity.avatarUrl;
+                    tok.icon = entity.icon;
+                }
+            });
+        }
+
+        function saveEntityAndBroadcast(entity, isEnemy) {
+            syncEntityToTokens(entity);
+            renderTokens();
+            renderCharacterRoster();
+            renderBattleMapRoster();
+            saveToLocalStorage();
+            broadcastNetworkEvent({ type: 'save_character', entity, isEnemy });
+        }
+
+        function applyProfileDamage(rosterId, amount) {
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            if (!isHostNow) return;
+            const char = findEntityById(rosterId);
+            if (!char) return;
+            char.hp = Math.max(0, (char.hp || 0) - amount);
+            saveEntityAndBroadcast(char, rosterId.startsWith('enemy-'));
+            openProfileModal(rosterId);
+        }
+
+        function healProfileCharacter(rosterId, amount) {
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            if (!isHostNow) return;
+            const char = findEntityById(rosterId);
+            if (!char) return;
+            char.hp = Math.min(char.maxHp || 10, (char.hp || 0) + amount);
+            saveEntityAndBroadcast(char, rosterId.startsWith('enemy-'));
+            openProfileModal(rosterId);
+        }
+
+        function toggleAttackPermission(rosterId) {
+            const isHostNow = state.username.toLowerCase() === state.hostName.toLowerCase();
+            if (!isHostNow) return;
+            const char = findEntityById(rosterId);
+            if (!char) return;
+            char.canAttack = !char.canAttack;
+            if (char.canAttack && typeof char.attackMod !== 'number') char.attackMod = getAttackProfile(char).recommendedMod;
+            saveEntityAndBroadcast(char, rosterId.startsWith('enemy-'));
+            updatePlayerAttackButton();
+            openProfileModal(rosterId);
+        }
+
+        function editStatusInline(rosterId) {
+            const char = findEntityById(rosterId);
+            if (!char) return;
+            const display = document.getElementById('statusDisplay');
+            if (!display) return;
+            const currentStatus = char.status || '';
+            display.innerHTML = `
+                <div class="flex items-center gap-2 w-full">
+                    <input id="statusInput" type="text" value="${currentStatus.replace(/"/g, '&quot;')}"
+                           class="flex-1 bg-[#2E1E07] border border-rpg-border focus:border-rpg-gold transition-colors text-sm px-3 py-1.5 rounded-xl outline-none text-white"
+                           placeholder="Örn: 🛡️ Tank modunda">
+                    <button onclick="saveProfileStatus('${rosterId}')" class="px-4 py-1.5 text-xs font-bold bg-rpg-accent hover:bg-rpg-accentHover text-white rounded-xl transition-colors">Kaydet</button>
+                </div>`;
+            setTimeout(() => {
+                const input = document.getElementById('statusInput');
+                if (input) {
+                    input.focus();
+                    input.select();
+                    input.onkeydown = (e) => {
+                        if (e.key === 'Enter') saveProfileStatus(rosterId);
+                        if (e.key === 'Escape') openProfileModal(rosterId);
+                    };
+                }
+            }, 50);
+        }
+
+        function saveProfileStatus(rosterId) {
+            const char = findEntityById(rosterId);
+            const input = document.getElementById('statusInput');
+            if (!char || !input) return;
+            char.status = input.value.trim();
+            saveEntityAndBroadcast(char, rosterId.startsWith('enemy-'));
+            openProfileModal(rosterId);
         }
 
         function renderCharacterRoster() {
@@ -3049,11 +3681,11 @@
                 
                 const isDead = (token.hp || 0) <= 0;
                 
-                let baseClass = "absolute flex flex-col items-center select-none z-10";
+                let baseClass = "battlemap-token-ui absolute flex flex-col items-center select-none z-10";
                 if (state.currentMode === 'tokens' && !isDead) {
                     baseClass += " cursor-pointer pointer-events-auto";
                 } else if (isDead) {
-                    baseClass += " grayscale opacity-60 pointer-events-none";
+                    baseClass += " is-dead grayscale opacity-60 pointer-events-auto";
                 } else {
                     baseClass += " pointer-events-none";
                 }
@@ -3073,36 +3705,63 @@
                 if (hpPercent < 35) barColor = "bg-red-500";
                 else if (hpPercent < 65) barColor = "bg-yellow-500";
 
-                const avatarHTML = token.avatarUrl 
-                    ? `<img src="${token.avatarUrl}" class="w-full h-full object-cover rounded-full">` 
-                    : `<span class="text-base">${token.icon || "🛡️"}</span>`;
+                const borderColor = token.color || '#f59e0b';
 
-                const sizeStyle = `width: ${size * 0.75}px; height: ${size * 0.75}px;`;
+                // Avatar arka planı (varsa fotoğraf, yoksa sınıf ikonu)
+                const avatarBgHTML = token.avatarUrl
+                    ? `<div class="absolute inset-0 bg-cover bg-center" style="background-image:url('${token.avatarUrl}')"></div>`
+                    : `<div class="absolute inset-0 flex items-center justify-center bg-[#1F1404] text-2xl">${token.icon || "🛡️"}</div>`;
 
                 const hostSecretBadge = (isEnemyToken && isHost && !state.enemiesVisibleToPlayers) 
-                    ? `<span class="absolute -top-1 left-[50%] -translate-x-[50%] bg-red-600/90 text-white border border-red-500 text-[7px] font-bold px-1 rounded animate-pulse">👁️ GİZLİ</span>` 
+                    ? `<span class="absolute top-1 left-1/2 -translate-x-1/2 z-20 bg-red-600/90 text-white border border-red-500 text-[7px] font-bold px-1 rounded animate-pulse">👁️ GİZLİ</span>` 
                     : ``;
 
+                // Seviye rozeti (sol üst) - karakter kartında level tanımlıysa gösterilir
+                const levelBadge = token.level
+                    ? `<div class="absolute top-1 left-1 z-20 px-1.5 py-px bg-[#D4B46A] text-[#2E1E07] text-[9px] font-black rounded shadow border border-[#8A6529] leading-tight min-w-[15px] text-center">${token.level}</div>`
+                    : '';
+
                 div.innerHTML = `
-                    <div class="rounded-full border-[3px] flex items-center justify-center bg-gray-900 shadow-xl relative" style="${sizeStyle} border-color: ${token.color || '#f59e0b'};">
-                        ${avatarHTML}
+                    <div class="rpg-token relative rounded-2xl overflow-hidden border-[3px] bg-[#1F1404]" style="width:${size}px; height:${size}px; border-color:${borderColor};">
+                        ${avatarBgHTML}
+                        <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70 pointer-events-none"></div>
+
+                        ${levelBadge}
                         ${hostSecretBadge}
-                        <span class="absolute -bottom-1 -right-1 bg-black border border-gray-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px] text-white font-bold">${token.ac}</span>
+
+                        <!-- Sınıf/tür amblemi (sağ üst) -->
+                        <div class="rpg-class-emblem absolute top-1 right-1 z-20 w-5 h-5 rounded-lg flex items-center justify-center text-[11px] border border-white/20" style="background-color:${borderColor};">
+                            ${token.icon || '🛡️'}
+                        </div>
+
+                        <!-- Zırh Sınıfı (AC) rozeti -->
+                        <span class="absolute bottom-[9px] right-1 z-20 bg-black/90 border border-gray-600 rounded-full w-4 h-4 flex items-center justify-center text-[8px] text-white font-bold">${token.ac}</span>
+
+                        <!-- Can (HP) Barı -->
+                        <div class="absolute bottom-0 left-0 right-0 h-[7px] bg-black/70 border-t border-black/60 z-10">
+                            <div class="rpg-hp-bar h-full ${barColor}" style="width:${hpPercent}%"></div>
+                        </div>
+
+                        ${isDead ? `
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                            <span class="text-red-500 font-black text-[11px] tracking-[2px]" style="text-shadow:0 2px 4px rgba(0,0,0,0.9)">💀 ÖLÜ</span>
+                        </div>` : ''}
                     </div>
 
-                    <div class="w-[85%] bg-black/80 border border-black rounded-full overflow-hidden mt-1.5 mb-0.5" style="height: 5px;">
-                        <div class="h-full ${barColor}" style="width: ${hpPercent}%"></div>
-                    </div>
-
-                    <div class="bg-black/95 text-white text-[8px] px-1.5 py-0.5 rounded border border-gray-800 text-center whitespace-normal break-words w-[95%] leading-tight flex items-center justify-center gap-1">
+                    <div class="rpg-token-nameplate w-[95%] mt-1.5 mb-0.5 text-white text-[8px] px-1.5 py-0.5 rounded-lg text-center whitespace-normal break-words leading-tight">
                         ${token.name}
-                        ${isDead ? `<span class="text-red-500 text-[9px] font-bold">💀 ÖLÜ</span>` : ''}
                     </div>
                 `;
 
                 if (state.currentMode === 'tokens') {
                     div.addEventListener('mousedown', (e) => startDrag(e, token.id));
                     div.addEventListener('touchstart', (e) => startDrag(e, token.id), { passive: false });
+                    div.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        if (isHost && confirm(`${token.name} haritadan kaldırılsın mı?`)) {
+                            removeFromMapByRosterId(token.rosterId);
+                        }
+                    });
                 }
 
                 layer.appendChild(div);
@@ -3124,6 +3783,7 @@
             dragInfo.startY = clientY;
             dragInfo.tokenLeft = token.x;
             dragInfo.tokenTop = token.y;
+            dragInfo.hasMoved = false;
 
             document.addEventListener('mousemove', dragToken);
             document.addEventListener('touchmove', dragToken, { passive: false });
@@ -3139,6 +3799,7 @@
 
             const dx = (clientX - dragInfo.startX) / zoomLevel;
             const dy = (clientY - dragInfo.startY) / zoomLevel;
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragInfo.hasMoved = true;
 
             const tokenEl = document.getElementById(dragInfo.tokenId);
             if (tokenEl) {
@@ -3175,9 +3836,14 @@
                 });
             }
 
+            const shouldOpenProfile = !dragInfo.hasMoved && token && token.rosterId;
+            const rosterId = token ? token.rosterId : null;
             dragInfo.isDragging = false;
             dragInfo.tokenId = null;
             saveToLocalStorage();
+
+            // Referans arayüzdeki gibi sürüklemeden yapılan tıklama profil kartını açar.
+            if (shouldOpenProfile) openProfileModal(rosterId);
         }
 
         function rollDice(sides) {
@@ -3343,6 +4009,167 @@
                 `;
                 list.appendChild(div);
             });
+        }
+
+        function getAttackProfile(char) {
+            const className = (char.class || '').toLowerCase();
+            let ability = 'str', die = 8;
+            if (className.includes('rogue') || className.includes('ranger') || className.includes('monk')) { ability = 'dex'; die = 8; }
+            else if (className.includes('wizard')) { ability = 'int'; die = 6; }
+            else if (className.includes('cleric') || className.includes('druid')) { ability = 'wis'; die = 8; }
+            else if (className.includes('bard') || className.includes('sorcerer') || className.includes('warlock')) { ability = 'cha'; die = 8; }
+            else if (className.includes('barbarian')) { ability = 'str'; die = 12; }
+            else if (className.includes('fighter') || className.includes('paladin')) { ability = 'str'; die = 10; }
+            const statMod = getAbilityModifier(Number(char[ability]) || 10);
+            return { ability, die, statMod, recommendedMod: Math.max(-2, Math.min(3, statMod)) };
+        }
+
+        function openAttackGrantModal() {
+            const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+            if (!isHost) return;
+            const select = document.getElementById('grant-attack-character');
+            select.innerHTML = '';
+            state.roster.forEach(char => {
+                const option = document.createElement('option');
+                option.value = char.id;
+                option.textContent = `${char.name}${char.owner ? ` (${char.owner})` : ''}`;
+                select.appendChild(option);
+            });
+            if (!select.children.length) {
+                select.innerHTML = '<option>Karakter bulunamadı</option>';
+            }
+            showAttackRecommendation();
+            document.getElementById('attack-grant-modal').classList.remove('hidden');
+        }
+
+        function closeAttackGrantModal() { document.getElementById('attack-grant-modal').classList.add('hidden'); }
+
+        function showAttackRecommendation() {
+            const char = state.roster.find(c => c.id === document.getElementById('grant-attack-character').value);
+            const box = document.getElementById('attack-mod-recommendation');
+            if (!char) { box.textContent = 'Karakter seçin.'; return; }
+            const profile = getAttackProfile(char);
+            const sign = profile.recommendedMod >= 0 ? '+' : '';
+            box.textContent = `${profile.ability.toUpperCase()} statına göre ${sign}${profile.recommendedMod} önerilir (hasar: D${profile.die}).`;
+            document.getElementById('grant-attack-mod').value = profile.recommendedMod;
+        }
+
+        function grantPlayerAttackPermission() {
+            const char = state.roster.find(c => c.id === document.getElementById('grant-attack-character').value);
+            if (!char) return;
+            char.canAttack = true;
+            char.attackMod = Math.max(-10, Math.min(10, parseInt(document.getElementById('grant-attack-mod').value) || 0));
+            saveEntityAndBroadcast(char, false);
+            addSystemLog(`⚔️ <strong>${char.name}</strong> için saldırı hakkı verildi (mod: ${char.attackMod >= 0 ? '+' : ''}${char.attackMod}).`);
+            closeAttackGrantModal();
+            updatePlayerAttackButton();
+        }
+
+        function openPlayerAttackModal() {
+            const username = (state.username || '').toLowerCase();
+            const source = document.getElementById('player-attack-source');
+            const target = document.getElementById('player-attack-target');
+            source.innerHTML = ''; target.innerHTML = '';
+            state.tokens.forEach(tok => {
+                const char = state.roster.find(c => c.id === tok.rosterId);
+                if (char && char.canAttack && char.owner && char.owner.toLowerCase() === username && (char.hp || 0) > 0) {
+                    const opt = document.createElement('option'); opt.value = tok.id; opt.textContent = char.name; source.appendChild(opt);
+                }
+            });
+            state.tokens.forEach(tok => {
+                if (!source.value || tok.id !== source.value) {
+                    const isEnemy = (tok.rosterId || '').startsWith('enemy-');
+                    const isHost = state.username.toLowerCase() === state.hostName.toLowerCase();
+                    if (isEnemy && !isHost && !state.enemiesVisibleToPlayers) return;
+                    const opt = document.createElement('option'); opt.value = tok.id; opt.textContent = `${isEnemy ? '👹 ' : '🛡️ '}${tok.name}`; target.appendChild(opt);
+                }
+            });
+            if (!source.children.length || !target.children.length) { alert('Saldırabilecek kendi tokenın ve geçerli bir hedef haritada olmalı.'); return; }
+            document.getElementById('player-attack-modal').classList.remove('hidden');
+        }
+
+        function closePlayerAttackModal() { document.getElementById('player-attack-modal').classList.add('hidden'); }
+
+        function performPlayerAttack() {
+            const attacker = state.tokens.find(t => t.id === document.getElementById('player-attack-source').value);
+            const target = state.tokens.find(t => t.id === document.getElementById('player-attack-target').value);
+            const char = attacker && state.roster.find(c => c.id === attacker.rosterId);
+            if (!attacker || !target || !char || !char.canAttack) return;
+            closePlayerAttackModal();
+            if ((target.rosterId || '').startsWith('enemy-')) {
+                const profile = getAttackProfile(char);
+                const roll = Math.floor(Math.random() * 20) + 1;
+                const attackTotal = roll + profile.statMod + (Number(char.attackMod) || 0);
+                const enemy = state.enemies.find(e => e.id === target.rosterId) || target;
+                const ac = Number(enemy.ac) || 10;
+                if (roll !== 1 && (roll === 20 || attackTotal >= ac)) {
+                    const damage = Math.max(1, Math.floor(Math.random() * profile.die) + 1 + Math.max(0, profile.statMod) + Math.floor((Number(char.level) || 1) / 4));
+                    triggerAttackAnimation(attacker.id, target.id, damage);
+                    broadcastNetworkEvent({ type: 'execute_attack', attackerId: attacker.id, targetId: target.id, damage });
+                    addSystemLog(`🎲 ${char.name}: D20 ${roll} + ${profile.statMod >= 0 ? '+' : ''}${profile.statMod} + ${char.attackMod >= 0 ? '+' : ''}${char.attackMod} = ${attackTotal}; AC ${ac} vuruldu.`);
+                } else {
+                    addSystemLog(`🎲 ${char.name}: D20 ${roll} ile ${target.name}'e saldırdı fakat AC ${ac} aşılamadı.`);
+                    broadcastNetworkEvent({ type: 'chat', text: `🎲 ${char.name}, ${target.name}'e saldırdı fakat ıskaladı.` });
+                }
+            } else {
+                const challenge = { id: 'pvp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), attackerId: attacker.id, targetId: target.id, attackerName: attacker.name, targetName: target.name, createdBy: state.username };
+                receivePvpChallenge(challenge);
+                broadcastNetworkEvent({ type: 'pvp_challenge', challenge });
+            }
+        }
+
+        function receivePvpChallenge(challenge) {
+            activePvpChallenge = challenge;
+            activePvpRolls = [];
+            const modal = document.getElementById('pvp-roll-modal');
+            document.getElementById('pvp-roll-description').textContent = `${challenge.attackerName}, ${challenge.targetName}'e saldırdı. Herkes D20 atsın; en yüksek atış sonucu belirler.`;
+            document.getElementById('pvp-roll-button').disabled = false;
+            document.getElementById('pvp-roll-button').classList.remove('opacity-40');
+            document.getElementById('pvp-roll-result').textContent = '';
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            if (pvpResolveTimer) clearTimeout(pvpResolveTimer);
+            if (state.username.toLowerCase() === state.hostName.toLowerCase()) pvpResolveTimer = setTimeout(resolvePvpChallenge, 15000);
+        }
+
+        function submitPvpRoll() {
+            if (!activePvpChallenge) return;
+            const roll = Math.floor(Math.random() * 20) + 1;
+            document.getElementById('pvp-roll-button').disabled = true;
+            document.getElementById('pvp-roll-button').classList.add('opacity-40');
+            document.getElementById('pvp-roll-result').textContent = `Atışın: ${roll}`;
+            const result = { name: state.username, value: roll };
+            receivePvpRoll(activePvpChallenge.id, result);
+            broadcastNetworkEvent({ type: 'pvp_roll', challengeId: activePvpChallenge.id, roll: result });
+        }
+
+        function receivePvpRoll(challengeId, roll) {
+            if (!activePvpChallenge || activePvpChallenge.id !== challengeId) return;
+            if (!activePvpRolls.some(r => r.name.toLowerCase() === roll.name.toLowerCase())) activePvpRolls.push(roll);
+            if (state.username.toLowerCase() === state.hostName.toLowerCase() && activePvpRolls.length >= state.players.length) resolvePvpChallenge();
+        }
+
+        function resolvePvpChallenge() {
+            if (!activePvpChallenge || state.username.toLowerCase() !== state.hostName.toLowerCase()) return;
+            if (pvpResolveTimer) clearTimeout(pvpResolveTimer);
+            const rolls = activePvpRolls.slice().sort((a, b) => b.value - a.value);
+            const highest = rolls[0];
+            const attacker = state.tokens.find(t => t.id === activePvpChallenge.attackerId);
+            const target = state.tokens.find(t => t.id === activePvpChallenge.targetId);
+            document.getElementById('pvp-roll-modal').classList.remove('flex'); document.getElementById('pvp-roll-modal').classList.add('hidden');
+            if (!highest || !attacker || !target) { activePvpChallenge = null; return; }
+            const summary = rolls.map(r => `${r.name}: ${r.value}`).join(' • ');
+            const defaultDamage = Math.max(1, Math.floor(Math.random() * 8) + 1);
+            const apply = confirm(`D20 sonuçları: ${summary}\nKazanan: ${highest.name} (${highest.value})\n\nHost kararı: ${target.name}'e hasar uygulansın mı?`);
+            if (apply) {
+                const entered = prompt('Uygulanacak hasar (host kararı):', String(defaultDamage));
+                const damage = Math.max(0, parseInt(entered) || 0);
+                if (damage > 0) {
+                    triggerAttackAnimation(attacker.id, target.id, damage);
+                    broadcastNetworkEvent({ type: 'execute_attack', attackerId: attacker.id, targetId: target.id, damage });
+                }
+            }
+            addSystemLog(`🎲 Oyuncu düellosu: ${summary}. En yüksek: <strong>${highest.name}</strong>.`);
+            activePvpChallenge = null;
         }
 
         function openAttackModal() {
