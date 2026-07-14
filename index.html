@@ -2956,6 +2956,11 @@
                     if (isEditingEnemyMode) {
                         state.enemies.push(savedEntity);
                         addSystemLog("Yeni düşman kurgulandı.");
+                        // Host için düşman bölümünün görünür olduğundan emin ol (online/local farkı için)
+                        const enemyContainer = document.getElementById('enemy-section-container');
+                        const btnNewEnemy = document.getElementById('btn-new-enemy');
+                        if (enemyContainer) enemyContainer.classList.remove('hidden');
+                        if (btnNewEnemy) btnNewEnemy.classList.remove('hidden');
                     } else {
                         state.roster.push(savedEntity);
                         addSystemLog("Yeni karakter oluşturuldu.");
@@ -4184,6 +4189,13 @@
             char.attackMod = Math.max(-10, Math.min(10, parseInt(document.getElementById('grant-attack-mod').value) || 0));
             saveEntityAndBroadcast(char, false);
             addSystemLog(`⚔️ <strong>${char.name}</strong> için saldırı hakkı verildi (mod: ${char.attackMod >= 0 ? '+' : ''}${char.attackMod}).`);
+
+            // Oyuncuya da chat üzerinden bildirelim (online için daha görünür olsun)
+            broadcastNetworkEvent({
+                type: 'chat',
+                text: `⚔️ <strong>${state.username}</strong> sana saldırı izni verdi! (Mod: ${char.attackMod >= 0 ? '+' : ''}${char.attackMod}) Battle Map'te "Saldır" butonu aktif oldu.`
+            });
+
             closeAttackGrantModal();
             updatePlayerAttackButton();
         }
