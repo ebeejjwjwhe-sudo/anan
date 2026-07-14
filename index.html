@@ -764,6 +764,16 @@
         <div class="w-full max-w-sm bg-zinc-900 border-2 border-amber-500 rounded-3xl p-6 text-center shadow-2xl"><div class="text-4xl mb-3">🎲</div><h2 class="text-xl font-black text-white">D20 Düellosu</h2><p id="pvp-roll-description" class="text-sm text-zinc-400 mt-2"></p><button id="pvp-roll-button" onclick="submitPvpRoll()" class="mt-5 w-full bg-amber-500 hover:bg-amber-400 text-amber-950 font-black py-3 rounded-2xl">D20 AT</button><p id="pvp-roll-result" class="text-sm font-bold text-amber-300 mt-3"></p></div>
     </div>
 
+    <!-- PvP zarını kazanan oyuncunun olay anlatımı -->
+    <div id="pvp-narrative-modal" class="hidden fixed inset-0 z-[131] bg-black/90 backdrop-blur-xl items-center justify-center p-4">
+        <div class="w-full max-w-md bg-[#1C1307] border-2 border-amber-500 rounded-2xl p-6 shadow-2xl text-[#CBB58F]"><h2 class="text-lg font-black text-amber-300">Zarı sen kazandın!</h2><p id="pvp-narrative-description" class="text-xs text-gray-400 mt-2">Olayı anlat; host son hasarı belirleyecek.</p><textarea id="pvp-narrative-text" rows="5" maxlength="700" class="mt-4 w-full resize-none rounded-lg border border-[#8A6529] bg-[#100c06] p-3 text-sm text-white outline-none focus:border-amber-400" placeholder="Örn: Rakibin savunmasındaki boşluğu fark edip kılıcımı omzuna doğru savuruyorum..."></textarea><button onclick="submitPvpNarrative()" class="mt-4 w-full rounded-lg bg-amber-500 py-2.5 text-sm font-bold text-amber-950 hover:bg-amber-400">Olayı Hosta Gönder</button></div>
+    </div>
+
+    <!-- Hostun olay ve hasar kararı -->
+    <div id="pvp-host-review-modal" class="hidden fixed inset-0 z-[132] bg-black/90 backdrop-blur-xl items-center justify-center p-4">
+        <div class="w-full max-w-md bg-[#1C1307] border-2 border-red-700 rounded-2xl p-6 shadow-2xl text-[#CBB58F]"><h2 class="text-lg font-black text-red-300">PvP Olay Onayı</h2><p id="pvp-host-review-summary" class="mt-2 text-xs text-gray-400"></p><div id="pvp-host-review-story" class="mt-4 max-h-40 overflow-y-auto rounded-lg border border-[#8A6529]/60 bg-black/30 p-3 text-sm text-white whitespace-pre-wrap"></div><label class="mt-4 block text-xs font-bold text-[#CBB58F]">Uygulanacak hasar</label><input id="pvp-host-damage" type="number" min="0" value="1" class="mt-1 w-full rounded-lg border border-[#8A6529] bg-[#100c06] p-2 text-white outline-none"><div class="mt-4 flex gap-2"><button onclick="closePvpHostReview()" class="flex-1 rounded-lg border border-[#8A6529] py-2 text-xs font-bold">Reddet</button><button onclick="approvePvpNarrative()" class="flex-1 rounded-lg bg-red-700 py-2 text-xs font-bold text-white hover:bg-red-600">Hasarı Uygula</button></div></div>
+    </div>
+
     <!-- ENVANTER & TAKAS MODALI -->
     <div id="inventory-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-[#2E1E07] border-2 border-[#8A6529] p-5 rounded-lg w-full max-w-md shadow-2xl text-[#CBB58F]">
@@ -1423,6 +1433,14 @@
 
                 case 'pvp_roll':
                     receivePvpRoll(packet.challengeId, packet.roll);
+                    break;
+
+                case 'pvp_winner':
+                    receivePvpWinner(packet.challengeId, packet.winner, packet.summary);
+                    break;
+
+                case 'pvp_narrative':
+                    receivePvpNarrative(packet.challengeId, packet.winnerName, packet.story);
                     break;
             }
             saveToLocalStorage();
@@ -4234,13 +4252,17 @@
             activePvpChallenge = challenge;
             activePvpRolls = [];
             const modal = document.getElementById('pvp-roll-modal');
-            document.getElementById('pvp-roll-description').textContent = `${challenge.attackerName}, ${challenge.targetName}'e saldırdı. Herkes D20 atsın; en yüksek atış sonucu belirler.`;
-            document.getElementById('pvp-roll-button').disabled = false;
-            document.getElementById('pvp-roll-button').classList.remove('opacity-40');
+            const isHost = isCurrentUserHost();
+            document.getElementById('pvp-roll-description').textContent = isHost
+                ? `${challenge.attackerName}, ${challenge.targetName}'e saldırdı. Oyuncuların D20 sonuçları bekleniyor.`
+                : `${challenge.attackerName}, ${challenge.targetName}'e saldırdı. D20 at; en yüksek atan olayın sonucunu anlatacak.`;
+            document.getElementById('pvp-roll-button').disabled = isHost;
+            document.getElementById('pvp-roll-button').classList.toggle('hidden', isHost);
+            document.getElementById('pvp-roll-button').classList.toggle('opacity-40', isHost);
             document.getElementById('pvp-roll-result').textContent = '';
             modal.classList.remove('hidden'); modal.classList.add('flex');
             if (pvpResolveTimer) clearTimeout(pvpResolveTimer);
-            if (state.username.toLowerCase() === state.hostName.toLowerCase()) pvpResolveTimer = setTimeout(resolvePvpChallenge, 15000);
+            if (isHost) pvpResolveTimer = setTimeout(resolvePvpChallenge, 15000);
         }
 
         function submitPvpRoll() {
@@ -4252,36 +4274,79 @@
             const result = { name: state.username, value: roll };
             receivePvpRoll(activePvpChallenge.id, result);
             broadcastNetworkEvent({ type: 'pvp_roll', challengeId: activePvpChallenge.id, roll: result });
+            // Her oyuncu yalnızca kendi atışını görür; ekranda kilitli modal kalmaz.
+            setTimeout(() => {
+                document.getElementById('pvp-roll-modal').classList.remove('flex');
+                document.getElementById('pvp-roll-modal').classList.add('hidden');
+            }, 650);
         }
 
         function receivePvpRoll(challengeId, roll) {
             if (!activePvpChallenge || activePvpChallenge.id !== challengeId) return;
             if (!activePvpRolls.some(r => r.name.toLowerCase() === roll.name.toLowerCase())) activePvpRolls.push(roll);
-            if (state.username.toLowerCase() === state.hostName.toLowerCase() && activePvpRolls.length >= state.players.length) resolvePvpChallenge();
+            const requiredRolls = state.players.filter(player => String(player.name || '').trim().toLocaleLowerCase('tr-TR') !== String(state.hostName || '').trim().toLocaleLowerCase('tr-TR')).length;
+            if (isCurrentUserHost() && activePvpRolls.length >= requiredRolls) resolvePvpChallenge();
         }
 
         function resolvePvpChallenge() {
-            if (!activePvpChallenge || state.username.toLowerCase() !== state.hostName.toLowerCase()) return;
+            if (!activePvpChallenge || !isCurrentUserHost()) return;
             if (pvpResolveTimer) clearTimeout(pvpResolveTimer);
             const rolls = activePvpRolls.slice().sort((a, b) => b.value - a.value);
             const highest = rolls[0];
+            document.getElementById('pvp-roll-modal').classList.remove('flex'); document.getElementById('pvp-roll-modal').classList.add('hidden');
+            if (!highest) { activePvpChallenge = null; return; }
+            const summary = rolls.map(r => `${r.name}: ${r.value}`).join(' • ');
+            receivePvpWinner(activePvpChallenge.id, highest, summary);
+            broadcastNetworkEvent({ type: 'pvp_winner', challengeId: activePvpChallenge.id, winner: highest, summary });
+            addSystemLog(`🎲 Oyuncu düellosu: ${summary}. En yüksek: <strong>${highest.name}</strong>. Olay anlatımı bekleniyor.`);
+        }
+
+        function receivePvpWinner(challengeId, winner, summary) {
+            if (!activePvpChallenge || activePvpChallenge.id !== challengeId) return;
+            document.getElementById('pvp-roll-modal').classList.remove('flex');
+            document.getElementById('pvp-roll-modal').classList.add('hidden');
+            if (String(winner.name).trim().toLocaleLowerCase('tr-TR') !== String(state.username).trim().toLocaleLowerCase('tr-TR')) return;
+            document.getElementById('pvp-narrative-description').textContent = `${summary} — en yüksek zar sende. Olayı anlat, host hasarı onaylasın.`;
+            document.getElementById('pvp-narrative-text').value = '';
+            document.getElementById('pvp-narrative-modal').classList.remove('hidden');
+            document.getElementById('pvp-narrative-modal').classList.add('flex');
+        }
+
+        function submitPvpNarrative() {
+            const story = document.getElementById('pvp-narrative-text').value.trim();
+            if (!activePvpChallenge || !story) { alert('Önce kısa bir olay anlatımı yaz.'); return; }
+            const payload = { challengeId: activePvpChallenge.id, winnerName: state.username, story };
+            document.getElementById('pvp-narrative-modal').classList.remove('flex');
+            document.getElementById('pvp-narrative-modal').classList.add('hidden');
+            receivePvpNarrative(payload.challengeId, payload.winnerName, payload.story);
+            broadcastNetworkEvent({ type: 'pvp_narrative', ...payload });
+        }
+
+        function receivePvpNarrative(challengeId, winnerName, story) {
+            if (!isCurrentUserHost() || !activePvpChallenge || activePvpChallenge.id !== challengeId) return;
+            document.getElementById('pvp-host-review-summary').textContent = `${winnerName} olayı anlattı. Uygun görürsen hasarı sen belirlersin.`;
+            document.getElementById('pvp-host-review-story').textContent = story;
+            document.getElementById('pvp-host-damage').value = 1;
+            document.getElementById('pvp-host-review-modal').classList.remove('hidden');
+            document.getElementById('pvp-host-review-modal').classList.add('flex');
+        }
+
+        function closePvpHostReview() {
+            document.getElementById('pvp-host-review-modal').classList.remove('flex');
+            document.getElementById('pvp-host-review-modal').classList.add('hidden');
+            activePvpChallenge = null;
+        }
+
+        function approvePvpNarrative() {
+            if (!isCurrentUserHost() || !activePvpChallenge) return;
             const attacker = state.tokens.find(t => t.id === activePvpChallenge.attackerId);
             const target = state.tokens.find(t => t.id === activePvpChallenge.targetId);
-            document.getElementById('pvp-roll-modal').classList.remove('flex'); document.getElementById('pvp-roll-modal').classList.add('hidden');
-            if (!highest || !attacker || !target) { activePvpChallenge = null; return; }
-            const summary = rolls.map(r => `${r.name}: ${r.value}`).join(' • ');
-            const defaultDamage = Math.max(1, Math.floor(Math.random() * 8) + 1);
-            const apply = confirm(`D20 sonuçları: ${summary}\nKazanan: ${highest.name} (${highest.value})\n\nHost kararı: ${target.name}'e hasar uygulansın mı?`);
-            if (apply) {
-                const entered = prompt('Uygulanacak hasar (host kararı):', String(defaultDamage));
-                const damage = Math.max(0, parseInt(entered) || 0);
-                if (damage > 0) {
-                    triggerAttackAnimation(attacker.id, target.id, damage);
-                    broadcastNetworkEvent({ type: 'execute_attack', attackerId: attacker.id, targetId: target.id, damage });
-                }
+            const damage = Math.max(0, parseInt(document.getElementById('pvp-host-damage').value) || 0);
+            if (attacker && target && damage > 0) {
+                triggerAttackAnimation(attacker.id, target.id, damage);
+                broadcastNetworkEvent({ type: 'execute_attack', attackerId: attacker.id, targetId: target.id, damage });
             }
-            addSystemLog(`🎲 Oyuncu düellosu: ${summary}. En yüksek: <strong>${highest.name}</strong>.`);
-            activePvpChallenge = null;
+            closePvpHostReview();
         }
 
         function openAttackModal() {
