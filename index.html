@@ -2503,7 +2503,7 @@
             const username = (state.username || '').toLowerCase();
             const hasEligibleToken = state.tokens.some(tok => {
                 const char = state.roster.find(c => c.id === tok.rosterId);
-                return char && char.canAttack && char.owner && char.owner.toLowerCase() === username && (char.hp || 0) > 0;
+                return char && char.canAttack && !char.attackPermissionConsumedAt && char.owner && char.owner.toLowerCase() === username && (char.hp || 0) > 0;
             });
             btn.classList.toggle('hidden', !hasEligibleToken);
         }
@@ -4136,6 +4136,7 @@
             const char = state.roster.find(c => c.id === document.getElementById('grant-attack-character').value);
             if (!char) return;
             char.canAttack = true;
+            char.attackPermissionConsumedAt = null;
             char.attackMod = Math.max(-10, Math.min(10, parseInt(document.getElementById('grant-attack-mod').value) || 0));
             saveEntityAndBroadcast(char, false);
             addSystemLog(`⚔️ <strong>${char.name}</strong> için saldırı hakkı verildi (mod: ${char.attackMod >= 0 ? '+' : ''}${char.attackMod}).`);
@@ -4144,13 +4145,15 @@
         }
 
         function openPlayerAttackModal() {
+            // İzin daha önce tüketildiyse, ekranda eski bir buton kalmış olsa bile saldırı paneli açılmaz.
+            updatePlayerAttackButton();
             const username = (state.username || '').toLowerCase();
             const source = document.getElementById('player-attack-source');
             const target = document.getElementById('player-attack-target');
             source.innerHTML = ''; target.innerHTML = '';
             state.tokens.forEach(tok => {
                 const char = state.roster.find(c => c.id === tok.rosterId);
-                if (char && char.canAttack && char.owner && char.owner.toLowerCase() === username && (char.hp || 0) > 0) {
+                if (char && char.canAttack && !char.attackPermissionConsumedAt && char.owner && char.owner.toLowerCase() === username && (char.hp || 0) > 0) {
                     const opt = document.createElement('option'); opt.value = tok.id; opt.textContent = char.name; source.appendChild(opt);
                 }
             });
@@ -4172,12 +4175,16 @@
             const attacker = state.tokens.find(t => t.id === document.getElementById('player-attack-source').value);
             const target = state.tokens.find(t => t.id === document.getElementById('player-attack-target').value);
             const char = attacker && state.roster.find(c => c.id === attacker.rosterId);
-            if (!attacker || !target || !char || !char.canAttack) return;
+            if (!attacker || !target || !char || !char.canAttack || char.attackPermissionConsumedAt) return;
             closePlayerAttackModal();
 
             // Hostun verdiği saldırı izni tek kullanımlıktır: saldırı denenir denenmez tüketilir.
             char.canAttack = false;
+            char.attackPermissionConsumedAt = Date.now();
             saveEntityAndBroadcast(char, false);
+            saveToLocalStorage();
+            // Yeniden çizim beklemeden oyuncunun araç çubuğundan kaldır.
+            document.getElementById('player-attack-btn')?.classList.add('hidden');
             updatePlayerAttackButton();
 
             if ((target.rosterId || '').startsWith('enemy-')) {
